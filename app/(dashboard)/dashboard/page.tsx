@@ -1,0 +1,126 @@
+import { getCurrentUser } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { Calendar, Users, DollarSign, Activity } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+export default async function DashboardPage() {
+  const userId = await getCurrentUser()
+  
+  if (!userId) {
+    return null
+  }
+
+  const hoy = format(new Date(), 'yyyy-MM-dd')
+  
+  const totalAlumnas = await prisma.alumna.count({
+    where: {
+      profesoraId: userId,
+      estaActiva: true
+    }
+  })
+
+  const clasesHoy = await prisma.clase.findMany({
+    where: {
+      profesoraId: userId,
+      fecha: new Date(hoy)
+    },
+    include: {
+      alumna: {
+        select: {
+          nombre: true
+        }
+      }
+    },
+    orderBy: {
+      horaInicio: 'asc'
+    }
+  })
+
+  const pagosVencidos = await prisma.pago.count({
+    where: {
+      alumna: {
+        profesoraId: userId
+      },
+      estado: 'vencido'
+    }
+  })
+
+  return (
+    <div className="dashboard-container">
+      <div className="dashboard-header">
+        <div>
+          <h1>Bienvenida</h1>
+          <p className="date-text">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
+          </p>
+        </div>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon purple">
+            <Users size={24} />
+          </div>
+          <div className="stat-content">
+            <p className="stat-label">Alumnas Activas</p>
+            <p className="stat-value">{totalAlumnas}</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon blue">
+            <Calendar size={24} />
+          </div>
+          <div className="stat-content">
+            <p className="stat-label">Clases Hoy</p>
+            <p className="stat-value">{clasesHoy.length}</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon pink">
+            <DollarSign size={24} />
+          </div>
+          <div className="stat-content">
+            <p className="stat-label">Pagos Pendientes</p>
+            <p className="stat-value">{pagosVencidos}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="agenda-card">
+        <div className="agenda-header">
+          <Activity size={20} />
+          <h2>Tu agenda de hoy</h2>
+        </div>
+        
+        <div className="agenda-content">
+          {clasesHoy.length > 0 ? (
+            <div className="clases-list">
+              {clasesHoy.map((clase) => (
+                <div key={clase.id} className="clase-item">
+                  <div className="clase-time">{clase.horaInicio}</div>
+                  <div className="clase-info">
+                    <p className="clase-alumna">{clase.alumna?.nombre || 'Sin reserva'}</p>
+                    <p className="clase-tipo">Clase de pilates</p>
+                  </div>
+                  <div className={`clase-status ${clase.estado}`}>
+                    {clase.estado === 'completada' ? '✓' : 
+                     clase.estado === 'cancelada' ? '✕' : '○'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <Calendar size={48} strokeWidth={1} />
+              <p>No tenés clases programadas para hoy</p>
+              <p className="empty-subtitle">Disfrutá tu día libre</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

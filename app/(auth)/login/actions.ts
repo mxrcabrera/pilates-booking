@@ -40,10 +40,22 @@ export async function signup(formData: FormData) {
 
   // Verificar si ya existe
   const existente = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
+    include: {
+      accounts: {
+        select: {
+          provider: true
+        }
+      }
+    }
   })
 
   if (existente) {
+    // Check if user has a Google account
+    const hasGoogleAccount = existente.accounts.some(acc => acc.provider === 'google')
+    if (hasGoogleAccount) {
+      throw new Error('Este email ya está registrado con Google. Por favor iniciá sesión con Google.')
+    }
     throw new Error('El email ya está registrado')
   }
 

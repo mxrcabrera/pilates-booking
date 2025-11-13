@@ -546,6 +546,10 @@ body::before {
   font-weight: 300;
   color: rgba(255, 255, 255, 0.95);
   line-height: 1;
+  min-height: 1.75rem;
+  display: flex;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Desktop: Stats más grandes */
@@ -1232,7 +1236,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ========================================
-   ALUMNAS
+   ALUMNOS
    ======================================== */
 .search-bar {
   display: flex;

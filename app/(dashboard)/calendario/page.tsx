@@ -7,14 +7,36 @@ export default async function CalendarioPage() {
   if (!userId) return null
 
   const hoy = new Date()
-  
+
   // Cargar 3 meses (mes anterior, actual, siguiente)
   const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
   const finRango = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0)
 
+  // Obtener configuración del usuario
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      espacioCompartidoId: true,
+      horarioMananaInicio: true,
+      horarioMananaFin: true,
+      horarioTardeInicio: true,
+      horarioTardeFin: true
+    }
+  })
+
+  // Si tiene espacio compartido, obtener IDs de todos los usuarios en ese espacio
+  let profesoraIds = [userId]
+  if (user?.espacioCompartidoId) {
+    const usuariosEnEspacio = await prisma.user.findMany({
+      where: { espacioCompartidoId: user.espacioCompartidoId },
+      select: { id: true }
+    })
+    profesoraIds = usuariosEnEspacio.map(p => p.id)
+  }
+
   const clases = await prisma.clase.findMany({
     where: {
-      profesoraId: userId,
+      profesoraId: { in: profesoraIds },
       fecha: {
         gte: inicioRango,
         lte: finRango
@@ -22,6 +44,12 @@ export default async function CalendarioPage() {
     },
     include: {
       alumna: {
+        select: {
+          id: true,
+          nombre: true
+        }
+      },
+      profesora: {
         select: {
           id: true,
           nombre: true
@@ -52,5 +80,15 @@ export default async function CalendarioPage() {
     }
   })
 
-  return <CalendarioClient clases={clasesNormalizadas} alumnas={alumnas} />
+  return (
+    <CalendarioClient
+      clasesIniciales={clasesNormalizadas}
+      alumnas={alumnas}
+      currentUserId={userId}
+      horarioMananaInicio={user?.horarioMananaInicio || '08:00'}
+      horarioMananaFin={user?.horarioMananaFin || '14:00'}
+      horarioTardeInicio={user?.horarioTardeInicio || '17:00'}
+      horarioTardeFin={user?.horarioTardeFin || '22:00'}
+    />
+  )
 }

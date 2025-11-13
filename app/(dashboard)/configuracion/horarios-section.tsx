@@ -14,9 +14,23 @@ type Horario = {
   estaActivo: boolean
 }
 
+type HorariosSectionProps = {
+  horarios: Horario[]
+  horarioMananaInicio: string
+  horarioMananaFin: string
+  horarioTardeInicio: string
+  horarioTardeFin: string
+}
+
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
-export function HorariosSection({ horarios }: { horarios: Horario[] }) {
+export function HorariosSection({
+  horarios,
+  horarioMananaInicio,
+  horarioMananaFin,
+  horarioTardeInicio,
+  horarioTardeFin
+}: HorariosSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingHorario, setEditingHorario] = useState<Horario | null>(null)
 
@@ -56,19 +70,17 @@ export function HorariosSection({ horarios }: { horarios: Horario[] }) {
 
   return (
     <div className="settings-section">
-      <div className="section-header">
-        <Clock size={20} />
-        <h2>Horarios de Atención</h2>
-        <button 
-          onClick={handleNew}
-          className="btn-icon-sm"
-          title="Agregar horario"
-        >
-          <Plus size={18} />
-        </button>
-      </div>
-
       <div className="section-content">
+        <div className="section-actions" style={{ marginBottom: '1.5rem' }}>
+          <button
+            onClick={handleNew}
+            className="btn-primary"
+          >
+            <Plus size={18} />
+            <span>Agregar Horario</span>
+          </button>
+        </div>
+
         {horarios.length === 0 ? (
           <div className="empty-state-small">
             <Clock size={32} strokeWidth={1} />
@@ -88,8 +100,8 @@ export function HorariosSection({ horarios }: { horarios: Horario[] }) {
                   <h3 className="horario-dia-nombre">{DIAS[dia]}</h3>
                   <div className="horario-dia-slots">
                     {horariosDelDia.map(horario => (
-                      <div 
-                        key={horario.id} 
+                      <div
+                        key={horario.id}
                         className={`horario-slot ${!horario.estaActivo ? 'inactive' : ''}`}
                       >
                         <div className="horario-slot-info">
@@ -100,27 +112,23 @@ export function HorariosSection({ horarios }: { horarios: Horario[] }) {
                             {horario.esManiana ? 'Mañana' : 'Tarde'}
                           </span>
                         </div>
+                        {!horario.estaActivo && (
+                          <span className="horario-status-badge">Inactivo</span>
+                        )}
                         <div className="horario-slot-actions">
                           <button
-                            onClick={() => handleToggle(horario.id)}
-                            className="btn-icon-xs"
-                            title={horario.estaActivo ? 'Desactivar' : 'Activar'}
-                          >
-                            {horario.estaActivo ? '✓' : '○'}
-                          </button>
-                          <button
                             onClick={() => handleEdit(horario)}
-                            className="btn-icon-xs"
+                            className="btn-icon-sm"
                             title="Editar"
                           >
-                            <Edit2 size={14} />
+                            <Edit2 size={16} />
                           </button>
                           <button
                             onClick={() => handleDelete(horario.id)}
-                            className="btn-icon-xs danger"
+                            className="btn-icon-sm danger"
                             title="Eliminar"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
@@ -140,6 +148,10 @@ export function HorariosSection({ horarios }: { horarios: Horario[] }) {
           setEditingHorario(null)
         }}
         horario={editingHorario}
+        horarioMananaInicio={horarioMananaInicio}
+        horarioMananaFin={horarioMananaFin}
+        horarioTardeInicio={horarioTardeInicio}
+        horarioTardeFin={horarioTardeFin}
       />
     </div>
   )

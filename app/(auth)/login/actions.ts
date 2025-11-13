@@ -4,28 +4,29 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, verifyPassword, createToken, setAuthCookie, removeAuthCookie } from '@/lib/auth'
+import { signIn } from '@/lib/auth-new'
 
 export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // Buscar profesora por email
-  const profesora = await prisma.profesora.findUnique({
+  // Buscar usuario por email
+  const user = await prisma.user.findUnique({
     where: { email }
   })
 
-  if (!profesora) {
+  if (!user) {
     throw new Error('Credenciales inválidas')
   }
 
   // Verificar password
-  const isValid = await verifyPassword(password, profesora.password)
+  const isValid = await verifyPassword(password, user.password)
   if (!isValid) {
     throw new Error('Credenciales inválidas')
   }
 
   // Crear token y guardar en cookie
-  const token = await createToken(profesora.id)
+  const token = await createToken(user.id)
   await setAuthCookie(token)
 
   revalidatePath('/', 'layout')
@@ -38,7 +39,7 @@ export async function signup(formData: FormData) {
   const nombre = formData.get('nombre') as string
 
   // Verificar si ya existe
-  const existente = await prisma.profesora.findUnique({
+  const existente = await prisma.user.findUnique({
     where: { email }
   })
 
@@ -46,10 +47,10 @@ export async function signup(formData: FormData) {
     throw new Error('El email ya está registrado')
   }
 
-  // Hashear password y crear profesora
+  // Hashear password y crear usuario
   const hashedPassword = await hashPassword(password)
-  
-  const profesora = await prisma.profesora.create({
+
+  const user = await prisma.user.create({
     data: {
       email,
       nombre,
@@ -58,7 +59,7 @@ export async function signup(formData: FormData) {
   })
 
   // Crear token y guardar en cookie
-  const token = await createToken(profesora.id)
+  const token = await createToken(user.id)
   await setAuthCookie(token)
 
   revalidatePath('/', 'layout')
@@ -68,4 +69,8 @@ export async function signup(formData: FormData) {
 export async function logout() {
   await removeAuthCookie()
   redirect('/login')
+}
+
+export async function loginWithGoogle() {
+  await signIn('google', { redirectTo: '/dashboard' })
 }

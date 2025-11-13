@@ -36,26 +36,38 @@ const DIAS_INDIVIDUALES = [
 ]
 
 const TURNOS = [
-  { value: 'maniana', label: 'Mañana', emoji: '🌅' },
-  { value: 'tarde', label: 'Tarde', emoji: '🌆' },
+  { value: 'maniana', label: 'Mañana', emoji: '☀️' },
+  { value: 'tarde', label: 'Tarde', emoji: '☀️' },
   { value: 'ambos', label: 'Mañana y Tarde', emoji: '☀️' },
 ]
+
+type HorarioDialogProps = {
+  isOpen: boolean
+  onClose: () => void
+  horario: Horario | null
+  horarioMananaInicio: string
+  horarioMananaFin: string
+  horarioTardeInicio: string
+  horarioTardeFin: string
+}
 
 export function HorarioDialog({
   isOpen,
   onClose,
-  horario
-}: {
-  isOpen: boolean
-  onClose: () => void
-  horario: Horario | null
-}) {
+  horario,
+  horarioMananaInicio,
+  horarioMananaFin,
+  horarioTardeInicio,
+  horarioTardeFin
+}: HorarioDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rangoSeleccionado, setRangoSeleccionado] = useState('single')
   const [turnoSeleccionado, setTurnoSeleccionado] = useState('maniana')
   const [pendingSubmit, setPendingSubmit] = useState<FormData | null>(null)
   const [confirmType, setConfirmType] = useState<'sabado-tarde' | 'domingo' | null>(null)
+  const [horaInicio, setHoraInicio] = useState('')
+  const [horaFin, setHoraFin] = useState('')
 
   useEffect(() => {
     if (!isOpen) {
@@ -64,8 +76,30 @@ export function HorarioDialog({
       setTurnoSeleccionado('maniana')
       setPendingSubmit(null)
       setConfirmType(null)
+      setHoraInicio('')
+      setHoraFin('')
+    } else if (horario) {
+      // Si estamos editando, setear el turno según el horario
+      setTurnoSeleccionado(horario.esManiana ? 'maniana' : 'tarde')
+    } else {
+      // Nuevo horario - setear mañana por defecto
+      setTurnoSeleccionado('maniana')
     }
-  }, [isOpen])
+  }, [isOpen, horario])
+
+  // Actualizar las horas cuando cambia el turno
+  useEffect(() => {
+    if (isOpen) {
+      // Actualizar SIEMPRE que cambie el turno, tanto en crear como en editar
+      if (turnoSeleccionado === 'maniana') {
+        setHoraInicio(horarioMananaInicio)
+        setHoraFin(horarioMananaFin)
+      } else if (turnoSeleccionado === 'tarde') {
+        setHoraInicio(horarioTardeInicio)
+        setHoraFin(horarioTardeFin)
+      }
+    }
+  }, [turnoSeleccionado, isOpen, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin])
 
   async function procesarHorarios(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false) {
     const rango = RANGOS_DIAS.find(r => r.value === rangoSeleccionado)
@@ -283,18 +317,20 @@ export function HorarioDialog({
                         type="radio"
                         name="esManiana"
                         value="true"
-                        defaultChecked={horario.esManiana}
+                        checked={turnoSeleccionado === 'maniana'}
+                        onChange={() => setTurnoSeleccionado('maniana')}
                       />
-                      <span>🌅 Mañana</span>
+                      <span>☀️ Mañana</span>
                     </label>
                     <label className="radio-option">
                       <input
                         type="radio"
                         name="esManiana"
                         value="false"
-                        defaultChecked={!horario.esManiana}
+                        checked={turnoSeleccionado === 'tarde'}
+                        onChange={() => setTurnoSeleccionado('tarde')}
                       />
-                      <span>🌆 Tarde</span>
+                      <span>🌙 Tarde</span>
                     </label>
                   </div>
                 </div>
@@ -304,40 +340,40 @@ export function HorarioDialog({
             {turnoSeleccionado === 'ambos' && !horario && (
               <>
                 <div className="form-group">
-                  <label>🌅 Horario Mañana</label>
+                  <label>☀️ Horario Mañana</label>
                   <div className="form-row">
                     <input
                       type="time"
                       name="horaInicioManiana"
                       required
-                      defaultValue="09:00"
+                      defaultValue={horarioMananaInicio}
                       disabled={isLoading}
                     />
                     <input
                       type="time"
                       name="horaFinManiana"
                       required
-                      defaultValue="13:00"
+                      defaultValue={horarioMananaFin}
                       disabled={isLoading}
                     />
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label>🌆 Horario Tarde</label>
+                  <label>🌙 Horario Tarde</label>
                   <div className="form-row">
                     <input
                       type="time"
                       name="horaInicioTarde"
                       required
-                      defaultValue="15:00"
+                      defaultValue={horarioTardeInicio}
                       disabled={isLoading}
                     />
                     <input
                       type="time"
                       name="horaFinTarde"
                       required
-                      defaultValue="19:00"
+                      defaultValue={horarioTardeFin}
                       disabled={isLoading}
                     />
                   </div>
@@ -353,7 +389,8 @@ export function HorarioDialog({
                     type="time"
                     name="horaInicio"
                     required
-                    defaultValue={horario?.horaInicio || '09:00'}
+                    value={horaInicio}
+                    onChange={(e) => setHoraInicio(e.target.value)}
                     disabled={isLoading}
                   />
                 </div>
@@ -364,7 +401,8 @@ export function HorarioDialog({
                     type="time"
                     name="horaFin"
                     required
-                    defaultValue={horario?.horaFin || '18:00'}
+                    value={horaFin}
+                    onChange={(e) => setHoraFin(e.target.value)}
                     disabled={isLoading}
                   />
                 </div>

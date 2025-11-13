@@ -53,6 +53,15 @@ export async function removeAuthCookie() {
 }
 
 export async function getCurrentUser() {
+  // Primero intentar con NextAuth
+  const { auth } = await import('./auth-new')
+  const session = await auth()
+
+  if (session?.user?.id) {
+    return session.user.id
+  }
+
+  // Si no hay sesión de NextAuth, intentar con JWT personalizado
   const token = await getAuthCookie()
   if (!token) return null
 

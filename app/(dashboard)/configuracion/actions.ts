@@ -12,7 +12,7 @@ export async function updateProfile(formData: FormData) {
   const nombre = formData.get('nombre') as string
   const telefono = formData.get('telefono') as string
 
-  await prisma.profesora.update({
+  await prisma.user.update({
     where: { id: userId },
     data: { nombre, telefono }
   })
@@ -37,18 +37,18 @@ export async function changePassword(formData: FormData) {
     throw new Error('La contraseña debe tener al menos 6 caracteres')
   }
 
-  const profesora = await prisma.profesora.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId }
   })
 
-  if (!profesora) throw new Error('Usuario no encontrado')
+  if (!user) throw new Error('Usuario no encontrado')
 
-  const isValid = await verifyPassword(currentPassword, profesora.password)
+  const isValid = await verifyPassword(currentPassword, user.password)
   if (!isValid) throw new Error('Contraseña actual incorrecta')
 
   const hashedPassword = await hashPassword(newPassword)
 
-  await prisma.profesora.update({
+  await prisma.user.update({
     where: { id: userId },
     data: { password: hashedPassword }
   })
@@ -66,6 +66,39 @@ export async function saveHorario(formData: FormData) {
   const horaInicio = formData.get('horaInicio') as string
   const horaFin = formData.get('horaFin') as string
   const esManiana = formData.get('esManiana') === 'true'
+
+  // Obtener horarios por defecto configurados
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      horarioMananaInicio: true,
+      horarioMananaFin: true,
+      horarioTardeInicio: true,
+      horarioTardeFin: true
+    }
+  })
+
+  if (!user) throw new Error('Usuario no encontrado')
+
+  // Validar que los horarios estén dentro del rango configurado
+  if (esManiana) {
+    if (horaInicio < user.horarioMananaInicio || horaFin > user.horarioMananaFin) {
+      throw new Error(
+        `El horario de mañana debe estar entre ${user.horarioMananaInicio} y ${user.horarioMananaFin}`
+      )
+    }
+  } else {
+    if (horaInicio < user.horarioTardeInicio || horaFin > user.horarioTardeFin) {
+      throw new Error(
+        `El horario de tarde debe estar entre ${user.horarioTardeInicio} y ${user.horarioTardeFin}`
+      )
+    }
+  }
+
+  // Validar que horaInicio < horaFin
+  if (horaInicio >= horaFin) {
+    throw new Error('La hora de inicio debe ser anterior a la hora de fin')
+  }
 
   if (id) {
     // Actualizar
@@ -118,5 +151,38 @@ export async function toggleHorario(id: string) {
   })
 
   revalidatePath('/configuracion')
+  return { success: true }
+}
+
+export async function updatePreferencias(formData: FormData) {
+  const userId = await getCurrentUser()
+  if (!userId) throw new Error('No autorizado')
+
+  const horasAnticipacionMinima = parseInt(formData.get('horasAnticipacionMinima') as string)
+  const maxAlumnasPorClase = parseInt(formData.get('maxAlumnasPorClase') as string)
+  const horarioMananaInicio = formData.get('horarioMananaInicio') as string
+  const horarioMananaFin = formData.get('horarioMananaFin') as string
+  const horarioTardeInicio = formData.get('horarioTardeInicio') as string
+  const horarioTardeFin = formData.get('horarioTardeFin') as string
+  const espacioCompartidoId = formData.get('espacioCompartidoId') as string
+
+  // Normalizar el código de espacio (trim y lowercase)
+  const espacioNormalizado = espacioCompartidoId?.trim().toLowerCase() || null
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      horasAnticipacionMinima,
+      maxAlumnasPorClase,
+      horarioMananaInicio,
+      horarioMananaFin,
+      horarioTardeInicio,
+      horarioTardeFin,
+      espacioCompartidoId: espacioNormalizado
+    }
+  })
+
+  revalidatePath('/configuracion')
+  revalidatePath('/calendario')
   return { success: true }
 }

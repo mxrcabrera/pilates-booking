@@ -33,18 +33,14 @@ export function ProfileForm({ profesora }: { profesora: Profesora }) {
 
   return (
     <div className="settings-section">
-      <div className="section-header">
-        <User size={20} />
-        <h2>Perfil</h2>
-      </div>
-      
-      {message && (
-        <div className={`form-message ${message.type}`}>
-          {message.text}
-        </div>
-      )}
+      <div className="section-content">
+        {message && (
+          <div className={`form-message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="section-content">
+        <form onSubmit={handleSubmit} className="form-content">
         <div className="form-group">
           <label>Nombre</label>
           <input 
@@ -68,8 +64,8 @@ export function ProfileForm({ profesora }: { profesora: Profesora }) {
 
         <div className="form-group">
           <label>Teléfono</label>
-          <input 
-            type="tel" 
+          <input
+            type="tel"
             name="telefono"
             defaultValue={profesora.telefono || ''}
             placeholder="+54 9 11 1234-5678"
@@ -77,10 +73,13 @@ export function ProfileForm({ profesora }: { profesora: Profesora }) {
           />
         </div>
 
-        <button type="submit" className="btn-primary" disabled={isLoading}>
-          {isLoading ? 'Guardando...' : 'Guardar Cambios'}
-        </button>
-      </form>
+          <div className="form-actions">
+            <button type="submit" className="btn-primary" disabled={isLoading}>
+              {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

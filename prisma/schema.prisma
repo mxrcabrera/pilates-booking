@@ -7,37 +7,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Profesora {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  nombre    String
-  telefono  String?
-  password  String
-  createdAt DateTime @default(now()) @map("created_at")
+model User {
+  id                       String    @id @default(uuid())
+  email                    String    @unique
+  nombre                   String
+  telefono                 String?
+  password                 String?
+  emailVerified            DateTime? @map("email_verified")
+  image                    String?
+  horasAnticipacionMinima  Int       @default(1) @map("horas_anticipacion_minima")
+  maxAlumnasPorClase       Int       @default(4) @map("max_alumnas_por_clase")
+  horarioMananaInicio      String    @default("08:00") @map("horario_manana_inicio")
+  horarioMananaFin         String    @default("14:00") @map("horario_manana_fin")
+  horarioTardeInicio       String    @default("17:00") @map("horario_tarde_inicio")
+  horarioTardeFin          String    @default("22:00") @map("horario_tarde_fin")
+  espacioCompartidoId      String?   @map("espacio_compartido_id")
+  createdAt                DateTime  @default(now()) @map("created_at")
 
   alumnas             Alumna[]
   horariosDisponibles HorarioDisponible[]
   clases              Clase[]
+  accounts            Account[]
+  sessions            Session[]
 
   @@map("profesoras")
 }
 
 model Alumna {
-  id             String    @id @default(uuid())
-  profesoraId    String    @map("profesora_id")
-  nombre         String
-  email          String
-  telefono       String
-  cumpleanos     DateTime? @map("cumpleanos") @db.Date  // ← AGREGAR
-  patologias     String?   @map("patologias")           // ← AGREGAR
-  packType       String    @map("pack_type")
-  clasesPorMes   Int?      @map("clases_por_mes")
-  precio         Decimal   @db.Decimal(10, 2)
-  estaActiva     Boolean   @default(true) @map("esta_activa")
-  estaPausada    Boolean   @default(false) @map("esta_pausada")
-  createdAt      DateTime  @default(now()) @map("created_at")
+  id           String    @id @default(uuid())
+  profesoraId  String    @map("profesora_id")
+  nombre       String
+  email        String
+  telefono     String
+  cumpleanos   DateTime? @map("cumpleanos") @db.Date // ← AGREGAR
+  patologias   String?   @map("patologias") // ← AGREGAR
+  packType     String    @map("pack_type")
+  clasesPorMes Int?      @map("clases_por_mes")
+  precio       Decimal   @db.Decimal(10, 2)
+  estaActiva   Boolean   @default(true) @map("esta_activa")
+  estaPausada  Boolean   @default(false) @map("esta_pausada")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-  profesora Profesora @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
+  profesora User @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
   clases    Clase[]
   pagos     Pago[]
 
@@ -54,7 +65,7 @@ model HorarioDisponible {
   estaActivo  Boolean  @default(true) @map("esta_activo")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  profesora Profesora @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
+  profesora User @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
 
   @@map("horarios_disponibles")
 }
@@ -73,23 +84,62 @@ model Clase {
   esClasePrueba     Boolean  @default(false) @map("es_clase_prueba")
   createdAt         DateTime @default(now()) @map("created_at")
 
-  profesora Profesora @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
-  alumna    Alumna?   @relation(fields: [alumnaId], references: [id], onDelete: SetNull)
+  profesora User    @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
+  alumna    Alumna? @relation(fields: [alumnaId], references: [id], onDelete: SetNull)
 
   @@map("clases")
 }
 
 model Pago {
-  id                  String    @id @default(uuid())
-  alumnaId            String    @map("alumna_id")
-  monto               Decimal   @db.Decimal(10, 2)
-  fechaPago           DateTime? @map("fecha_pago") @db.Date
-  fechaVencimiento    DateTime  @map("fecha_vencimiento") @db.Date
-  estado              String    @default("pendiente")
-  mesCorrespondiente  String    @map("mes_correspondiente")
-  createdAt           DateTime  @default(now()) @map("created_at")
+  id                 String    @id @default(uuid())
+  alumnaId           String    @map("alumna_id")
+  monto              Decimal   @db.Decimal(10, 2)
+  fechaPago          DateTime? @map("fecha_pago") @db.Date
+  fechaVencimiento   DateTime  @map("fecha_vencimiento") @db.Date
+  estado             String    @default("pendiente")
+  mesCorrespondiente String    @map("mes_correspondiente")
+  createdAt          DateTime  @default(now()) @map("created_at")
 
   alumna Alumna @relation(fields: [alumnaId], references: [id], onDelete: Cascade)
 
   @@map("pagos")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx prisma format:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm install:*)",
+      "Bash(nul)",
+      "Bash(timeout /t 2)",
+      "Bash(npx tsx:*)",
+      "Bash(timeout:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

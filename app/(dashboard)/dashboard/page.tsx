@@ -1,8 +1,9 @@
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { Calendar, Users, DollarSign, Activity } from 'lucide-react'
+import { Calendar, Users, DollarSign } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { DashboardClient } from './dashboard-client'
 
 export default async function DashboardPage() {
   const userId = await getCurrentUser()
@@ -90,36 +91,15 @@ export default async function DashboardPage() {
       </div>
 
       <div className="agenda-card">
-        <div className="agenda-header">
-          <Activity size={20} />
-          <h2>Tu agenda de hoy</h2>
-        </div>
-        
-        <div className="agenda-content">
-          {clasesHoy.length > 0 ? (
-            <div className="clases-list">
-              {clasesHoy.map((clase) => (
-                <div key={clase.id} className="clase-item">
-                  <div className="clase-time">{clase.horaInicio}</div>
-                  <div className="clase-info">
-                    <p className="clase-alumna">{clase.alumna?.nombre || 'Sin reserva'}</p>
-                    <p className="clase-tipo">Clase de pilates</p>
-                  </div>
-                  <div className={`clase-status ${clase.estado}`}>
-                    {clase.estado === 'completada' ? '✓' : 
-                     clase.estado === 'cancelada' ? '✕' : '○'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <Calendar size={48} strokeWidth={1} />
-              <p>No tenés clases programadas para hoy</p>
-              <p className="empty-subtitle">Disfrutá tu día libre</p>
-            </div>
-          )}
-        </div>
+        {clasesHoy.length > 0 ? (
+          <DashboardClient clasesHoy={clasesHoy} />
+        ) : (
+          <div className="empty-state">
+            <Calendar size={48} strokeWidth={1} />
+            <p>No tenés clases programadas para hoy</p>
+            <p className="empty-subtitle">Disfrutá tu día libre</p>
+          </div>
+        )}
       </div>
     </div>
   )

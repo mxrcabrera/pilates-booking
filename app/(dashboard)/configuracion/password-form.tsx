@@ -28,18 +28,14 @@ export function PasswordForm() {
 
   return (
     <div className="settings-section">
-      <div className="section-header">
-        <Lock size={20} />
-        <h2>Seguridad</h2>
-      </div>
+      <div className="section-content">
+        {message && (
+          <div className={`form-message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
 
-      {message && (
-        <div className={`form-message ${message.type}`}>
-          {message.text}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="section-content">
+        <form onSubmit={handleSubmit} className="form-content">
         <div className="form-group">
           <label>Contraseña Actual</label>
           <input 
@@ -66,20 +62,23 @@ export function PasswordForm() {
 
         <div className="form-group">
           <label>Confirmar Contraseña</label>
-          <input 
-            type="password" 
+          <input
+            type="password"
             name="confirmPassword"
-            placeholder="••••••••" 
+            placeholder="••••••••"
             required
             minLength={6}
             disabled={isLoading}
           />
         </div>
 
-        <button type="submit" className="btn-primary" disabled={isLoading}>
-          {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
-        </button>
-      </form>
+          <div className="form-actions">
+            <button type="submit" className="btn-primary" disabled={isLoading}>
+              {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

@@ -47,13 +47,21 @@ export function ClaseDialog({
   onClose,
   clase,
   fecha,
-  alumnas
+  alumnas,
+  horarioMananaInicio,
+  horarioMananaFin,
+  horarioTardeInicio,
+  horarioTardeFin
 }: {
   isOpen: boolean
   onClose: () => void
   clase: Clase | null
   fecha: Date | null
   alumnas: Alumna[]
+  horarioMananaInicio: string
+  horarioMananaFin: string
+  horarioTardeInicio: string
+  horarioTardeFin: string
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -179,7 +187,7 @@ export function ClaseDialog({
                 type="time"
                 name="horaInicio"
                 required
-                defaultValue={clase?.horaInicio || '09:00'}
+                defaultValue={clase?.horaInicio || horarioMananaInicio}
                 disabled={isLoading}
               />
             </div>
@@ -286,7 +294,7 @@ export function ClaseDialog({
                     <input
                       type="time"
                       name="horaRecurrente"
-                      defaultValue={clase?.horaRecurrente || '09:00'}
+                      defaultValue={clase?.horaRecurrente || horarioMananaInicio}
                       disabled={isLoading}
                     />
                     <small style={{ fontSize: '0.8125rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>

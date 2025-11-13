@@ -14,8 +14,8 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Obtener datos de la profesora
-  const profesora = await prisma.profesora.findUnique({
+  // Obtener datos del usuario
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -24,13 +24,13 @@ export default async function DashboardLayout({
     }
   })
 
-  if (!profesora) {
+  if (!user) {
     redirect('/login')
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav profesora={profesora} />
+      <DashboardNav profesora={user} />
       <main className="container mx-auto py-6 px-4">
         {children}
       </main>

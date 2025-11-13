@@ -12,7 +12,7 @@ type Horario = {
   diaSemana: number
   horaInicio: string
   horaFin: string
-  turno: string
+  esManiana: boolean
   estaActivo: boolean
 }
 

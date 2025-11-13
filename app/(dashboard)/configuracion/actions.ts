@@ -41,7 +41,7 @@ export async function changePassword(formData: FormData) {
     where: { id: userId }
   })
 
-  if (!user) throw new Error('Usuario no encontrado')
+  if (!user || !user.password) throw new Error('Usuario no encontrado')
 
   const isValid = await verifyPassword(currentPassword, user.password)
   if (!isValid) throw new Error('Contraseña actual incorrecta')

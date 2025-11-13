@@ -15,7 +15,7 @@ export async function login(formData: FormData) {
     where: { email }
   })
 
-  if (!user) {
+  if (!user || !user.password) {
     throw new Error('Credenciales inválidas')
   }
 

@@ -48,15 +48,21 @@ interface ConfiguracionClientProps {
 }
 
 type Tab = 'horarios' | 'preferencias' | 'perfil' | 'seguridad'
+type Section = 'settings' | 'account'
 
 export function ConfiguracionClient({ profesor, horarios, packs }: ConfiguracionClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('horarios')
+  const [section, setSection] = useState<Section>('settings')
 
   useEffect(() => {
-    // Check for hash in URL to set initial tab
+    // Check for hash in URL to set initial tab and section
     const hash = window.location.hash.slice(1) as Tab
-    if (hash && ['horarios', 'preferencias', 'perfil', 'seguridad'].includes(hash)) {
+    if (hash && ['horarios', 'preferencias'].includes(hash)) {
       setActiveTab(hash)
+      setSection('settings')
+    } else if (hash && ['perfil', 'seguridad'].includes(hash)) {
+      setActiveTab(hash)
+      setSection('account')
     }
   }, [])
 
@@ -64,34 +70,41 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
     <div className="settings-tabs">
       {/* Tabs Navigation */}
       <div className="tabs-nav">
-        <button
-          onClick={() => setActiveTab('horarios')}
-          className={`tab-button ${activeTab === 'horarios' ? 'active' : ''}`}
-        >
-          <Clock size={20} />
-          <span>Horarios</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('preferencias')}
-          className={`tab-button ${activeTab === 'preferencias' ? 'active' : ''}`}
-        >
-          <Settings size={20} />
-          <span>Preferencias</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('perfil')}
-          className={`tab-button ${activeTab === 'perfil' ? 'active' : ''}`}
-        >
-          <User size={20} />
-          <span>Perfil</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('seguridad')}
-          className={`tab-button ${activeTab === 'seguridad' ? 'active' : ''}`}
-        >
-          <Lock size={20} />
-          <span>Seguridad</span>
-        </button>
+        {section === 'settings' ? (
+          <>
+            <button
+              onClick={() => setActiveTab('horarios')}
+              className={`tab-button ${activeTab === 'horarios' ? 'active' : ''}`}
+            >
+              <Clock size={20} />
+              <span>Horarios</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('preferencias')}
+              className={`tab-button ${activeTab === 'preferencias' ? 'active' : ''}`}
+            >
+              <Settings size={20} />
+              <span>Preferencias</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setActiveTab('perfil')}
+              className={`tab-button ${activeTab === 'perfil' ? 'active' : ''}`}
+            >
+              <User size={20} />
+              <span>Perfil</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('seguridad')}
+              className={`tab-button ${activeTab === 'seguridad' ? 'active' : ''}`}
+            >
+              <Lock size={20} />
+              <span>Seguridad</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Tab Content */}

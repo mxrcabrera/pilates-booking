@@ -29,12 +29,12 @@ export async function checkPreferencesComplete(userId: string): Promise<{
   const missingFields: string[] = []
 
   // Check required fields
-  if (!user.telefono) missingFields.push('teléfono')
-  if (!user.horarioMananaInicio) missingFields.push('horario de mañana (inicio)')
-  if (!user.horarioMananaFin) missingFields.push('horario de mañana (fin)')
-  if (!user.horarioTardeInicio) missingFields.push('horario de tarde (inicio)')
-  if (!user.horarioTardeFin) missingFields.push('horario de tarde (fin)')
-  if (user._count.horariosDisponibles === 0) missingFields.push('al menos un horario disponible')
+  if (!user.telefono) missingFields.push('Teléfono')
+  if (!user.horarioMananaInicio) missingFields.push('Horario de Mañana (Inicio)')
+  if (!user.horarioMananaFin) missingFields.push('Horario de Mañana (Fin)')
+  if (!user.horarioTardeInicio) missingFields.push('Horario de Tarde (Inicio)')
+  if (!user.horarioTardeFin) missingFields.push('Horario de Tarde (Fin)')
+  if (user._count.horariosDisponibles === 0) missingFields.push('Al Menos un Horario Disponible')
 
   return {
     isComplete: missingFields.length === 0,

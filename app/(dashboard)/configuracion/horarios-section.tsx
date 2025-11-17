@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, Plus, Trash2, Edit2 } from 'lucide-react'
+import { Clock, Plus, Trash2, Edit2, MoreVertical } from 'lucide-react'
 import { HorarioDialog } from './horario-dialog'
 import { deleteHorario, toggleHorario } from './actions'
 
@@ -33,6 +33,7 @@ export function HorariosSection({
 }: HorariosSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingHorario, setEditingHorario] = useState<Horario | null>(null)
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedHorarios, setSelectedHorarios] = useState<Set<string>>(new Set())
 
   const handleEdit = (horario: Horario) => {
@@ -87,9 +88,15 @@ export function HorariosSection({
     try {
       await Promise.all(Array.from(selectedHorarios).map(id => deleteHorario(id)))
       setSelectedHorarios(new Set())
+      setIsSelectionMode(false)
     } catch (err: any) {
       alert(err.message)
     }
+  }
+
+  const cancelSelectionMode = () => {
+    setIsSelectionMode(false)
+    setSelectedHorarios(new Set())
   }
 
   // Agrupar horarios por día
@@ -103,15 +110,34 @@ export function HorariosSection({
     <div className="settings-section">
       <div className="section-content">
         <div className="section-actions" style={{ marginBottom: '1.5rem', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={handleNew}
-            className="btn-primary"
-          >
-            <Plus size={18} />
-            <span>Agregar Horario</span>
-          </button>
-          {horarios.length > 0 && (
+          {!isSelectionMode ? (
             <>
+              <button
+                onClick={handleNew}
+                className="btn-primary"
+              >
+                <Plus size={18} />
+                <span>Agregar Horario</span>
+              </button>
+              {horarios.length > 0 && (
+                <button
+                  onClick={() => setIsSelectionMode(true)}
+                  className="btn-icon"
+                  title="Seleccionar horarios"
+                >
+                  <MoreVertical size={20} />
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={cancelSelectionMode}
+                className="btn-ghost"
+                style={{ fontSize: '0.875rem' }}
+              >
+                Cancelar
+              </button>
               <button
                 onClick={toggleSelectAll}
                 className="btn-outline"
@@ -156,13 +182,15 @@ export function HorariosSection({
                         key={horario.id}
                         className={`horario-slot ${!horario.estaActivo ? 'inactive' : ''} ${selectedHorarios.has(horario.id) ? 'selected' : ''}`}
                       >
-                        <input
-                          type="checkbox"
-                          checked={selectedHorarios.has(horario.id)}
-                          onChange={() => toggleSelection(horario.id)}
-                          className="horario-checkbox"
-                          onClick={(e) => e.stopPropagation()}
-                        />
+                        {isSelectionMode && (
+                          <input
+                            type="checkbox"
+                            checked={selectedHorarios.has(horario.id)}
+                            onChange={() => toggleSelection(horario.id)}
+                            className="horario-checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
                         <div className="horario-slot-info">
                           <span className="horario-time">
                             {horario.horaInicio} - {horario.horaFin}
@@ -174,22 +202,24 @@ export function HorariosSection({
                         {!horario.estaActivo && (
                           <span className="horario-status-badge">Inactivo</span>
                         )}
-                        <div className="horario-slot-actions">
-                          <button
-                            onClick={() => handleEdit(horario)}
-                            className="btn-icon-sm"
-                            title="Editar"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(horario.id)}
-                            className="btn-icon-sm danger"
-                            title="Eliminar"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
+                        {!isSelectionMode && (
+                          <div className="horario-slot-actions">
+                            <button
+                              onClick={() => handleEdit(horario)}
+                              className="btn-icon-sm"
+                              title="Editar"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(horario.id)}
+                              className="btn-icon-sm danger"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

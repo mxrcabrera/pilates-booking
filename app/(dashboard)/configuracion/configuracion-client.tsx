@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Clock, User, Lock, Settings } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import { ProfileForm } from './profile-form'
 import { PasswordForm } from './password-form'
 import { HorariosSection } from './horarios-section'
@@ -50,6 +51,14 @@ type Tab = 'horarios' | 'preferencias' | 'perfil' | 'seguridad'
 
 export function ConfiguracionClient({ profesor, horarios, packs }: ConfiguracionClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('horarios')
+
+  useEffect(() => {
+    // Check for hash in URL to set initial tab
+    const hash = window.location.hash.slice(1) as Tab
+    if (hash && ['horarios', 'preferencias', 'perfil', 'seguridad'].includes(hash)) {
+      setActiveTab(hash)
+    }
+  }, [])
 
   return (
     <div className="settings-tabs">

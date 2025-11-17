@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 
@@ -21,7 +21,20 @@ const navItems = [
 
 export function DashboardNav({ profesor }: { profesor: Profesor }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const isConfigPage = pathname === '/configuracion'
+
+  const handleAvatarClick = () => {
+    if (isConfigPage) {
+      // From config page, navigate to perfil tab with hash
+      router.push('/configuracion#perfil')
+    } else {
+      // From other pages, navigate to config
+      router.push('/configuracion')
+    }
+  }
 
   return (
     <>
@@ -52,7 +65,7 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
           </div>
           
           <div className="nav-user">
-            <div className="user-info">
+            <div className="user-info" style={{ cursor: 'pointer' }} onClick={handleAvatarClick}>
               <div className="user-avatar">
                 {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
               </div>
@@ -89,7 +102,14 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
           />
           <div className="mobile-menu">
             <div className="mobile-menu-header">
-              <div className="user-info">
+              <div
+                className="user-info"
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  handleAvatarClick()
+                  setMobileMenuOpen(false)
+                }}
+              >
                 <div className="user-avatar">
                   {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
                 </div>
@@ -101,21 +121,46 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
             </div>
 
             <div className="mobile-menu-items">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`mobile-menu-link ${isActive ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
+              {isConfigPage ? (
+                <>
+                  <button
+                    className="mobile-menu-link"
+                    onClick={() => {
+                      router.push('/configuracion#horarios')
+                      setMobileMenuOpen(false)
+                    }}
                   >
-                    <Icon size={20} />
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
+                    <Clock size={20} />
+                    <span>Horarios</span>
+                  </button>
+                  <button
+                    className="mobile-menu-link"
+                    onClick={() => {
+                      router.push('/configuracion#preferencias')
+                      setMobileMenuOpen(false)
+                    }}
+                  >
+                    <Settings size={20} />
+                    <span>Preferencias</span>
+                  </button>
+                </>
+              ) : (
+                navItems.map((item) => {
+                  const Icon = item.icon
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`mobile-menu-link ${isActive ? 'active' : ''}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                    </Link>
+                  )
+                })
+              )}
             </div>
 
             <div className="mobile-menu-footer">

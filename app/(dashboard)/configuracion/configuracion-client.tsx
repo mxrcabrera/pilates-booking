@@ -69,7 +69,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
   return (
     <div className="settings-tabs">
       {/* Tabs Navigation */}
-      <div className="tabs-nav">
+      <div className="tabs-nav" style={section === 'account' ? { justifyContent: 'center', maxWidth: '600px', margin: '0 auto' } : undefined}>
         {section === 'settings' ? (
           <>
             <button
@@ -84,7 +84,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
               className={`tab-button ${activeTab === 'preferencias' ? 'active' : ''}`}
             >
               <Settings size={20} />
-              <span>Preferencias</span>
+              <span>Configuración</span>
             </button>
           </>
         ) : (

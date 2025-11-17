@@ -121,46 +121,21 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
             </div>
 
             <div className="mobile-menu-items">
-              {isConfigPage ? (
-                <>
-                  <button
-                    className="mobile-menu-link"
-                    onClick={() => {
-                      router.push('/configuracion#horarios')
-                      setMobileMenuOpen(false)
-                    }}
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`mobile-menu-link ${isActive ? 'active' : ''}`}
+                    onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Clock size={20} />
-                    <span>Horarios</span>
-                  </button>
-                  <button
-                    className="mobile-menu-link"
-                    onClick={() => {
-                      router.push('/configuracion#preferencias')
-                      setMobileMenuOpen(false)
-                    }}
-                  >
-                    <Settings size={20} />
-                    <span>Preferencias</span>
-                  </button>
-                </>
-              ) : (
-                navItems.map((item) => {
-                  const Icon = item.icon
-                  const isActive = pathname === item.href
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`mobile-menu-link ${isActive ? 'active' : ''}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Icon size={20} />
-                      <span>{item.label}</span>
-                    </Link>
-                  )
-                })
-              )}
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                  </Link>
+                )
+              })}
             </div>
 
             <div className="mobile-menu-footer">

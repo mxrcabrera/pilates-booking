@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Clock, User, Lock, Settings } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
+import { Calendar, DollarSign, Settings2, User } from 'lucide-react'
+import { ClasesSection } from './clases-section'
+import { PacksTab } from './packs-tab'
+import { SistemaSection } from './sistema-section'
 import { ProfileForm } from './profile-form'
 import { PasswordForm } from './password-form'
-import { HorariosSection } from './horarios-section'
-import { PreferenciasSection } from './preferencias-section'
 
 type Horario = {
   id: string
@@ -47,106 +47,96 @@ interface ConfiguracionClientProps {
   packs: Pack[]
 }
 
-type Tab = 'horarios' | 'preferencias' | 'perfil' | 'seguridad'
-type Section = 'settings' | 'account'
+type Tab = 'clases' | 'packs' | 'sistema' | 'cuenta'
 
 export function ConfiguracionClient({ profesor, horarios, packs }: ConfiguracionClientProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('horarios')
-  const [section, setSection] = useState<Section>('settings')
+  const [activeTab, setActiveTab] = useState<Tab>('clases')
 
   useEffect(() => {
-    // Check for hash in URL to set initial tab and section
+    // Check for hash in URL to set initial tab
     const hash = window.location.hash.slice(1) as Tab
-    if (hash && ['horarios', 'preferencias'].includes(hash)) {
+    if (hash && ['clases', 'packs', 'sistema', 'cuenta'].includes(hash)) {
       setActiveTab(hash)
-      setSection('settings')
-    } else if (hash && ['perfil', 'seguridad'].includes(hash)) {
-      setActiveTab(hash)
-      setSection('account')
     }
   }, [])
 
   return (
     <div className="settings-tabs">
       {/* Tabs Navigation */}
-      <div className="tabs-nav" style={section === 'account' ? { justifyContent: 'center', maxWidth: '600px', margin: '0 auto' } : undefined}>
-        {section === 'settings' ? (
-          <>
-            <button
-              onClick={() => setActiveTab('horarios')}
-              className={`tab-button ${activeTab === 'horarios' ? 'active' : ''}`}
-            >
-              <Clock size={20} />
-              <span>Horarios</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('preferencias')}
-              className={`tab-button ${activeTab === 'preferencias' ? 'active' : ''}`}
-            >
-              <Settings size={20} />
-              <span>Configuración</span>
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => setActiveTab('perfil')}
-              className={`tab-button ${activeTab === 'perfil' ? 'active' : ''}`}
-            >
-              <User size={20} />
-              <span>Perfil</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('seguridad')}
-              className={`tab-button ${activeTab === 'seguridad' ? 'active' : ''}`}
-            >
-              <Lock size={20} />
-              <span>Seguridad</span>
-            </button>
-          </>
-        )}
+      <div className="tabs-nav">
+        <button
+          onClick={() => setActiveTab('clases')}
+          className={`tab-button ${activeTab === 'clases' ? 'active' : ''}`}
+        >
+          <Calendar size={20} />
+          <span>Clases</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('packs')}
+          className={`tab-button ${activeTab === 'packs' ? 'active' : ''}`}
+        >
+          <DollarSign size={20} />
+          <span>Packs</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('sistema')}
+          className={`tab-button ${activeTab === 'sistema' ? 'active' : ''}`}
+        >
+          <Settings2 size={20} />
+          <span>Sistema</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('cuenta')}
+          className={`tab-button ${activeTab === 'cuenta' ? 'active' : ''}`}
+        >
+          <User size={20} />
+          <span>Cuenta</span>
+        </button>
       </div>
 
       {/* Tab Content */}
       <div className="tab-content">
-        {activeTab === 'horarios' && (
+        {activeTab === 'clases' && (
           <div className="tab-panel">
-            <HorariosSection
+            <ClasesSection
               horarios={horarios}
               horarioMananaInicio={profesor.horarioMananaInicio}
               horarioMananaFin={profesor.horarioMananaFin}
               horarioTardeInicio={profesor.horarioTardeInicio}
               horarioTardeFin={profesor.horarioTardeFin}
+              maxAlumnosPorClase={profesor.maxAlumnosPorClase}
             />
           </div>
         )}
 
-        {activeTab === 'preferencias' && (
+        {activeTab === 'packs' && (
           <div className="tab-panel">
-            <PreferenciasSection
+            <PacksTab
+              packs={packs}
               horasAnticipacionMinima={profesor.horasAnticipacionMinima}
-              maxAlumnosPorClase={profesor.maxAlumnosPorClase}
-              horarioMananaInicio={profesor.horarioMananaInicio}
-              horarioMananaFin={profesor.horarioMananaFin}
-              horarioTardeInicio={profesor.horarioTardeInicio}
-              horarioTardeFin={profesor.horarioTardeFin}
+            />
+          </div>
+        )}
+
+        {activeTab === 'sistema' && (
+          <div className="tab-panel">
+            <SistemaSection
               espacioCompartidoId={profesor.espacioCompartidoId}
               syncGoogleCalendar={profesor.syncGoogleCalendar}
               hasGoogleAccount={profesor.hasGoogleAccount}
-              packs={packs}
             />
           </div>
         )}
 
-        {activeTab === 'perfil' && (
+        {activeTab === 'cuenta' && (
           <div className="tab-panel">
-            <ProfileForm profesor={profesor} />
-          </div>
-        )}
-
-        {activeTab === 'seguridad' && (
-          <div className="tab-panel">
-            <PasswordForm />
+            <div className="settings-section">
+              <div className="section-content">
+                <ProfileForm profesor={profesor} />
+                <div className="form-divider" style={{ margin: '3rem 0' }}></div>
+                <PasswordForm />
+              </div>
+            </div>
           </div>
         )}
       </div>

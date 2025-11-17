@@ -28,8 +28,8 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
 
   const handleAvatarClick = () => {
     if (isConfigPage) {
-      // From config page, navigate to perfil tab with hash
-      router.push('/configuracion#perfil')
+      // From config page, navigate to cuenta tab with hash
+      router.push('/configuracion#cuenta')
     } else {
       // From other pages, navigate to config
       router.push('/configuracion')

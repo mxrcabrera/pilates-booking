@@ -2,10 +2,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
+import { deleteClase } from './actions'
 
 type Clase = {
   id: string
@@ -17,25 +18,25 @@ type Clase = {
   esRecurrente: boolean
   frecuenciaSemanal: number | null
   diasSemana: number[]
-  profesoraId: string
-  alumna: {
+  profesorId: string
+  alumno: {
     id: string
     nombre: string
   } | null
-  profesora: {
+  profesor: {
     id: string
     nombre: string
   }
 }
 
-type Alumna = {
+type Alumno = {
   id: string
   nombre: string
 }
 
 interface CalendarioClientProps {
   clasesIniciales: Clase[]
-  alumnas: Alumna[]
+  alumnos: Alumno[]
   currentUserId: string
   horarioMananaInicio: string
   horarioMananaFin: string
@@ -65,7 +66,7 @@ function formatearFechaDia(fecha: Date): string {
   return fecha.toISOString().split('T')[0]
 }
 
-export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin }: CalendarioClientProps) {
+export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin }: CalendarioClientProps) {
   const router = useRouter()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
@@ -74,6 +75,7 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [claseSeleccionada, setClaseSeleccionada] = useState<Clase | null>(null)
+  const [selectedClases, setSelectedClases] = useState<Set<string>>(new Set())
 
   // Sincronizar estado local cuando cambian las props (después del refresh)
   useEffect(() => {
@@ -185,6 +187,39 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
     router.refresh()
   }
 
+  const toggleSelection = (id: string, e?: React.MouseEvent | React.ChangeEvent) => {
+    e?.stopPropagation()
+    const newSelection = new Set(selectedClases)
+    if (newSelection.has(id)) {
+      newSelection.delete(id)
+    } else {
+      newSelection.add(id)
+    }
+    setSelectedClases(newSelection)
+  }
+
+  const toggleSelectAll = () => {
+    const clasesVisibles = vista === 'dia' ? clasesDelDia : clasesDeLaSemana.flatMap(d => d.clases)
+    if (selectedClases.size === clasesVisibles.length) {
+      setSelectedClases(new Set())
+    } else {
+      setSelectedClases(new Set(clasesVisibles.map(c => c.id)))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedClases.size === 0) return
+    if (!confirm(`¿Estás segura de eliminar ${selectedClases.size} clase(s)?`)) return
+
+    try {
+      await Promise.all(Array.from(selectedClases).map(id => deleteClase(id)))
+      setSelectedClases(new Set())
+      router.refresh()
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
   const formatearFecha = (fecha: Date) => {
     const dia = DIAS_SEMANA_FULL[fecha.getDay()]
     const num = fecha.getDate()
@@ -207,10 +242,25 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
             <h1>Calendario</h1>
             <p className="page-subtitle">Gestiona tus clases y horarios</p>
           </div>
-          <Button className="btn-primary desktop-only" onClick={() => setDialogOpen(true)}>
-            <Plus className="w-4 h-4" />
-            Nueva Clase
-          </Button>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {((vista === 'dia' && clasesDelDia.length > 0) || (vista === 'semana' && clasesDeLaSemana.some(d => d.clases.length > 0))) && (
+              <>
+                <Button className="btn-outline desktop-only" onClick={toggleSelectAll} style={{ fontSize: '0.875rem' }}>
+                  {selectedClases.size === (vista === 'dia' ? clasesDelDia : clasesDeLaSemana.flatMap(d => d.clases)).length && selectedClases.size > 0 ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                </Button>
+                {selectedClases.size > 0 && (
+                  <Button className="btn-outline desktop-only" onClick={handleBulkDelete} style={{ fontSize: '0.875rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}>
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar ({selectedClases.size})
+                  </Button>
+                )}
+              </>
+            )}
+            <Button className="btn-primary desktop-only" onClick={() => setDialogOpen(true)}>
+              <Plus className="w-4 h-4" />
+              Nueva Clase
+            </Button>
+          </div>
         </div>
 
         {/* Vista Mobile: Lista Diaria */}
@@ -267,21 +317,28 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
                         <button
                           key={clase.id}
                           onClick={() => handleClaseClick(clase)}
-                          className={`clase-item-mobile ${clase.profesoraId !== currentUserId ? 'clase-compartida' : ''}`}
+                          className={`clase-item-mobile ${clase.profesorId !== currentUserId ? 'clase-compartida' : ''} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
                         >
+                          <input
+                            type="checkbox"
+                            checked={selectedClases.has(clase.id)}
+                            onChange={(e) => toggleSelection(clase.id, e)}
+                            className="calendario-checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           <div className="clase-time-mobile">
                             <div className="clase-time-text">
                               {formatearHora(clase.horaInicio)}
                             </div>
                           </div>
                           <div className="clase-info-mobile">
-                            <div className="clase-alumna-name">
-                              {clase.profesoraId !== currentUserId && (
-                                <span className="profesora-badge">
-                                  {clase.profesora.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            <div className="clase-alumno-name">
+                              {clase.profesorId !== currentUserId && (
+                                <span className="profesor-badge">
+                                  {clase.profesor.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </span>
                               )}
-                              {clase.alumna?.nombre || 'Disponible'}
+                              {clase.alumno?.nombre || 'Disponible'}
                             </div>
                             {clase.esClasePrueba && (
                               <div className="clase-prueba-label">
@@ -316,21 +373,28 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
                         <button
                           key={clase.id}
                           onClick={() => handleClaseClick(clase)}
-                          className={`clase-item-mobile ${clase.profesoraId !== currentUserId ? 'clase-compartida' : ''}`}
+                          className={`clase-item-mobile ${clase.profesorId !== currentUserId ? 'clase-compartida' : ''} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
                         >
+                          <input
+                            type="checkbox"
+                            checked={selectedClases.has(clase.id)}
+                            onChange={(e) => toggleSelection(clase.id, e)}
+                            className="calendario-checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           <div className="clase-time-mobile">
                             <div className="clase-time-text">
                               {formatearHora(clase.horaInicio)}
                             </div>
                           </div>
                           <div className="clase-info-mobile">
-                            <div className="clase-alumna-name">
-                              {clase.profesoraId !== currentUserId && (
-                                <span className="profesora-badge">
-                                  {clase.profesora.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            <div className="clase-alumno-name">
+                              {clase.profesorId !== currentUserId && (
+                                <span className="profesor-badge">
+                                  {clase.profesor.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </span>
                               )}
-                              {clase.alumna?.nombre || 'Disponible'}
+                              {clase.alumno?.nombre || 'Disponible'}
                             </div>
                             {clase.esClasePrueba && (
                               <div className="clase-prueba-label">
@@ -365,21 +429,28 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
                         <button
                           key={clase.id}
                           onClick={() => handleClaseClick(clase)}
-                          className={`clase-item-mobile ${clase.profesoraId !== currentUserId ? 'clase-compartida' : ''}`}
+                          className={`clase-item-mobile ${clase.profesorId !== currentUserId ? 'clase-compartida' : ''} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
                         >
+                          <input
+                            type="checkbox"
+                            checked={selectedClases.has(clase.id)}
+                            onChange={(e) => toggleSelection(clase.id, e)}
+                            className="calendario-checkbox"
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           <div className="clase-time-mobile">
                             <div className="clase-time-text">
                               {formatearHora(clase.horaInicio)}
                             </div>
                           </div>
                           <div className="clase-info-mobile">
-                            <div className="clase-alumna-name">
-                              {clase.profesoraId !== currentUserId && (
-                                <span className="profesora-badge">
-                                  {clase.profesora.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            <div className="clase-alumno-name">
+                              {clase.profesorId !== currentUserId && (
+                                <span className="profesor-badge">
+                                  {clase.profesor.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
                                 </span>
                               )}
-                              {clase.alumna?.nombre || 'Disponible'}
+                              {clase.alumno?.nombre || 'Disponible'}
                             </div>
                             {clase.esClasePrueba && (
                               <div className="clase-prueba-label">
@@ -496,13 +567,20 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
                               <button
                                 key={clase.id}
                                 onClick={() => handleClaseClick(clase)}
-                                className={`clase-item-week ${clase.estado}`}
+                                className={`clase-item-week ${clase.estado} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
                               >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedClases.has(clase.id)}
+                                  onChange={(e) => toggleSelection(clase.id, e)}
+                                  className="calendario-checkbox"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
                                 <div className="clase-week-time">
                                   {formatearHora(clase.horaInicio)}
                                 </div>
-                                <div className="clase-week-alumna">
-                                  {clase.alumna?.nombre || 'Disponible'}
+                                <div className="clase-week-alumno">
+                                  {clase.alumno?.nombre || 'Disponible'}
                                 </div>
                                 {clase.esClasePrueba && (
                                   <div className="clase-week-prueba">
@@ -529,7 +607,7 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
         onClose={handleCloseDialog}
         clase={null}
         fecha={fechaActual}
-        alumnas={alumnas}
+        alumnos={alumnos}
         horarioMananaInicio={horarioMananaInicio}
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}
@@ -541,7 +619,7 @@ export function CalendarioClient({ clasesIniciales, alumnas, currentUserId, hora
         onClose={handleCloseEditDialog}
         clase={claseSeleccionada}
         fecha={null}
-        alumnas={alumnas}
+        alumnos={alumnos}
         horarioMananaInicio={horarioMananaInicio}
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 
-type Profesora = {
+type Profesor = {
   id: string
   nombre: string
   email: string
@@ -15,11 +15,11 @@ type Profesora = {
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { href: '/calendario', icon: Calendar, label: 'Calendario' },
-  { href: '/alumnos', icon: Users, label: 'Alumnas' },
+  { href: '/alumnos', icon: Users, label: 'Alumnos' },
   { href: '/configuracion', icon: Settings, label: 'Configuración' },
 ]
 
-export function DashboardNav({ profesora }: { profesora: Profesora }) {
+export function DashboardNav({ profesor }: { profesor: Profesor }) {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -54,11 +54,11 @@ export function DashboardNav({ profesora }: { profesora: Profesora }) {
           <div className="nav-user">
             <div className="user-info">
               <div className="user-avatar">
-                {profesora?.nombre?.charAt(0).toUpperCase() || 'P'}
+                {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
               </div>
               <div className="user-details desktop-only">
-                <p className="user-name">{profesora?.nombre}</p>
-                <p className="user-email">{profesora?.email}</p>
+                <p className="user-name">{profesor?.nombre}</p>
+                <p className="user-email">{profesor?.email}</p>
               </div>
             </div>
             
@@ -91,11 +91,11 @@ export function DashboardNav({ profesora }: { profesora: Profesora }) {
             <div className="mobile-menu-header">
               <div className="user-info">
                 <div className="user-avatar">
-                  {profesora?.nombre?.charAt(0).toUpperCase() || 'P'}
+                  {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
                 </div>
                 <div className="user-details">
-                  <p className="user-name">{profesora?.nombre}</p>
-                  <p className="user-email">{profesora?.email}</p>
+                  <p className="user-name">{profesor?.nombre}</p>
+                  <p className="user-email">{profesor?.email}</p>
                 </div>
               </div>
             </div>

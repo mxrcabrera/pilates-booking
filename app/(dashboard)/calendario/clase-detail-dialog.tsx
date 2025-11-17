@@ -21,7 +21,7 @@ type Clase = {
   esClasePrueba: boolean
   esRecurrente: boolean
   frecuenciaSemanal: number | null
-  alumna: {
+  alumno: {
     id: string
     nombre: string
   } | null
@@ -86,9 +86,9 @@ export function ClaseDetailDialog({
         <div className="dialog-body">
           <div className="clase-detail-section">
             <div className="detail-item">
-              <span className="detail-label">Alumna</span>
+              <span className="detail-label">Alumno</span>
               <span className="detail-value">
-                {clase.alumna?.nombre || 'Sin asignar'}
+                {clase.alumno?.nombre || 'Sin asignar'}
               </span>
             </div>
 

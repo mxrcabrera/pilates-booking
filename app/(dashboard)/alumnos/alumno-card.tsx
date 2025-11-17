@@ -2,9 +2,9 @@
 
 import { MoreVertical, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import { toggleAlumnaStatus, deleteAlumna } from './actions'
+import { toggleAlumnoStatus, deleteAlumno } from './actions'
 
-type Alumna = {
+type Alumno = {
   id: string
   nombre: string
   email: string
@@ -14,7 +14,7 @@ type Alumna = {
   packType: string
   clasesPorMes: number | null
   precio: string
-  estaActiva: boolean
+  estaActivo: boolean
   _count: {
     clases: number
     pagos: number
@@ -35,13 +35,13 @@ const PACK_CLASES: Record<string, number> = {
   'pack_12': 12
 }
 
-export function AlumnaCard({ 
-  alumna, 
+export function AlumnoCard({ 
+  alumno, 
   onEdit, 
   onView,
   viewMode = 'list'
 }: { 
-  alumna: Alumna
+  alumno: Alumno
   onEdit: () => void
   onView: () => void
   viewMode?: 'list' | 'grid'
@@ -86,7 +86,7 @@ export function AlumnaCard({
   const handleToggleStatus = async () => {
     setShowMenu(false)
     try {
-      await toggleAlumnaStatus(alumna.id)
+      await toggleAlumnoStatus(alumno.id)
     } catch (err: any) {
       alert(err.message)
     }
@@ -94,20 +94,20 @@ export function AlumnaCard({
 
   const handleDelete = async () => {
     setShowMenu(false)
-    if (!confirm(`¿Estás segura de eliminar a ${alumna.nombre}? Esta acción no se puede deshacer.`)) return
+    if (!confirm(`¿Estás seguro de eliminar a ${alumno.nombre}? Esta acción no se puede deshacer.`)) return
     try {
-      await deleteAlumna(alumna.id)
+      await deleteAlumno(alumno.id)
     } catch (err: any) {
       alert(err.message)
     }
   }
 
   const getClasesDisplay = () => {
-    if (alumna.packType === 'mensual' && alumna.clasesPorMes) {
-      return `${alumna.clasesPorMes}/mes`
+    if (alumno.packType === 'mensual' && alumno.clasesPorMes) {
+      return `${alumno.clasesPorMes}/mes`
     }
-    if (PACK_CLASES[alumna.packType]) {
-      return `${PACK_CLASES[alumna.packType]}/sem`
+    if (PACK_CLASES[alumno.packType]) {
+      return `${PACK_CLASES[alumno.packType]}/sem`
     }
     return null
   }
@@ -120,11 +120,11 @@ export function AlumnaCard({
           <div className="dropdown-overlay" onClick={() => setShowMenu(false)} />
         )}
         <div 
-          className={`alumna-list-item-final ${showMenu ? 'menu-active' : ''}`}
+          className={`alumno-list-item-final ${showMenu ? 'menu-active' : ''}`}
           onClick={() => !showMenu && onView()}
         >
-          <div className="alumna-list-top-row">
-            <h3>{alumna.nombre}</h3>
+          <div className="alumno-list-top-row">
+            <h3>{alumno.nombre}</h3>
             <button
               ref={menuButtonRef}
               onClick={(e) => { 
@@ -137,9 +137,9 @@ export function AlumnaCard({
             </button>
           </div>
           
-          <div className="alumna-list-bottom-row">
-            <div className="alumna-list-info-row">
-              <span className="pack-label-new">{PACK_LABELS[alumna.packType]}</span>
+          <div className="alumno-list-bottom-row">
+            <div className="alumno-list-info-row">
+              <span className="pack-label-new">{PACK_LABELS[alumno.packType]}</span>
               {getClasesDisplay() && (
                 <>
                   <span className="separator-dot">•</span>
@@ -148,8 +148,8 @@ export function AlumnaCard({
               )}
             </div>
             
-            <span className={`status-badge ${alumna.estaActiva ? 'active' : 'inactive'}`}>
-              {alumna.estaActiva ? 'Activa' : 'Inactiva'}
+            <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
+              {alumno.estaActivo ? 'Activa' : 'Inactiva'}
             </span>
           </div>
           
@@ -160,8 +160,8 @@ export function AlumnaCard({
                 <span>Editar</span>
               </button>
               <button onClick={handleToggleStatus}>
-                {alumna.estaActiva ? <UserX size={16} /> : <UserCheck size={16} />}
-                <span>{alumna.estaActiva ? 'Desactivar' : 'Activar'}</span>
+                {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
+                <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
               </button>
               <button onClick={handleDelete} className="danger">
                 <Trash2 size={16} />
@@ -180,18 +180,18 @@ export function AlumnaCard({
       {showMenu && (
         <div className="dropdown-overlay" onClick={() => setShowMenu(false)} />
       )}
-      <div className={`alumna-card ${showMenu ? 'menu-active' : ''}`}>
-        <div className="alumna-header">
-          <div className="alumna-avatar">
-            {alumna.nombre.charAt(0).toUpperCase()}
+      <div className={`alumno-card ${showMenu ? 'menu-active' : ''}`}>
+        <div className="alumno-header">
+          <div className="alumno-avatar">
+            {alumno.nombre.charAt(0).toUpperCase()}
           </div>
-          <div className="alumna-info">
-            <h3>{alumna.nombre}</h3>
-            <span className={`status-badge ${alumna.estaActiva ? 'active' : 'inactive'}`}>
-              {alumna.estaActiva ? 'Activa' : 'Inactiva'}
+          <div className="alumno-info">
+            <h3>{alumno.nombre}</h3>
+            <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
+              {alumno.estaActivo ? 'Activo' : 'Inactivo'}
             </span>
           </div>
-          <div className="alumna-menu">
+          <div className="alumno-menu">
             <button 
               ref={menuButtonRef}
               onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
@@ -206,8 +206,8 @@ export function AlumnaCard({
                   <span>Editar</span>
                 </button>
                 <button onClick={handleToggleStatus}>
-                  {alumna.estaActiva ? <UserX size={16} /> : <UserCheck size={16} />}
-                  <span>{alumna.estaActiva ? 'Desactivar' : 'Activar'}</span>
+                  {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
+                  <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
                 </button>
                 <button onClick={handleDelete} className="danger">
                   <Trash2 size={16} />
@@ -217,19 +217,19 @@ export function AlumnaCard({
             )}
           </div>
         </div>
-        <div className="alumna-details">
+        <div className="alumno-details">
           <div className="detail-row">
-            <span>{alumna.email}</span>
+            <span>{alumno.email}</span>
           </div>
           <div className="detail-row">
-            <span>{alumna.telefono}</span>
+            <span>{alumno.telefono}</span>
           </div>
           <div className="pack-info">
-            <span className="pack-badge">{PACK_LABELS[alumna.packType]}</span>
+            <span className="pack-badge">{PACK_LABELS[alumno.packType]}</span>
             {getClasesDisplay() && (
               <span className="pack-detail">{getClasesDisplay()}</span>
             )}
-            <span className="pack-price">${alumna.precio}</span>
+            <span className="pack-price">${alumno.precio}</span>
           </div>
         </div>
       </div>

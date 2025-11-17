@@ -1,11 +1,11 @@
 'use client'
 
 import { X, Mail, Phone, Calendar, Cake, FileText, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
-import { toggleAlumnaStatus, deleteAlumna } from './actions'
+import { toggleAlumnoStatus, deleteAlumno } from './actions'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-type Alumna = {
+type Alumno = {
   id: string
   nombre: string
   email: string
@@ -15,7 +15,7 @@ type Alumna = {
   packType: string
   clasesPorMes: number | null
   precio: string
-  estaActiva: boolean
+  estaActivo: boolean
   _count: {
     clases: number
     pagos: number
@@ -30,22 +30,22 @@ const PACK_LABELS: Record<string, string> = {
   'pack_12': 'Pack 12 Clases'
 }
 
-export function AlumnaDetailSheet({
+export function AlumnoDetailSheet({
   isOpen,
   onClose,
-  alumna,
+  alumno,
   onEdit
 }: {
   isOpen: boolean
   onClose: () => void
-  alumna: Alumna | null
+  alumno: Alumno | null
   onEdit: () => void
 }) {
-  if (!isOpen || !alumna) return null
+  if (!isOpen || !alumno) return null
 
   const handleToggleStatus = async () => {
     try {
-      await toggleAlumnaStatus(alumna.id)
+      await toggleAlumnoStatus(alumno.id)
       onClose()
     } catch (err: any) {
       alert(err.message)
@@ -53,9 +53,9 @@ export function AlumnaDetailSheet({
   }
 
   const handleDelete = async () => {
-    if (!confirm(`¿Estás segura de eliminar a ${alumna.nombre}? Esta acción no se puede deshacer.`)) return
+    if (!confirm(`¿Estás segura de eliminar a ${alumno.nombre}? Esta acción no se puede deshacer.`)) return
     try {
-      await deleteAlumna(alumna.id)
+      await deleteAlumno(alumno.id)
       onClose()
     } catch (err: any) {
       alert(err.message)
@@ -76,11 +76,11 @@ export function AlumnaDetailSheet({
         <div className="sheet-body">
           <div className="sheet-profile">
             <div className="sheet-avatar">
-              {alumna.nombre.charAt(0).toUpperCase()}
+              {alumno.nombre.charAt(0).toUpperCase()}
             </div>
-            <h2>{alumna.nombre}</h2>
-            <span className={`status-badge ${alumna.estaActiva ? 'active' : 'inactive'}`}>
-              {alumna.estaActiva ? 'Activa' : 'Inactiva'}
+            <h2>{alumno.nombre}</h2>
+            <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
+              {alumno.estaActivo ? 'Activa' : 'Inactiva'}
             </span>
           </div>
 
@@ -91,23 +91,23 @@ export function AlumnaDetailSheet({
                 <Mail size={18} />
                 <div>
                   <p className="detail-label">Email</p>
-                  <p className="detail-value">{alumna.email}</p>
+                  <p className="detail-value">{alumno.email}</p>
                 </div>
               </div>
               <div className="sheet-detail-row">
                 <Phone size={18} />
                 <div>
                   <p className="detail-label">Teléfono</p>
-                  <p className="detail-value">{alumna.telefono}</p>
+                  <p className="detail-value">{alumno.telefono}</p>
                 </div>
               </div>
-              {alumna.cumpleanos && (
+              {alumno.cumpleanos && (
                 <div className="sheet-detail-row">
                   <Cake size={18} />
                   <div>
                     <p className="detail-label">Cumpleaños</p>
                     <p className="detail-value">
-                      {format(new Date(alumna.cumpleanos), "d 'de' MMMM", { locale: es })}
+                      {format(new Date(alumno.cumpleanos), "d 'de' MMMM", { locale: es })}
                     </p>
                   </div>
                 </div>
@@ -122,15 +122,15 @@ export function AlumnaDetailSheet({
                 <FileText size={18} />
                 <div>
                   <p className="detail-label">Tipo de Pack</p>
-                  <p className="detail-value">{PACK_LABELS[alumna.packType]}</p>
+                  <p className="detail-value">{PACK_LABELS[alumno.packType]}</p>
                 </div>
               </div>
-              {alumna.clasesPorMes && (
+              {alumno.clasesPorMes && (
                 <div className="sheet-detail-row">
                   <Calendar size={18} />
                   <div>
                     <p className="detail-label">Clases por mes</p>
-                    <p className="detail-value">{alumna.clasesPorMes} clases</p>
+                    <p className="detail-value">{alumno.clasesPorMes} clases</p>
                   </div>
                 </div>
               )}
@@ -138,17 +138,17 @@ export function AlumnaDetailSheet({
                 <span className="sheet-price-icon">$</span>
                 <div>
                   <p className="detail-label">Precio</p>
-                  <p className="detail-value">${alumna.precio} ARS</p>
+                  <p className="detail-value">${alumno.precio} ARS</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {alumna.patologias && (
+          {alumno.patologias && (
             <div className="sheet-section">
               <h3 className="sheet-section-title">Patologías / Observaciones</h3>
               <div className="sheet-patologias">
-                <p>{alumna.patologias}</p>
+                <p>{alumno.patologias}</p>
               </div>
             </div>
           )}
@@ -157,11 +157,11 @@ export function AlumnaDetailSheet({
             <h3 className="sheet-section-title">Estadísticas</h3>
             <div className="sheet-stats">
               <div className="sheet-stat">
-                <p className="stat-value">{alumna._count.clases}</p>
+                <p className="stat-value">{alumno._count.clases}</p>
                 <p className="stat-label">Clases</p>
               </div>
               <div className="sheet-stat">
-                <p className="stat-value">{alumna._count.pagos}</p>
+                <p className="stat-value">{alumno._count.pagos}</p>
                 <p className="stat-label">Pagos</p>
               </div>
             </div>
@@ -173,8 +173,8 @@ export function AlumnaDetailSheet({
               <span>Editar</span>
             </button>
             <button onClick={handleToggleStatus} className="btn-outline sheet-action-btn">
-              {alumna.estaActiva ? <UserX size={20} /> : <UserCheck size={20} />}
-              <span>{alumna.estaActiva ? 'Desactivar' : 'Activar'}</span>
+              {alumno.estaActivo ? <UserX size={20} /> : <UserCheck size={20} />}
+              <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
             </button>
             <button onClick={handleDelete} className="btn-ghost danger sheet-action-btn">
               <Trash2 size={20} />

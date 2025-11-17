@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { Search, Plus, Grid, List } from 'lucide-react'
-import { AlumnaCard } from './alumna-card'
-import { AlumnaDialog } from './alumna-dialog'
-import { AlumnaDetailSheet } from './alumna-detail-sheet'
+import { AlumnoCard } from './alumno-card'
+import { AlumnoDialog } from './alumno-dialog'
+import { AlumnoDetailSheet } from './alumno-detail-sheet'
 import { Users } from 'lucide-react'
 
-type Alumna = {
+type Alumno = {
   id: string
   nombre: string
   email: string
@@ -17,42 +17,49 @@ type Alumna = {
   packType: string
   clasesPorMes: number | null
   precio: string
-  estaActiva: boolean
+  estaActivo: boolean
   _count: {
     clases: number
     pagos: number
   }
 }
 
-export function AlumnasClient({ alumnas }: { alumnas: Alumna[] }) {
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+}
+
+export function AlumnosClient({ alumnos, packs }: { alumnos: Alumno[], packs: Pack[] }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingAlumna, setEditingAlumna] = useState<Alumna | null>(null)
-  const [selectedAlumna, setSelectedAlumna] = useState<Alumna | null>(null)
+  const [editingAlumno, setEditingAlumno] = useState<Alumno | null>(null)
+  const [selectedAlumno, setSelectedAlumno] = useState<Alumno | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
 
-  const filteredAlumnas = alumnas.filter(a =>
+  const filteredAlumnos = alumnos.filter(a =>
     a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const activas = alumnas.filter(a => a.estaActiva).length
-  const inactivas = alumnas.filter(a => !a.estaActiva).length
+  const activos = alumnos.filter(a => a.estaActivo).length
+  const inactivos = alumnos.filter(a => !a.estaActivo).length
 
-  const handleEdit = (alumna: Alumna) => {
-    setEditingAlumna(alumna)
+  const handleEdit = (alumno: Alumno) => {
+    setEditingAlumno(alumno)
     setIsDialogOpen(true)
     setIsSheetOpen(false)
   }
 
-  const handleView = (alumna: Alumna) => {
-    setSelectedAlumna(alumna)
+  const handleView = (alumno: Alumno) => {
+    setSelectedAlumno(alumno)
     setIsSheetOpen(true)
   }
 
   const handleNew = () => {
-    setEditingAlumna(null)
+    setEditingAlumno(null)
     setIsDialogOpen(true)
   }
 
@@ -60,22 +67,22 @@ export function AlumnasClient({ alumnas }: { alumnas: Alumna[] }) {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1>Alumnas</h1>
-          <p className="page-subtitle">{activas} activas · {inactivas} inactivas</p>
+          <h1>Alumnos</h1>
+          <p className="page-subtitle">{activos} activos · {inactivos} inactivos</p>
         </div>
         <button onClick={handleNew} className="btn-primary">
           <Plus size={20} />
-          <span>Nueva Alumna</span>
+          <span>Nuevo Alumno</span>
         </button>
       </div>
 
       <div className="content-card">
-        <div className="alumnas-toolbar">
+        <div className="alumnos-toolbar">
           <div className="search-bar">
             <Search size={20} />
             <input
               type="text"
-              placeholder="Buscar alumna..."
+              placeholder="Buscar alumno..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -99,27 +106,27 @@ export function AlumnasClient({ alumnas }: { alumnas: Alumna[] }) {
           </div>
         </div>
 
-        {filteredAlumnas.length === 0 ? (
+        {filteredAlumnos.length === 0 ? (
           <div className="empty-state">
             <Users size={48} strokeWidth={1} />
-            <p>{searchTerm ? 'No se encontraron alumnas' : 'No tenés alumnas registradas'}</p>
+            <p>{searchTerm ? 'No se encontraron alumnos' : 'No tenés alumnos registrados'}</p>
             {!searchTerm && (
               <>
-                <p className="empty-subtitle">Agregá tu primera alumna para comenzar</p>
+                <p className="empty-subtitle">Agregá tu primer alumno para comenzar</p>
                 <button onClick={handleNew} className="btn-outline">
-                  Agregar Alumna
+                  Agregar Alumno
                 </button>
               </>
             )}
           </div>
         ) : (
-          <div className={viewMode === 'grid' ? 'alumnas-grid' : 'alumnas-list'}>
-            {filteredAlumnas.map(alumna => (
-              <AlumnaCard
-                key={alumna.id}
-                alumna={alumna}
-                onEdit={() => handleEdit(alumna)}
-                onView={() => handleView(alumna)}
+          <div className={viewMode === 'grid' ? 'alumnos-grid' : 'alumnos-list'}>
+            {filteredAlumnos.map(alumno => (
+              <AlumnoCard
+                key={alumno.id}
+                alumno={alumno}
+                onEdit={() => handleEdit(alumno)}
+                onView={() => handleView(alumno)}
                 viewMode={viewMode}
               />
             ))}
@@ -127,23 +134,24 @@ export function AlumnasClient({ alumnas }: { alumnas: Alumna[] }) {
         )}
       </div>
 
-      <AlumnaDialog
+      <AlumnoDialog
         isOpen={isDialogOpen}
         onClose={() => {
           setIsDialogOpen(false)
-          setEditingAlumna(null)
+          setEditingAlumno(null)
         }}
-        alumna={editingAlumna}
+        alumno={editingAlumno}
+        packs={packs}
       />
 
-      <AlumnaDetailSheet
+      <AlumnoDetailSheet
         isOpen={isSheetOpen}
         onClose={() => {
           setIsSheetOpen(false)
-          setSelectedAlumna(null)
+          setSelectedAlumno(null)
         }}
-        alumna={selectedAlumna}
-        onEdit={() => handleEdit(selectedAlumna!)}
+        alumno={selectedAlumno}
+        onEdit={() => handleEdit(selectedAlumno!)}
       />
     </div>
   )

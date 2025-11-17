@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { User } from 'lucide-react'
 import { updateProfile } from './actions'
 
-type Profesora = {
+type Profesor = {
   nombre: string
   email: string
   telefono: string | null
 }
 
-export function ProfileForm({ profesora }: { profesora: Profesora }) {
+export function ProfileForm({ profesor }: { profesor: Profesor }) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -46,7 +46,7 @@ export function ProfileForm({ profesora }: { profesora: Profesora }) {
           <input 
             type="text" 
             name="nombre"
-            defaultValue={profesora.nombre}
+            defaultValue={profesor.nombre}
             required
             disabled={isLoading}
           />
@@ -56,7 +56,7 @@ export function ProfileForm({ profesora }: { profesora: Profesora }) {
           <label>Email</label>
           <input 
             type="email" 
-            defaultValue={profesora.email} 
+            defaultValue={profesor.email} 
             disabled 
           />
           <p className="form-hint">El email no se puede modificar</p>
@@ -67,7 +67,7 @@ export function ProfileForm({ profesora }: { profesora: Profesora }) {
           <input
             type="tel"
             name="telefono"
-            defaultValue={profesora.telefono || ''}
+            defaultValue={profesor.telefono || ''}
             placeholder="+54 9 11 1234-5678"
             disabled={isLoading}
           />

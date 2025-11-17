@@ -14,11 +14,24 @@ export default async function ConfiguracionPage() {
           { diaSemana: 'asc' },
           { horaInicio: 'asc' }
         ]
+      },
+      packs: {
+        orderBy: {
+          createdAt: 'desc'
+        }
+      },
+      accounts: {
+        select: {
+          provider: true
+        }
       }
     }
   })
 
   if (!user) return null
+
+  // Check if user has a Google account linked
+  const hasGoogleAccount = user.accounts.some(account => account.provider === 'google')
 
   return (
     <div className="page-container">
@@ -30,20 +43,29 @@ export default async function ConfiguracionPage() {
       </div>
 
       <ConfiguracionClient
-        profesora={{
+        profesor={{
           id: user.id,
           nombre: user.nombre,
           email: user.email,
           telefono: user.telefono,
           horasAnticipacionMinima: user.horasAnticipacionMinima,
-          maxAlumnasPorClase: user.maxAlumnasPorClase,
+          maxAlumnosPorClase: user.maxAlumnosPorClase,
           horarioMananaInicio: user.horarioMananaInicio,
           horarioMananaFin: user.horarioMananaFin,
           horarioTardeInicio: user.horarioTardeInicio,
           horarioTardeFin: user.horarioTardeFin,
-          espacioCompartidoId: user.espacioCompartidoId
+          espacioCompartidoId: user.espacioCompartidoId,
+          syncGoogleCalendar: user.syncGoogleCalendar,
+          hasGoogleAccount
         }}
         horarios={user.horariosDisponibles}
+        packs={user.packs.map(pack => ({
+          id: pack.id,
+          nombre: pack.nombre,
+          clasesPorSemana: pack.clasesPorSemana,
+          precio: pack.precio.toString(),
+          estaActivo: pack.estaActivo
+        }))}
       />
     </div>
   )

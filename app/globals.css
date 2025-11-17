@@ -532,15 +532,25 @@ body::before {
 .stat-content {
   flex: 1;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .stat-label {
   font-size: 0.6875rem;
   color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
   font-weight: 400;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
+/* Números alineados verticalmente */
 .stat-value {
   font-size: 1.75rem;
   font-weight: 300;
@@ -549,6 +559,7 @@ body::before {
   min-height: 1.75rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   font-variant-numeric: tabular-nums;
 }
 
@@ -581,16 +592,22 @@ body::before {
 
   .stat-content {
     text-align: left;
+    align-items: flex-start;
   }
 
   .stat-label {
     font-size: 0.875rem;
     color: rgba(255, 255, 255, 0.6);
     margin-bottom: 0.5rem;
+    height: 3rem;
+    justify-content: flex-start;
   }
 
   .stat-value {
     font-size: 2.5rem;
+    line-height: 1;
+    min-height: 2.5rem;
+    justify-content: flex-start;
   }
 }
 
@@ -652,7 +669,7 @@ body::before {
   flex: 1;
 }
 
-.clase-alumna {
+.clase-alumno {
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.9);
   margin-bottom: 0.25rem;
@@ -1263,14 +1280,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Toolbar */
-.alumnas-toolbar {
+.alumnos-toolbar {
   display: flex;
   gap: 1rem;
   align-items: center;
   margin-bottom: 1.5rem;
 }
 
-.alumnas-toolbar .search-bar {
+.alumnos-toolbar .search-bar {
   flex: 1;
   margin-bottom: 0;
 }
@@ -1309,13 +1326,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Vista Grid */
-.alumnas-grid {
+.alumnos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
 }
 
-.alumna-card {
+.alumno-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(133, 138, 227, 0.1);
   border-radius: 16px;
@@ -1323,20 +1340,20 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.3s ease;
 }
 
-.alumna-card:hover {
+.o-card:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(133, 138, 227, 0.2);
   transform: translateY(-2px);
 }
 
-.alumna-header {
+.o-header {
   display: flex;
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.25rem;
 }
 
-.alumna-avatar {
+.alumno-avatar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -1350,11 +1367,11 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
-.alumna-info {
+.alumno-info {
   flex: 1;
 }
 
-.alumna-info h3 {
+.alumno-info h3 {
   font-size: 1rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.95);
@@ -1399,7 +1416,7 @@ h1, h2, h3, h4, h5, h6 {
   color: #fbbf24;
 }
 
-.alumna-details {
+.alumno-details {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -1414,7 +1431,7 @@ h1, h2, h3, h4, h5, h6 {
   color: rgba(255, 255, 255, 0.7);
 }
 
-.alumna-menu {
+.alumno-menu {
   position: relative;
   margin-left: auto;
 }
@@ -1492,13 +1509,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Vista Lista */
-.alumnas-list {
+.alumnos-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.alumna-list-item-final {
+.alumno-list-item-final {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1511,20 +1528,20 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.2s ease;
 }
 
-.alumna-list-item-final:hover {
+.alumno-list-item-final:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(133, 138, 227, 0.2);
   transform: scale(1.03);
 }
 
-.alumna-list-top-row {
+.alumno-list-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.alumna-list-top-row h3 {
+.alumno-list-top-row h3 {
   font-size: 1.0625rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.95);
@@ -1533,14 +1550,14 @@ h1, h2, h3, h4, h5, h6 {
   flex: 1;
 }
 
-.alumna-list-bottom-row {
+.alumno-list-bottom-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.alumna-list-info-row {
+.alumno-list-info-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1590,13 +1607,13 @@ h1, h2, h3, h4, h5, h6 {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.alumna-list-header-new {
+.alumno-list-header-new {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.alumna-list-header-new h3 {
+.alumno-list-header-new h3 {
   font-size: 1.0625rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.95);
@@ -1604,7 +1621,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
 }
 
-.alumna-list-footer-new {
+.alumno-list-footer-new {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2466,7 +2483,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .horario-slot {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto auto;
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
@@ -2485,6 +2502,91 @@ h1, h2, h3, h4, h5, h6 {
 .horario-slot:hover {
   background: rgba(133, 138, 227, 0.08);
   border-color: rgba(133, 138, 227, 0.25);
+}
+
+.horario-slot.selected {
+  background: rgba(133, 138, 227, 0.12);
+  border-color: rgba(133, 138, 227, 0.35);
+}
+
+.horario-checkbox {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 6px;
+  border: 2px solid rgba(133, 138, 227, 0.3);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.horario-checkbox:hover {
+  border-color: rgba(133, 138, 227, 0.5);
+  background: rgba(133, 138, 227, 0.05);
+  transform: scale(1.05);
+}
+
+.horario-checkbox:checked {
+  background: linear-gradient(135deg, #858AE3 0%, #6B70D9 100%);
+  border-color: #858AE3;
+  box-shadow: 0 0 0 3px rgba(133, 138, 227, 0.15);
+}
+
+.horario-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+}
+
+.horario-checkbox:focus {
+  border-color: rgba(133, 138, 227, 0.6);
+}
+
+/* Calendario checkboxes */
+.calendario-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid rgba(133, 138, 227, 0.4);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  accent-color: #858AE3;
+  flex-shrink: 0;
+}
+
+.calendario-checkbox:checked {
+  background: #858AE3;
+  border-color: #858AE3;
+}
+
+.calendario-checkbox:hover {
+  border-color: rgba(133, 138, 227, 0.6);
+}
+
+.clase-item-mobile.selected {
+  background: rgba(133, 138, 227, 0.12);
+  border-color: rgba(133, 138, 227, 0.35);
+}
+
+.clase-item.selected {
+  background: rgba(133, 138, 227, 0.12);
+  border-color: rgba(133, 138, 227, 0.35);
+}
+
+.clase-item-week.selected {
+  background: rgba(133, 138, 227, 0.15);
+  border-color: rgba(133, 138, 227, 0.4);
 }
 
 .horario-slot-main {
@@ -2553,6 +2655,89 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(208, 0, 0, 0.1);
   border-color: rgba(208, 0, 0, 0.3);
   color: #D00000;
+}
+
+/* ========================================
+   PACKS
+   ======================================== */
+.packs-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.pack-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: rgba(133, 138, 227, 0.05);
+  border: 1px solid rgba(133, 138, 227, 0.15);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.pack-card.inactive {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(133, 138, 227, 0.08);
+}
+
+.pack-card:hover {
+  background: rgba(133, 138, 227, 0.08);
+  border-color: rgba(133, 138, 227, 0.25);
+}
+
+.pack-card-info {
+  flex: 1;
+}
+
+.pack-nombre {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 0.75rem;
+}
+
+.pack-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pack-clases {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.pack-precio {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #858AE3;
+}
+
+.pack-status-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pack-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ========================================
@@ -3225,8 +3410,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-.alumnas-list,
-.alumnas-grid {
+.alumnos-list,
+.alumnos-grid {
   position: relative;
 }
 
@@ -3240,8 +3425,8 @@ h1, h2, h3, h4, h5, h6 {
   animation: fadeIn 0.15s ease;
 }
 
-.alumna-list-item-final.menu-active,
-.alumna-card.menu-active {
+.alumno-list-item-final.menu-active,
+.alumno-card.menu-active {
   position: relative;
   z-index: 100;
 }
@@ -3378,7 +3563,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(251, 191, 36, 0.03);
 }
 
-.profesora-badge {
+.profesor-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3408,7 +3593,7 @@ h1, h2, h3, h4, h5, h6 {
   min-width: 0;
 }
 
-.clase-alumna-name {
+.clase-alumno-name {
   font-size: 0.875rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
@@ -3607,7 +3792,7 @@ h1, h2, h3, h4, h5, h6 {
   white-space: nowrap;
 }
 
-.clase-week-alumna {
+.clase-week-alumno {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
   overflow: hidden;
@@ -3676,7 +3861,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0.5rem 0;
 }
 
-.dashboard-next-alumna {
+.dashboard-next-alumno {
   font-size: 1.25rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
@@ -3867,4 +4052,60 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(133, 138, 227, 0.25);
   color: rgba(133, 138, 227, 1);
   transform: translateY(-2px);
+}
+
+/* Pack Option Selector */
+.pack-option {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(133, 138, 227, 0.15);
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pack-option:hover {
+  background: rgba(133, 138, 227, 0.08);
+  border-color: rgba(133, 138, 227, 0.25);
+  transform: translateY(-2px);
+}
+
+.pack-option.selected {
+  background: rgba(133, 138, 227, 0.12);
+  border-color: rgba(133, 138, 227, 0.4);
+  box-shadow: 0 0 0 1px rgba(133, 138, 227, 0.2);
+}
+
+.pack-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pack-option:disabled:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(133, 138, 227, 0.15);
+  transform: none;
+}
+
+.pack-option-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.pack-option-details {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.pack-option-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(133, 138, 227, 0.9);
+  margin-top: 0.25rem;
 }

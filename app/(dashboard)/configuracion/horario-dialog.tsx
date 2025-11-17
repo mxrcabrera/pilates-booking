@@ -45,6 +45,7 @@ type HorarioDialogProps = {
   isOpen: boolean
   onClose: () => void
   horario: Horario | null
+  horarios: Horario[]
   horarioMananaInicio: string
   horarioMananaFin: string
   horarioTardeInicio: string
@@ -55,6 +56,7 @@ export function HorarioDialog({
   isOpen,
   onClose,
   horario,
+  horarios,
   horarioMananaInicio,
   horarioMananaFin,
   horarioTardeInicio,
@@ -68,6 +70,9 @@ export function HorarioDialog({
   const [confirmType, setConfirmType] = useState<'sabado-tarde' | 'domingo' | null>(null)
   const [horaInicio, setHoraInicio] = useState('')
   const [horaFin, setHoraFin] = useState('')
+
+  // Check if Saturday has any tarde shifts configured
+  const sabadoTieneTarde = horarios.some(h => h.diaSemana === 6 && !h.esManiana)
 
   useEffect(() => {
     if (!isOpen) {
@@ -103,7 +108,7 @@ export function HorarioDialog({
 
   async function procesarHorarios(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false) {
     const rango = RANGOS_DIAS.find(r => r.value === rangoSeleccionado)
-    
+
     if (rango && rango.dias.length > 0) {
       for (const dia of rango.dias) {
         if (excluirSabadoTarde && dia === 6 && (turnoSeleccionado === 'tarde' || turnoSeleccionado === 'ambos')) {
@@ -126,13 +131,16 @@ export function HorarioDialog({
           fdManiana.append('horaFin', formData.get('horaFinManiana') as string)
           fdManiana.append('esManiana', 'true')
           await saveHorario(fdManiana)
-          
-          const fdTarde = new FormData()
-          fdTarde.append('diaSemana', dia.toString())
-          fdTarde.append('horaInicio', formData.get('horaInicioTarde') as string)
-          fdTarde.append('horaFin', formData.get('horaFinTarde') as string)
-          fdTarde.append('esManiana', 'false')
-          await saveHorario(fdTarde)
+
+          // Skip tarde for Saturday if no tarde shifts are configured
+          if (dia !== 6 || sabadoTieneTarde) {
+            const fdTarde = new FormData()
+            fdTarde.append('diaSemana', dia.toString())
+            fdTarde.append('horaInicio', formData.get('horaInicioTarde') as string)
+            fdTarde.append('horaFin', formData.get('horaFinTarde') as string)
+            fdTarde.append('esManiana', 'false')
+            await saveHorario(fdTarde)
+          }
         } else {
           const fd = new FormData()
           fd.append('diaSemana', dia.toString())
@@ -145,20 +153,24 @@ export function HorarioDialog({
     } else {
       if (turnoSeleccionado === 'ambos') {
         const diaSemana = formData.get('diaSemana') as string
-        
+        const diaNumero = parseInt(diaSemana)
+
         const fdManiana = new FormData()
         fdManiana.append('diaSemana', diaSemana)
         fdManiana.append('horaInicio', formData.get('horaInicioManiana') as string)
         fdManiana.append('horaFin', formData.get('horaFinManiana') as string)
         fdManiana.append('esManiana', 'true')
         await saveHorario(fdManiana)
-        
-        const fdTarde = new FormData()
-        fdTarde.append('diaSemana', diaSemana)
-        fdTarde.append('horaInicio', formData.get('horaInicioTarde') as string)
-        fdTarde.append('horaFin', formData.get('horaFinTarde') as string)
-        fdTarde.append('esManiana', 'false')
-        await saveHorario(fdTarde)
+
+        // Skip tarde for Saturday if no tarde shifts are configured
+        if (diaNumero !== 6 || sabadoTieneTarde) {
+          const fdTarde = new FormData()
+          fdTarde.append('diaSemana', diaSemana)
+          fdTarde.append('horaInicio', formData.get('horaInicioTarde') as string)
+          fdTarde.append('horaFin', formData.get('horaFinTarde') as string)
+          fdTarde.append('esManiana', 'false')
+          await saveHorario(fdTarde)
+        }
       } else {
         await saveHorario(formData)
       }

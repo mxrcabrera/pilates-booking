@@ -4,14 +4,46 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcrypt'
 import type { NextAuthConfig, User } from 'next-auth'
+import type { Adapter } from 'next-auth/adapters'
+
+// Custom adapter que mapea name → nombre
+function customPrismaAdapter(): Adapter {
+  const baseAdapter = PrismaAdapter(prisma) as Adapter
+
+  return {
+    ...baseAdapter,
+    async createUser(data) {
+      const { name, ...rest } = data
+      const userData = {
+        ...rest,
+        nombre: name || '',
+      }
+
+      const user = await prisma.user.create({
+        data: userData,
+      })
+
+      return {
+        ...user,
+        name: user.nombre,
+        emailVerified: user.emailVerified || null,
+      }
+    },
+  }
+}
 
 export const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
+  adapter: customPrismaAdapter(),
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       allowDangerousEmailAccountLinking: true,
+      authorization: {
+        params: {
+          scope: 'openid email profile https://www.googleapis.com/auth/calendar',
+        },
+      },
     }),
     Credentials({
       credentials: {
@@ -50,39 +82,52 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      // For Google OAuth, set default values if creating new user
-      if (account?.provider === 'google' && user.email) {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-        })
-
-        if (!existingUser) {
-          // PrismaAdapter will create the user, we just need to update with defaults
-          await prisma.user.update({
-            where: { email: user.email },
-            data: {
-              horasAnticipacionMinima: 1,
-              maxAlumnasPorClase: 4,
-              horarioMananaInicio: '08:00',
-              horarioMananaFin: '14:00',
-              horarioTardeInicio: '17:00',
-              horarioTardeFin: '22:00',
-            },
-          })
-        }
-      }
-      return true
-    },
     async session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub
       }
+      // Pass tokens to session for Google Calendar API
+      if (token.accessToken) {
+        (session as any).accessToken = token.accessToken
+      }
+      if (token.refreshToken) {
+        (session as any).refreshToken = token.refreshToken
+      }
       return session
     },
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, account }) {
+      if (user?.id) {
         token.sub = user.id
+
+        // For Google OAuth first-time login, set default values
+        if (account?.provider === 'google' && user.email) {
+          // Guardar access_token y refresh_token para Google Calendar API
+          if (account.access_token) {
+            token.accessToken = account.access_token
+          }
+          if (account.refresh_token) {
+            token.refreshToken = account.refresh_token
+          }
+
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email },
+          })
+
+          // Check if user needs defaults (newly created by PrismaAdapter)
+          if (dbUser && !dbUser.telefono) {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: {
+                horasAnticipacionMinima: 1,
+                maxAlumnosPorClase: 4,
+                horarioMananaInicio: '08:00',
+                horarioMananaFin: '14:00',
+                horarioTardeInicio: '17:00',
+                horarioTardeFin: '22:00',
+              },
+            })
+          }
+        }
       }
       return token
     },

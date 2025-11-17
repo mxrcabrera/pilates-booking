@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Decimal } from '@prisma/client/runtime/library'
 
-export async function createAlumna(formData: FormData) {
+export async function createAlumno(formData: FormData) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
@@ -19,9 +19,9 @@ export async function createAlumna(formData: FormData) {
   const clasesPorMes = formData.get('clasesPorMes') ? parseInt(formData.get('clasesPorMes') as string) : null
   const precio = parseFloat(formData.get('precio') as string)
 
-  await prisma.alumna.create({
+  await prisma.alumno.create({
     data: {
-      profesoraId: userId,
+      profesorId: userId,
       nombre,
       email,
       telefono,
@@ -37,7 +37,7 @@ export async function createAlumna(formData: FormData) {
   return { success: true }
 }
 
-export async function updateAlumna(formData: FormData) {
+export async function updateAlumno(formData: FormData) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
@@ -52,7 +52,7 @@ export async function updateAlumna(formData: FormData) {
   const clasesPorMes = formData.get('clasesPorMes') ? parseInt(formData.get('clasesPorMes') as string) : null
   const precio = parseFloat(formData.get('precio') as string)
 
-  await prisma.alumna.update({
+  await prisma.alumno.update({
     where: { id },
     data: {
       nombre,
@@ -70,30 +70,30 @@ export async function updateAlumna(formData: FormData) {
   return { success: true }
 }
 
-export async function toggleAlumnaStatus(id: string) {
+export async function toggleAlumnoStatus(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  const alumna = await prisma.alumna.findUnique({
+  const alumno = await prisma.alumno.findUnique({
     where: { id }
   })
 
-  if (!alumna) throw new Error('Alumna no encontrada')
+  if (!alumno) throw new Error('Alumno no encontrado')
 
-  await prisma.alumna.update({
+  await prisma.alumno.update({
     where: { id },
-    data: { estaActiva: !alumna.estaActiva }
+    data: { estaActivo: !alumno.estaActivo }
   })
 
   revalidatePath('/alumnos')
   return { success: true }
 }
 
-export async function deleteAlumna(id: string) {
+export async function deleteAlumno(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  await prisma.alumna.delete({
+  await prisma.alumno.delete({
     where: { id }
   })
 

@@ -9,7 +9,7 @@ type Clase = {
   horaInicio: string
   estado: string
   esClasePrueba: boolean
-  alumna: {
+  alumno: {
     nombre: string
   } | null
 }
@@ -167,7 +167,7 @@ export function DashboardClient({ clasesHoy }: DashboardClientProps) {
                 </div>
                 <div className="dashboard-clase-compact-info">
                   <div className="dashboard-clase-compact-name">
-                    {clase.alumna?.nombre || 'Disponible'}
+                    {clase.alumno?.nombre || 'Disponible'}
                   </div>
                   {isProxima && !timeStatus.isPast && (
                     <div className="dashboard-clase-compact-badge">
@@ -211,8 +211,8 @@ export function DashboardClient({ clasesHoy }: DashboardClientProps) {
             {formatearHora(proximaClase.horaInicio)}
           </div>
 
-          <div className="dashboard-next-alumna">
-            {proximaClase.alumna?.nombre || 'Disponible'}
+          <div className="dashboard-next-alumno">
+            {proximaClase.alumno?.nombre || 'Disponible'}
           </div>
 
           {proximaClase.esClasePrueba && (

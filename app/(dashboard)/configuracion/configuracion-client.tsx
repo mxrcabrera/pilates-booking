@@ -16,28 +16,39 @@ type Horario = {
   estaActivo: boolean
 }
 
-type Profesora = {
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+  estaActivo: boolean
+}
+
+type Profesor = {
   id: string
   nombre: string
   email: string
   telefono: string | null
   horasAnticipacionMinima: number
-  maxAlumnasPorClase: number
+  maxAlumnosPorClase: number
   horarioMananaInicio: string
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
   espacioCompartidoId: string | null
+  syncGoogleCalendar: boolean
+  hasGoogleAccount: boolean
 }
 
 interface ConfiguracionClientProps {
-  profesora: Profesora
+  profesor: Profesor
   horarios: Horario[]
+  packs: Pack[]
 }
 
 type Tab = 'horarios' | 'preferencias' | 'perfil' | 'seguridad'
 
-export function ConfiguracionClient({ profesora, horarios }: ConfiguracionClientProps) {
+export function ConfiguracionClient({ profesor, horarios, packs }: ConfiguracionClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('horarios')
 
   return (
@@ -80,10 +91,10 @@ export function ConfiguracionClient({ profesora, horarios }: ConfiguracionClient
           <div className="tab-panel">
             <HorariosSection
               horarios={horarios}
-              horarioMananaInicio={profesora.horarioMananaInicio}
-              horarioMananaFin={profesora.horarioMananaFin}
-              horarioTardeInicio={profesora.horarioTardeInicio}
-              horarioTardeFin={profesora.horarioTardeFin}
+              horarioMananaInicio={profesor.horarioMananaInicio}
+              horarioMananaFin={profesor.horarioMananaFin}
+              horarioTardeInicio={profesor.horarioTardeInicio}
+              horarioTardeFin={profesor.horarioTardeFin}
             />
           </div>
         )}
@@ -91,20 +102,23 @@ export function ConfiguracionClient({ profesora, horarios }: ConfiguracionClient
         {activeTab === 'preferencias' && (
           <div className="tab-panel">
             <PreferenciasSection
-              horasAnticipacionMinima={profesora.horasAnticipacionMinima}
-              maxAlumnasPorClase={profesora.maxAlumnasPorClase}
-              horarioMananaInicio={profesora.horarioMananaInicio}
-              horarioMananaFin={profesora.horarioMananaFin}
-              horarioTardeInicio={profesora.horarioTardeInicio}
-              horarioTardeFin={profesora.horarioTardeFin}
-              espacioCompartidoId={profesora.espacioCompartidoId}
+              horasAnticipacionMinima={profesor.horasAnticipacionMinima}
+              maxAlumnosPorClase={profesor.maxAlumnosPorClase}
+              horarioMananaInicio={profesor.horarioMananaInicio}
+              horarioMananaFin={profesor.horarioMananaFin}
+              horarioTardeInicio={profesor.horarioTardeInicio}
+              horarioTardeFin={profesor.horarioTardeFin}
+              espacioCompartidoId={profesor.espacioCompartidoId}
+              syncGoogleCalendar={profesor.syncGoogleCalendar}
+              hasGoogleAccount={profesor.hasGoogleAccount}
+              packs={packs}
             />
           </div>
         )}
 
         {activeTab === 'perfil' && (
           <div className="tab-panel">
-            <ProfileForm profesora={profesora} />
+            <ProfileForm profesor={profesor} />
           </div>
         )}
 

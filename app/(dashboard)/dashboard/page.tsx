@@ -14,20 +14,20 @@ export default async function DashboardPage() {
 
   const hoy = format(new Date(), 'yyyy-MM-dd')
   
-  const totalAlumnas = await prisma.alumna.count({
+  const totalAlumnos = await prisma.alumno.count({
     where: {
-      profesoraId: userId,
-      estaActiva: true
+      profesorId: userId,
+      estaActivo: true
     }
   })
 
   const clasesHoy = await prisma.clase.findMany({
     where: {
-      profesoraId: userId,
+      profesorId: userId,
       fecha: new Date(hoy)
     },
     include: {
-      alumna: {
+      alumno: {
         select: {
           nombre: true
         }
@@ -40,8 +40,8 @@ export default async function DashboardPage() {
 
   const pagosVencidos = await prisma.pago.count({
     where: {
-      alumna: {
-        profesoraId: userId
+      alumno: {
+        profesorId: userId
       },
       estado: 'vencido'
     }
@@ -64,8 +64,8 @@ export default async function DashboardPage() {
             <Users size={24} />
           </div>
           <div className="stat-content">
-            <p className="stat-label">Alumnas Activas</p>
-            <p className="stat-value">{totalAlumnas}</p>
+            <p className="stat-label">Alumnos Activos</p>
+            <p className="stat-value">{totalAlumnos}</p>
           </div>
         </div>
 

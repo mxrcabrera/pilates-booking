@@ -21,13 +21,13 @@ type Clase = {
   esRecurrente: boolean
   frecuenciaSemanal: number | null
   diasSemana: number[]
-  alumna: {
+  alumno: {
     id: string
     nombre: string
   } | null
 }
 
-type Alumna = {
+type Alumno = {
   id: string
   nombre: string
 }
@@ -47,7 +47,7 @@ export function ClaseDialog({
   onClose,
   clase,
   fecha,
-  alumnas,
+  alumnos,
   horarioMananaInicio,
   horarioMananaFin,
   horarioTardeInicio,
@@ -57,7 +57,7 @@ export function ClaseDialog({
   onClose: () => void
   clase: Clase | null
   fecha: Date | null
-  alumnas: Alumna[]
+  alumnos: Alumno[]
   horarioMananaInicio: string
   horarioMananaFin: string
   horarioTardeInicio: string
@@ -66,6 +66,7 @@ export function ClaseDialog({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [esRecurrente, setEsRecurrente] = useState(false)
+  const [esClasePrueba, setEsClasePrueba] = useState(false)
   const [frecuencia, setFrecuencia] = useState<number | null>(null)
   const [diasSeleccionados, setDiasSeleccionados] = useState<number[]>([])
 
@@ -73,10 +74,12 @@ export function ClaseDialog({
     if (isOpen) {
       if (clase) {
         setEsRecurrente(clase.esRecurrente)
+        setEsClasePrueba(clase.esClasePrueba)
         setFrecuencia(clase.frecuenciaSemanal)
         setDiasSeleccionados(clase.diasSemana || [])
       } else {
         setEsRecurrente(false)
+        setEsClasePrueba(false)
         setFrecuencia(null)
         setDiasSeleccionados([])
       }
@@ -154,43 +157,41 @@ export function ClaseDialog({
           )}
           
           <div className="form-group">
-            <label>Alumna</label>
+            <label>Alumno</label>
             <select
-              name="alumnaId"
-              defaultValue={clase?.alumna?.id || ''}
+              name="alumnoId"
+              defaultValue={clase?.alumno?.id || ''}
               disabled={isLoading}
             >
               <option value="">Sin asignar (disponible)</option>
-              {alumnas.map(alumna => (
-                <option key={alumna.id} value={alumna.id}>
-                  {alumna.nombre}
+              {alumnos.map(alumno => (
+                <option key={alumno.id} value={alumno.id}>
+                  {alumno.nombre}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Fecha</label>
-              <input
-                type="date"
-                name="fecha"
-                required
-                defaultValue={defaultFecha}
-                disabled={isLoading}
-              />
-            </div>
+          <div className="form-group">
+            <label>Fecha</label>
+            <input
+              type="date"
+              name="fecha"
+              required
+              defaultValue={defaultFecha}
+              disabled={isLoading}
+            />
+          </div>
 
-            <div className="form-group">
-              <label>Hora inicial</label>
-              <input
-                type="time"
-                name="horaInicio"
-                required
-                defaultValue={clase?.horaInicio || horarioMananaInicio}
-                disabled={isLoading}
-              />
-            </div>
+          <div className="form-group">
+            <label>Hora inicial</label>
+            <input
+              type="time"
+              name="horaInicio"
+              required
+              defaultValue={clase?.horaInicio || horarioMananaInicio}
+              disabled={isLoading}
+            />
           </div>
 
           {clase && (
@@ -214,32 +215,42 @@ export function ClaseDialog({
               <input
                 type="checkbox"
                 name="esClasePrueba"
-                defaultChecked={clase?.esClasePrueba || false}
-                disabled={isLoading}
-              />
-              <span>Es clase de prueba</span>
-            </label>
-          </div>
-
-          <div className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={esRecurrente}
+                checked={esClasePrueba}
                 onChange={(e) => {
-                  setEsRecurrente(e.target.checked)
-                  if (!e.target.checked) {
+                  setEsClasePrueba(e.target.checked)
+                  if (e.target.checked) {
+                    setEsRecurrente(false)
                     setFrecuencia(null)
                     setDiasSeleccionados([])
                   }
                 }}
                 disabled={isLoading}
               />
-              <span>
-                {clase ? 'Es clase recurrente' : 'Crear como clase recurrente'}
-              </span>
+              <span>Es clase de prueba</span>
             </label>
           </div>
+
+          {!esClasePrueba && (
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={esRecurrente}
+                  onChange={(e) => {
+                    setEsRecurrente(e.target.checked)
+                    if (!e.target.checked) {
+                      setFrecuencia(null)
+                      setDiasSeleccionados([])
+                    }
+                  }}
+                  disabled={isLoading}
+                />
+                <span>
+                  {clase ? 'Es clase recurrente' : 'Crear como clase recurrente'}
+                </span>
+              </label>
+            </div>
+          )}
 
           {esRecurrente && (
             <>

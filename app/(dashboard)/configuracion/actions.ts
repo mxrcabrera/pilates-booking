@@ -110,7 +110,7 @@ export async function saveHorario(formData: FormData) {
     // Crear
     await prisma.horarioDisponible.create({
       data: {
-        profesoraId: userId,
+        profesorId: userId,
         diaSemana,
         horaInicio,
         horaFin,
@@ -159,12 +159,13 @@ export async function updatePreferencias(formData: FormData) {
   if (!userId) throw new Error('No autorizado')
 
   const horasAnticipacionMinima = parseInt(formData.get('horasAnticipacionMinima') as string)
-  const maxAlumnasPorClase = parseInt(formData.get('maxAlumnasPorClase') as string)
+  const maxAlumnosPorClase = parseInt(formData.get('maxAlumnosPorClase') as string)
   const horarioMananaInicio = formData.get('horarioMananaInicio') as string
   const horarioMananaFin = formData.get('horarioMananaFin') as string
   const horarioTardeInicio = formData.get('horarioTardeInicio') as string
   const horarioTardeFin = formData.get('horarioTardeFin') as string
   const espacioCompartidoId = formData.get('espacioCompartidoId') as string
+  const syncGoogleCalendar = formData.get('syncGoogleCalendar') === 'on'
 
   // Normalizar el código de espacio (trim y lowercase)
   const espacioNormalizado = espacioCompartidoId?.trim().toLowerCase() || null
@@ -173,16 +174,97 @@ export async function updatePreferencias(formData: FormData) {
     where: { id: userId },
     data: {
       horasAnticipacionMinima,
-      maxAlumnasPorClase,
+      maxAlumnosPorClase,
       horarioMananaInicio,
       horarioMananaFin,
       horarioTardeInicio,
       horarioTardeFin,
-      espacioCompartidoId: espacioNormalizado
+      espacioCompartidoId: espacioNormalizado,
+      syncGoogleCalendar
     }
   })
 
   revalidatePath('/configuracion')
   revalidatePath('/calendario')
+  return { success: true }
+}
+
+export async function savePack(formData: FormData) {
+  const userId = await getCurrentUser()
+  if (!userId) throw new Error('No autorizado')
+
+  const id = formData.get('id') as string | null
+  const nombre = formData.get('nombre') as string
+  const clasesPorSemana = parseInt(formData.get('clasesPorSemana') as string)
+  const precio = parseFloat(formData.get('precio') as string)
+  const estaActivo = formData.get('estaActivo') === 'on'
+
+  if (id) {
+    // Editar pack existente
+    await prisma.pack.update({
+      where: { id },
+      data: {
+        nombre,
+        clasesPorSemana,
+        precio,
+        estaActivo
+      }
+    })
+  } else {
+    // Crear nuevo pack
+    await prisma.pack.create({
+      data: {
+        profesorId: userId,
+        nombre,
+        clasesPorSemana,
+        precio,
+        estaActivo: true
+      }
+    })
+  }
+
+  revalidatePath('/configuracion')
+  revalidatePath('/alumnos')
+  return { success: true }
+}
+
+export async function deletePack(id: string) {
+  const userId = await getCurrentUser()
+  if (!userId) throw new Error('No autorizado')
+
+  const pack = await prisma.pack.findUnique({
+    where: { id }
+  })
+
+  if (!pack || pack.profesorId !== userId) {
+    throw new Error('Pack no encontrado')
+  }
+
+  await prisma.pack.delete({
+    where: { id }
+  })
+
+  revalidatePath('/configuracion')
+  revalidatePath('/alumnos')
+  return { success: true }
+}
+
+export async function togglePack(id: string) {
+  const userId = await getCurrentUser()
+  if (!userId) throw new Error('No autorizado')
+
+  const pack = await prisma.pack.findUnique({
+    where: { id }
+  })
+
+  if (!pack) throw new Error('Pack no encontrado')
+
+  await prisma.pack.update({
+    where: { id },
+    data: { estaActivo: !pack.estaActivo }
+  })
+
+  revalidatePath('/configuracion')
+  revalidatePath('/alumnos')
   return { success: true }
 }

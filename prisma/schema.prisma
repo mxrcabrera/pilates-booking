@@ -16,48 +16,67 @@ model User {
   emailVerified            DateTime? @map("email_verified")
   image                    String?
   horasAnticipacionMinima  Int       @default(1) @map("horas_anticipacion_minima")
-  maxAlumnasPorClase       Int       @default(4) @map("max_alumnas_por_clase")
+  maxAlumnosPorClase       Int       @default(4) @map("max_alumnos_por_clase")
   horarioMananaInicio      String    @default("08:00") @map("horario_manana_inicio")
   horarioMananaFin         String    @default("14:00") @map("horario_manana_fin")
   horarioTardeInicio       String    @default("17:00") @map("horario_tarde_inicio")
   horarioTardeFin          String    @default("22:00") @map("horario_tarde_fin")
   espacioCompartidoId      String?   @map("espacio_compartido_id")
+  syncGoogleCalendar       Boolean   @default(false) @map("sync_google_calendar")
+  googleCalendarId         String?   @map("google_calendar_id")
   createdAt                DateTime  @default(now()) @map("created_at")
 
-  alumnas             Alumna[]
+  alumnos             Alumno[]
   horariosDisponibles HorarioDisponible[]
   clases              Clase[]
+  packs               Pack[]
   accounts            Account[]
   sessions            Session[]
 
-  @@map("profesoras")
+  @@map("profesores")
 }
 
-model Alumna {
-  id           String    @id @default(uuid())
-  profesoraId  String    @map("profesora_id")
-  nombre       String
-  email        String
-  telefono     String
-  cumpleanos   DateTime? @map("cumpleanos") @db.Date // ← AGREGAR
-  patologias   String?   @map("patologias") // ← AGREGAR
-  packType     String    @map("pack_type")
-  clasesPorMes Int?      @map("clases_por_mes")
-  precio       Decimal   @db.Decimal(10, 2)
-  estaActiva   Boolean   @default(true) @map("esta_activa")
-  estaPausada  Boolean   @default(false) @map("esta_pausada")
-  createdAt    DateTime  @default(now()) @map("created_at")
+model Pack {
+  id              String   @id @default(uuid())
+  profesorId      String   @map("profesor_id")
+  nombre          String
+  clasesPorSemana Int      @map("clases_por_semana")
+  precio          Decimal  @db.Decimal(10, 2)
+  estaActivo      Boolean  @default(true) @map("esta_activo")
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  profesora User @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
+  profesor User @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+
+  @@map("packs")
+}
+
+model Alumno {
+  id                 String    @id @default(uuid())
+  profesorId        String    @map("profesor_id")
+  nombre             String
+  email              String
+  telefono           String
+  cumpleanos         DateTime? @map("cumpleanos") @db.Date
+  patologias         String?   @map("patologias")
+  packType           String    @map("pack_type")
+  clasesPorMes       Int?      @map("clases_por_mes")
+  precio             Decimal   @db.Decimal(10, 2)
+  estaActivo         Boolean   @default(true) @map("esta_activa")
+  estaPausada        Boolean   @default(false) @map("esta_pausada")
+  syncGoogleCalendar Boolean   @default(false) @map("sync_google_calendar")
+  googleCalendarId   String?   @map("google_calendar_id")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  profesor User @relation(fields: [profesorId], references: [id], onDelete: Cascade)
   clases    Clase[]
   pagos     Pago[]
 
-  @@map("alumnas")
+  @@map("alumnos")
 }
 
 model HorarioDisponible {
   id          String   @id @default(uuid())
-  profesoraId String   @map("profesora_id")
+  profesorId String   @map("profesor_id")
   diaSemana   Int      @map("dia_semana")
   horaInicio  String   @map("hora_inicio")
   horaFin     String   @map("hora_fin")
@@ -65,15 +84,15 @@ model HorarioDisponible {
   estaActivo  Boolean  @default(true) @map("esta_activo")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  profesora User @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
+  profesor User @relation(fields: [profesorId], references: [id], onDelete: Cascade)
 
   @@map("horarios_disponibles")
 }
 
 model Clase {
   id                String   @id @default(uuid())
-  profesoraId       String   @map("profesora_id")
-  alumnaId          String?  @map("alumna_id")
+  profesorId       String   @map("profesor_id")
+  alumnoId          String?  @map("alumno_id")
   fecha             DateTime @db.Date
   horaInicio        String   @map("hora_inicio")
   horaRecurrente    String?  @map("hora_recurrente")
@@ -82,17 +101,18 @@ model Clase {
   diasSemana        Int[]    @map("dias_semana")
   estado            String   @default("reservada")
   esClasePrueba     Boolean  @default(false) @map("es_clase_prueba")
+  googleEventId     String?  @map("google_event_id")
   createdAt         DateTime @default(now()) @map("created_at")
 
-  profesora User    @relation(fields: [profesoraId], references: [id], onDelete: Cascade)
-  alumna    Alumna? @relation(fields: [alumnaId], references: [id], onDelete: SetNull)
+  profesor User    @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  alumno    Alumno? @relation(fields: [alumnoId], references: [id], onDelete: SetNull)
 
   @@map("clases")
 }
 
 model Pago {
   id                 String    @id @default(uuid())
-  alumnaId           String    @map("alumna_id")
+  alumnoId           String    @map("alumno_id")
   monto              Decimal   @db.Decimal(10, 2)
   fechaPago          DateTime? @map("fecha_pago") @db.Date
   fechaVencimiento   DateTime  @map("fecha_vencimiento") @db.Date
@@ -100,7 +120,7 @@ model Pago {
   mesCorrespondiente String    @map("mes_correspondiente")
   createdAt          DateTime  @default(now()) @map("created_at")
 
-  alumna Alumna @relation(fields: [alumnaId], references: [id], onDelete: Cascade)
+  alumno Alumno @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
 
   @@map("pagos")
 }

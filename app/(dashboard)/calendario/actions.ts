@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { addWeeks } from 'date-fns'
+import { auth } from '@/lib/auth-new'
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
 
 export async function createClase(formData: FormData) {
   const userId = await getCurrentUser()
@@ -14,13 +16,14 @@ export async function createClase(formData: FormData) {
     where: { id: userId },
     select: {
       horasAnticipacionMinima: true,
-      maxAlumnasPorClase: true
+      maxAlumnosPorClase: true,
+      syncGoogleCalendar: true
     }
   })
 
   if (!user) throw new Error('Usuario no encontrado')
 
-  const alumnaId = formData.get('alumnaId') as string
+  const alumnoId = formData.get('alumnoId') as string
   const horaInicio = formData.get('horaInicio') as string
   const horaRecurrenteInput = formData.get('horaRecurrente') as string
   const horaRecurrente = horaRecurrenteInput || horaInicio
@@ -55,7 +58,7 @@ export async function createClase(formData: FormData) {
     
     const horarioDisponible = await prisma.horarioDisponible.findFirst({
       where: {
-        profesoraId: userId,
+        profesorId: userId,
         diaSemana,
         esManiana,
         estaActivo: true
@@ -79,7 +82,7 @@ export async function createClase(formData: FormData) {
   
   const claseExistente = await prisma.clase.findFirst({
     where: {
-      profesoraId: userId,
+      profesorId: userId,
       fecha,
       horaInicio,
       estado: {
@@ -92,10 +95,10 @@ export async function createClase(formData: FormData) {
     throw new Error('Ya tenés una clase reservada en ese horario')
   }
 
-  // Validar cantidad máxima de alumnas por clase
+  // Validar cantidad máxima de alumnos por clase
   const clasesEnMismoHorario = await prisma.clase.count({
     where: {
-      profesoraId: userId,
+      profesorId: userId,
       fecha,
       horaInicio,
       estado: {
@@ -104,14 +107,14 @@ export async function createClase(formData: FormData) {
     }
   })
 
-  if (clasesEnMismoHorario >= user.maxAlumnasPorClase) {
-    throw new Error(`Esta clase ya alcanzó el máximo de ${user.maxAlumnasPorClase} alumnas`)
+  if (clasesEnMismoHorario >= user.maxAlumnosPorClase) {
+    throw new Error(`Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`)
   }
 
-  await prisma.clase.create({
+  const claseCreada = await prisma.clase.create({
     data: {
-      profesoraId: userId,
-      alumnaId: alumnaId || null,
+      profesorId: userId,
+      alumnoId: alumnoId || null,
       fecha,
       horaInicio,
       horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
@@ -122,6 +125,29 @@ export async function createClase(formData: FormData) {
       estado: 'reservada'
     }
   })
+
+  // Sincronizar con Google Calendar si está activado
+  if (user.syncGoogleCalendar) {
+    try {
+      const session = await auth()
+      if (session && (session as any).accessToken) {
+        const eventId = await createCalendarEvent(
+          claseCreada.id,
+          (session as any).accessToken,
+          (session as any).refreshToken
+        )
+
+        // Guardar el eventId en la clase
+        await prisma.clase.update({
+          where: { id: claseCreada.id },
+          data: { googleEventId: eventId }
+        })
+      }
+    } catch (error) {
+      console.error('Error al sincronizar con Google Calendar:', error)
+      // No fallar la creación de la clase si falla la sincronización
+    }
+  }
 
   // Crear clases recurrentes
   if (esRecurrente && diasSemana.length > 0) {
@@ -142,8 +168,8 @@ export async function createClase(formData: FormData) {
         const fechaClase = addWeeks(primeraOcurrencia, i)
         
         clasesACrear.push({
-          profesoraId: userId,
-          alumnaId: alumnaId || null,
+          profesorId: userId,
+          alumnoId: alumnoId || null,
           fecha: fechaClase,
           horaInicio: horaRecurrente,
           horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
@@ -177,14 +203,15 @@ export async function updateClase(formData: FormData) {
     where: { id: userId },
     select: {
       horasAnticipacionMinima: true,
-      maxAlumnasPorClase: true
+      maxAlumnosPorClase: true,
+      syncGoogleCalendar: true
     }
   })
 
   if (!user) throw new Error('Usuario no encontrado')
 
   const id = formData.get('id') as string
-  const alumnaId = formData.get('alumnaId') as string
+  const alumnoId = formData.get('alumnoId') as string
   const horaInicio = formData.get('horaInicio') as string
   const horaRecurrenteInput = formData.get('horaRecurrente') as string
   const horaRecurrente = horaRecurrenteInput || horaInicio
@@ -220,7 +247,7 @@ export async function updateClase(formData: FormData) {
     
     const horarioDisponible = await prisma.horarioDisponible.findFirst({
       where: {
-        profesoraId: userId,
+        profesorId: userId,
         diaSemana,
         esManiana,
         estaActivo: true
@@ -244,7 +271,7 @@ export async function updateClase(formData: FormData) {
   
   const claseExistente = await prisma.clase.findFirst({
     where: {
-      profesoraId: userId,
+      profesorId: userId,
       fecha,
       horaInicio,
       estado: {
@@ -260,10 +287,10 @@ export async function updateClase(formData: FormData) {
     throw new Error('Ya tenés otra clase reservada en ese horario')
   }
 
-  // Validar cantidad máxima de alumnas por clase
+  // Validar cantidad máxima de alumnos por clase
   const clasesEnMismoHorario = await prisma.clase.count({
     where: {
-      profesoraId: userId,
+      profesorId: userId,
       fecha,
       horaInicio,
       estado: {
@@ -275,14 +302,19 @@ export async function updateClase(formData: FormData) {
     }
   })
 
-  if (clasesEnMismoHorario >= user.maxAlumnasPorClase) {
-    throw new Error(`Esta clase ya alcanzó el máximo de ${user.maxAlumnasPorClase} alumnas`)
+  if (clasesEnMismoHorario >= user.maxAlumnosPorClase) {
+    throw new Error(`Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`)
   }
 
-  await prisma.clase.update({
+  // Obtener clase actual para comparar cambios
+  const claseActual = await prisma.clase.findUnique({
+    where: { id }
+  })
+
+  const claseActualizada = await prisma.clase.update({
     where: { id },
     data: {
-      alumnaId: alumnaId || null,
+      alumnoId: alumnoId || null,
       fecha,
       horaInicio,
       horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
@@ -294,6 +326,41 @@ export async function updateClase(formData: FormData) {
     }
   })
 
+  // Sincronizar con Google Calendar si está activado
+  if (user.syncGoogleCalendar && claseActualizada.googleEventId) {
+    try {
+      const session = await auth()
+      if (session && (session as any).accessToken) {
+        await updateCalendarEvent(
+          claseActualizada.id,
+          claseActualizada.googleEventId,
+          (session as any).accessToken,
+          (session as any).refreshToken
+        )
+      }
+    } catch (error) {
+      console.error('Error al actualizar en Google Calendar:', error)
+    }
+  } else if (user.syncGoogleCalendar && !claseActualizada.googleEventId) {
+    // Si no tiene evento pero ahora tiene sync activado, crear uno
+    try {
+      const session = await auth()
+      if (session && (session as any).accessToken) {
+        const eventId = await createCalendarEvent(
+          claseActualizada.id,
+          (session as any).accessToken,
+          (session as any).refreshToken
+        )
+        await prisma.clase.update({
+          where: { id: claseActualizada.id },
+          data: { googleEventId: eventId }
+        })
+      }
+    } catch (error) {
+      console.error('Error al crear evento en Google Calendar:', error)
+    }
+  }
+
   revalidatePath('/calendario')
   return { success: true }
 }
@@ -302,9 +369,36 @@ export async function deleteClase(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
+  // Obtener la clase antes de borrarla para sincronizar con Google Calendar
+  const clase = await prisma.clase.findUnique({
+    where: { id },
+    select: { googleEventId: true }
+  })
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { syncGoogleCalendar: true }
+  })
+
   await prisma.clase.delete({
     where: { id }
   })
+
+  // Eliminar de Google Calendar si está sincronizado
+  if (user?.syncGoogleCalendar && clase?.googleEventId) {
+    try {
+      const session = await auth()
+      if (session && (session as any).accessToken) {
+        await deleteCalendarEvent(
+          clase.googleEventId,
+          (session as any).accessToken,
+          (session as any).refreshToken
+        )
+      }
+    } catch (error) {
+      console.error('Error al eliminar de Google Calendar:', error)
+    }
+  }
 
   revalidatePath('/calendario')
   return { success: true }

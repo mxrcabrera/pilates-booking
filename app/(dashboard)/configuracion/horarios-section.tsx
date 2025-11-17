@@ -33,6 +33,7 @@ export function HorariosSection({
 }: HorariosSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingHorario, setEditingHorario] = useState<Horario | null>(null)
+  const [selectedHorarios, setSelectedHorarios] = useState<Set<string>>(new Set())
 
   const handleEdit = (horario: Horario) => {
     setEditingHorario(horario)
@@ -61,6 +62,36 @@ export function HorariosSection({
     }
   }
 
+  const toggleSelection = (id: string) => {
+    const newSelection = new Set(selectedHorarios)
+    if (newSelection.has(id)) {
+      newSelection.delete(id)
+    } else {
+      newSelection.add(id)
+    }
+    setSelectedHorarios(newSelection)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedHorarios.size === horarios.length) {
+      setSelectedHorarios(new Set())
+    } else {
+      setSelectedHorarios(new Set(horarios.map(h => h.id)))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedHorarios.size === 0) return
+    if (!confirm(`¿Estás segura de eliminar ${selectedHorarios.size} horario(s)?`)) return
+
+    try {
+      await Promise.all(Array.from(selectedHorarios).map(id => deleteHorario(id)))
+      setSelectedHorarios(new Set())
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
   // Agrupar horarios por día
   const horariosPorDia = horarios.reduce((acc, h) => {
     if (!acc[h.diaSemana]) acc[h.diaSemana] = []
@@ -71,7 +102,7 @@ export function HorariosSection({
   return (
     <div className="settings-section">
       <div className="section-content">
-        <div className="section-actions" style={{ marginBottom: '1.5rem' }}>
+        <div className="section-actions" style={{ marginBottom: '1.5rem', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button
             onClick={handleNew}
             className="btn-primary"
@@ -79,6 +110,27 @@ export function HorariosSection({
             <Plus size={18} />
             <span>Agregar Horario</span>
           </button>
+          {horarios.length > 0 && (
+            <>
+              <button
+                onClick={toggleSelectAll}
+                className="btn-outline"
+                style={{ fontSize: '0.875rem' }}
+              >
+                {selectedHorarios.size === horarios.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+              </button>
+              {selectedHorarios.size > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="btn-outline"
+                  style={{ fontSize: '0.875rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}
+                >
+                  <Trash2 size={16} />
+                  <span>Eliminar ({selectedHorarios.size})</span>
+                </button>
+              )}
+            </>
+          )}
         </div>
 
         {horarios.length === 0 ? (
@@ -102,8 +154,15 @@ export function HorariosSection({
                     {horariosDelDia.map(horario => (
                       <div
                         key={horario.id}
-                        className={`horario-slot ${!horario.estaActivo ? 'inactive' : ''}`}
+                        className={`horario-slot ${!horario.estaActivo ? 'inactive' : ''} ${selectedHorarios.has(horario.id) ? 'selected' : ''}`}
                       >
+                        <input
+                          type="checkbox"
+                          checked={selectedHorarios.has(horario.id)}
+                          onChange={() => toggleSelection(horario.id)}
+                          className="horario-checkbox"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                         <div className="horario-slot-info">
                           <span className="horario-time">
                             {horario.horaInicio} - {horario.horaFin}
@@ -148,6 +207,7 @@ export function HorariosSection({
           setEditingHorario(null)
         }}
         horario={editingHorario}
+        horarios={horarios}
         horarioMananaInicio={horarioMananaInicio}
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}

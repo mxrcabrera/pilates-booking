@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
+import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, Clock } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 
 type Profesor = {

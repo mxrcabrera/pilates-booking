@@ -138,10 +138,10 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           horarioTardeFin={profesor.horarioTardeFin}
         />
 
-        <div className="form-divider" style={{ margin: '3rem 1.25rem' }}></div>
+        <div className="form-divider" style={{ margin: '3rem 0' }}></div>
 
         {/* Configuración de Horarios */}
-        <div style={{ padding: '0 1.25rem' }}>
+        <div>
           <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'rgba(255, 255, 255, 0.95)', marginBottom: '1.5rem' }}>
             Configuración de Clases
           </h3>
@@ -269,9 +269,9 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           </div>
         </form>
 
-        <div className="form-divider" style={{ margin: '3rem 1.25rem' }}></div>
+        <div className="form-divider" style={{ margin: '3rem 0' }}></div>
 
-        <div style={{ padding: '0 1.25rem' }}>
+        <div>
           <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'rgba(255, 255, 255, 0.95)', marginBottom: '0.5rem' }}>
             Paquetes de Clases
           </h3>

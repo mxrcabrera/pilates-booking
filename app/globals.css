@@ -2058,6 +2058,70 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Accordion Styles */
+.settings-accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.accordion-item {
+  background: rgba(23, 19, 32, 0.75);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(147, 155, 245, 0.1);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.75rem 2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.accordion-header:hover {
+  background: rgba(147, 155, 245, 0.03);
+}
+
+.accordion-header:active {
+  transform: scale(0.99);
+}
+
+.accordion-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.accordion-body {
+  padding: 0 2rem 2rem 2rem;
+}
+
+@media (max-width: 768px) {
+  .accordion-header {
+    padding: 1.5rem 1.5rem;
+  }
+
+  .accordion-title {
+    font-size: 1rem;
+  }
+
+  .accordion-body {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+
+  .settings-accordion-container {
+    gap: 1rem;
+  }
+}
+
 /* Legacy grid (mantener compatibilidad) */
 .settings-grid {
   display: grid;

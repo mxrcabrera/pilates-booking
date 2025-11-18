@@ -27,13 +27,8 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
   const isConfigPage = pathname === '/configuracion'
 
   const handleAvatarClick = () => {
-    if (isConfigPage) {
-      // From config page, navigate to cuenta tab with hash
-      router.push('/configuracion#cuenta')
-    } else {
-      // From other pages, navigate to config
-      router.push('/configuracion')
-    }
+    // Always navigate to config page (Mi Perfil accordion opens by default)
+    router.push('/configuracion')
   }
 
   return (

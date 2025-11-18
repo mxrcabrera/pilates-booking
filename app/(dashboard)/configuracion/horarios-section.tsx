@@ -192,12 +192,14 @@ export function HorariosSection({
                           />
                         )}
                         <div className="horario-slot-info">
-                          <span className="horario-time">
-                            {horario.horaInicio} - {horario.horaFin}
-                          </span>
-                          <span className="horario-turno">
-                            {horario.esManiana ? 'Mañana' : 'Tarde'}
-                          </span>
+                          <div className="horario-slot-time-container">
+                            <span className="horario-time">
+                              {horario.horaInicio} - {horario.horaFin}
+                            </span>
+                            <span className="horario-turno">
+                              {horario.esManiana ? 'Mañana' : 'Tarde'}
+                            </span>
+                          </div>
                         </div>
                         {!horario.estaActivo && (
                           <span className="horario-status-badge">Inactivo</span>

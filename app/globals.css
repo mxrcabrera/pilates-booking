@@ -2595,8 +2595,8 @@ h1, h2, h3, h4, h5, h6 {
 .horario-slot {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 1.25rem 1.75rem;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
   background: rgba(147, 155, 245, 0.05);
   border: 2px solid rgba(147, 155, 245, 0.15);
   border-radius: 16px;
@@ -2706,13 +2706,18 @@ h1, h2, h3, h4, h5, h6 {
 
 .horario-slot-info {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex: 1;
   min-width: 0;
 }
 
+.horario-slot-time-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .horario-time {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.95);
   letter-spacing: -0.01em;
@@ -2720,13 +2725,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .horario-turno {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.5);
   font-weight: 500;
-  padding: 0.375rem 0.875rem;
+  padding: 0.25rem 0.75rem;
   background: rgba(147, 155, 245, 0.08);
-  border-radius: 8px;
+  border-radius: 6px;
   white-space: nowrap;
+  width: fit-content;
 }
 
 .horario-status-badge {

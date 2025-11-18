@@ -587,6 +587,7 @@ body::before {
 
   .stat-card {
     flex-direction: row;
+    align-items: center;
     padding: 2.5rem;
     gap: 1.5rem;
     border-radius: 20px;
@@ -2897,13 +2898,11 @@ h1, h2, h3, h4, h5, h6 {
 .dialog-content {
   background: rgba(23, 19, 32, 0.98);
   backdrop-filter: blur(40px);
-  border: 1.5px solid rgba(147, 155, 245, 0.2);
   border-radius: 24px;
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   animation: slideUpModal 0.3s ease;
 }
 
@@ -2936,6 +2935,8 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 1.25rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  line-height: 1.5;
 }
 
 .modal-close,

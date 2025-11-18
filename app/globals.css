@@ -2525,11 +2525,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .form-group select {
-  background-color: rgba(147, 155, 245, 0.08);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background:
+    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.7) 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.7) 50%, transparent 50%),
+    rgba(147, 155, 245, 0.08);
+  background-position:
+    calc(100% - 20px) calc(1rem + 2px),
+    calc(100% - 15px) calc(1rem + 2px),
+    0 0;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100%;
   background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 16px;
   border: 1.5px solid rgba(147, 155, 245, 0.25);
   border-radius: var(--radius-md);
   padding: 1rem 2.5rem 1rem 1.25rem;
@@ -2544,7 +2552,19 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-group select:focus {
   outline: none;
-  background-color: rgba(147, 155, 245, 0.12);
+  background:
+    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.7) 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.7) 50%, transparent 50%),
+    rgba(147, 155, 245, 0.12);
+  background-position:
+    calc(100% - 20px) calc(1rem + 2px),
+    calc(100% - 15px) calc(1rem + 2px),
+    0 0;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100%;
+  background-repeat: no-repeat;
   border-color: rgba(147, 155, 245, 0.5);
   box-shadow: 0 0 0 3px rgba(147, 155, 245, 0.2);
 }
@@ -2759,8 +2779,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .horario-slot {
   position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 1rem;
   padding: 1.5rem 2rem;
@@ -2872,6 +2892,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 1rem;
   min-width: 0;
+  flex: 1;
 }
 
 .horario-slot-time-container {
@@ -2909,12 +2930,15 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  flex-shrink: 0;
 }
 
 .horario-slot-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .btn-icon-xs {

@@ -22,7 +22,11 @@
       "Bash(git push:*)",
       "Bash(set:*)",
       "Bash(npx tsc:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(git rm:*)",
+      "Bash(git restore:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

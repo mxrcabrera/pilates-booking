@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, User } from 'lucide-react'
+import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 
 type Profesor = {
@@ -16,7 +16,6 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { href: '/calendario', icon: Calendar, label: 'Calendario' },
   { href: '/alumnos', icon: Users, label: 'Alumnos' },
-  { href: '/perfil', icon: User, label: 'Mi Perfil' },
   { href: '/configuracion', icon: Settings, label: 'Configuración' },
 ]
 

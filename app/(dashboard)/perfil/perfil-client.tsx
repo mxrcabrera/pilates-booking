@@ -23,7 +23,6 @@ export function PerfilClient({ profesor }: PerfilClientProps) {
       <Accordion
         title="Datos Personales"
         icon={<User size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
-        defaultOpen={true}
       >
         <ProfileForm profesor={profesor} />
       </Accordion>

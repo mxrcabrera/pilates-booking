@@ -37,8 +37,8 @@ const DIAS_INDIVIDUALES = [
 
 const TURNOS = [
   { value: 'maniana', label: 'Mañana', emoji: '☀️' },
-  { value: 'tarde', label: 'Tarde', emoji: '☀️' },
-  { value: 'ambos', label: 'Mañana y Tarde', emoji: '☀️' },
+  { value: 'tarde', label: 'Tarde', emoji: '🌙' },
+  { value: 'ambos', label: 'Mañana y Tarde', emoji: '☀️🌙' },
 ]
 
 type HorarioDialogProps = {

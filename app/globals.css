@@ -2185,7 +2185,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(147, 155, 245, 0.05);
   border: 1.5px solid rgba(147, 155, 245, 0.2);
   border-radius: 12px;
-  padding: 1rem 1.25rem;
+  padding: 1rem 0.8rem;
   color: rgba(255, 255, 255, 0.95);
   font-size: 0.8rem;
   transition: all 0.2s ease;
@@ -2377,8 +2377,7 @@ h1, h2, h3, h4, h5, h6 {
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  width: 100%
+  gap: 0.2rem;
 }
 
 .form-group select {

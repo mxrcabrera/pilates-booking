@@ -219,7 +219,7 @@ body::before {
   background: rgba(15, 12, 22, 0.6);
   backdrop-filter: blur(20px) saturate(150%);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 2.5rem 2rem;
   width: 100%;
   max-width: 360px;
@@ -272,7 +272,7 @@ body::before {
 .login-card input {
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.25);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   color: #ffffff;
   font-size: 1rem;
@@ -351,7 +351,7 @@ body::before {
   background: linear-gradient(135deg, #939BF5 0%, #5B42E0 100%);
   color: #ffffff;
   font-weight: 600;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.875rem 1rem;
   border: none;
   font-size: 0.9375rem;
@@ -416,7 +416,7 @@ body::before {
 
 .login-card .error-banner {
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: rgba(255, 255, 255, 0.95);
@@ -458,7 +458,7 @@ body::before {
   background: rgba(255, 255, 255, 0.03);
   color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.875rem 1rem;
   border: 2px solid rgba(147, 155, 245, 0.15);
   font-size: 0.9375rem;
@@ -579,7 +579,7 @@ body::before {
   background: rgba(23, 19, 32, 0.75);
   backdrop-filter: blur(20px);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -597,7 +597,7 @@ body::before {
 .stat-icon {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -666,7 +666,7 @@ body::before {
     align-items: center;
     padding: 2.5rem;
     gap: 1.5rem;
-    border-radius: 20px;
+    border-radius: var(--radius-xl);
   }
 
   .stat-card:hover {
@@ -678,7 +678,7 @@ body::before {
   .stat-icon {
     width: 56px;
     height: 56px;
-    border-radius: 18px;
+    border-radius: var(--radius-lg);
   }
 
   .stat-content {
@@ -706,7 +706,7 @@ body::before {
   background: rgba(23, 19, 32, 0.75);
   backdrop-filter: blur(20px);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   padding: 2.5rem;
 }
 
@@ -740,7 +740,7 @@ body::before {
   padding: 2rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   transition: all 0.2s ease;
 }
 
@@ -934,11 +934,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .rounded-lg {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .rounded-xl {
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
 }
 
 /* ========================================
@@ -994,7 +994,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 0.9375rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.6);
@@ -1063,7 +1063,7 @@ h1, h2, h3, h4, h5, h6 {
 .logout-btn {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: transparent;
   border: 2px solid rgba(147, 155, 245, 0.15);
   color: rgba(255, 255, 255, 0.6);
@@ -1253,7 +1253,7 @@ h1, h2, h3, h4, h5, h6 {
 .calendar-nav-btn {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.15);
   color: rgba(255, 255, 255, 0.7);
@@ -1274,7 +1274,7 @@ h1, h2, h3, h4, h5, h6 {
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
   background: rgba(147, 155, 245, 0.05);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -1388,7 +1388,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 0.75rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.875rem 1rem;
   color: rgba(255, 255, 255, 0.5);
 }
@@ -1424,14 +1424,14 @@ h1, h2, h3, h4, h5, h6 {
   gap: 0.25rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.25rem;
 }
 
 .view-toggle-btn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.5);
@@ -1460,16 +1460,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .alumno-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 18px;
-  padding: 2rem;
+  background: rgba(255, 255, 255, var(--opacity-bg-subtle));
+  border: 2px solid rgba(147, 155, 245, var(--opacity-border-subtle));
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
   transition: all 0.3s ease;
 }
 
-.o-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(147, 155, 245, 0.2);
+.alumno-card:hover {
+  background: rgba(255, 255, 255, var(--opacity-bg-default));
+  border-color: rgba(147, 155, 245, var(--opacity-border-default));
   transform: translateY(-2px);
 }
 
@@ -1571,7 +1571,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(23, 19, 32, 0.95);
   backdrop-filter: blur(30px);
   border: 1.5px solid rgba(147, 155, 245, 0.2);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.5rem;
   min-width: 160px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -1586,7 +1586,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.625rem 0.875rem;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.9375rem;
   text-align: left;
@@ -1650,7 +1650,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1.125rem 1.25rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1695,7 +1695,7 @@ h1, h2, h3, h4, h5, h6 {
 .menu-btn-bottom {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   border: 2px solid rgba(147, 155, 245, 0.15);
   color: rgba(255, 255, 255, 0.6);
@@ -1716,7 +1716,7 @@ h1, h2, h3, h4, h5, h6 {
 .menu-btn-top {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   border: 2px solid rgba(147, 155, 245, 0.15);
   color: rgba(255, 255, 255, 0.6);
@@ -1781,7 +1781,7 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(-50%);
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   border: 2px solid rgba(147, 155, 245, 0.15);
   color: rgba(255, 255, 255, 0.6);
@@ -1973,7 +1973,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .sheet-patologias p {
@@ -1994,7 +1994,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .sheet-stat .stat-value {
@@ -2053,7 +2053,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 1.5rem;
   background: rgba(23, 19, 32, 0.5);
   padding: 0.5rem;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   border: 2px solid rgba(147, 155, 245, 0.1);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -2069,7 +2069,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem 0.75rem;
   background: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
   font-weight: 500;
@@ -2111,7 +2111,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(23, 19, 32, 0.75);
   backdrop-filter: blur(20px);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
 }
 
@@ -2149,7 +2149,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(23, 19, 32, 0.75);
   backdrop-filter: blur(20px);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
 }
 
@@ -2292,7 +2292,7 @@ h1, h2, h3, h4, h5, h6 {
   color-scheme: dark;
   background: #939bf5;
   border: 1.5px solid #939bf5;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   transition: all 0.2s ease;
@@ -2435,7 +2435,7 @@ h1, h2, h3, h4, h5, h6 {
    ======================================== */
 .form-message {
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 0.9375rem;
   margin-bottom: 1rem;
 }
@@ -2467,7 +2467,7 @@ h1, h2, h3, h4, h5, h6 {
 .form-group select {
   background: rgba(147, 155, 245, 0.08);
   border: 1.5px solid rgba(147, 155, 245, 0.25);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   color: rgba(255, 255, 255, 0.95);
   font-size: 1rem;
@@ -2511,7 +2511,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.875rem 1.25rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -2581,7 +2581,7 @@ h1, h2, h3, h4, h5, h6 {
    ======================================== */
 .btn-sm {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
@@ -2614,7 +2614,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-icon-sm {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(147, 155, 245, 0.08);
   border: 2px solid rgba(147, 155, 245, 0.15);
   color: rgba(255, 255, 255, 0.7);
@@ -2893,7 +2893,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1.25rem;
   background: rgba(147, 155, 245, 0.05);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   transition: all 0.2s ease;
   position: relative;
 }
@@ -2981,7 +2981,7 @@ h1, h2, h3, h4, h5, h6 {
 .dialog-content {
   background: rgba(23, 19, 32, 0.98);
   backdrop-filter: blur(40px);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
@@ -3026,7 +3026,7 @@ h1, h2, h3, h4, h5, h6 {
 .dialog-close {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(147, 155, 245, 0.08);
   border: 2px solid rgba(147, 155, 245, 0.15);
   color: rgba(255, 255, 255, 0.7);
@@ -3070,7 +3070,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -3114,7 +3114,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -3147,7 +3147,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1.25rem 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -3178,7 +3178,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem;
   background: rgba(147, 197, 253, 0.1);
   border: 1px solid rgba(147, 197, 253, 0.2);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: #93c5fd;
   font-size: 0.9375rem;
   line-height: 1.6;
@@ -3204,7 +3204,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.375rem 0.875rem;
   background: rgba(251, 191, 36, 0.15);
   color: #fbbf24;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9375rem;
   font-weight: 500;
 }
@@ -3234,7 +3234,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.875rem 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1.5px solid rgba(147, 155, 245, 0.15);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -3422,7 +3422,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1.25rem 1.5rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.2);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -3450,7 +3450,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.875rem;
   background: transparent;
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -3479,7 +3479,7 @@ h1, h2, h3, h4, h5, h6 {
 .mobile-menu-btn {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(147, 155, 245, 0.1);
   border: 2px solid rgba(147, 155, 245, 0.2);
   color: rgba(255, 255, 255, 0.9);
@@ -3543,7 +3543,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   font-size: 0.9375rem;
@@ -3574,7 +3574,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: #EF4444;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -3611,7 +3611,7 @@ h1, h2, h3, h4, h5, h6 {
     transform: translate(-50%, -50%);
     max-width: 380px;
     max-height: 85vh;
-    border-radius: 20px;
+    border-radius: var(--radius-xl);
     border: 1.5px solid rgba(147, 155, 245, 0.2);
   }
 
@@ -3655,7 +3655,7 @@ h1, h2, h3, h4, h5, h6 {
   right: 0;
   background: #171320;
   border: 1.5px solid rgba(147, 155, 245, 0.4);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.5rem;
   min-width: 160px;
   box-shadow:
@@ -3673,7 +3673,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.75rem 1rem;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: rgba(255, 255, 255, 0.95);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -4038,7 +4038,7 @@ h1, h2, h3, h4, h5, h6 {
 .dashboard-next-card {
   background: linear-gradient(135deg, rgba(147, 155, 245, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
   border: 1.5px solid rgba(147, 155, 245, 0.3);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 2.5rem;
   display: flex;
   flex-direction: column;
@@ -4094,7 +4094,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.375rem 0.875rem;
   background: rgba(251, 191, 36, 0.15);
   color: #fbbf24;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9375rem;
   font-weight: 500;
 }
@@ -4120,7 +4120,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.625rem 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(147, 155, 245, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .dashboard-pill-emoji {
@@ -4180,7 +4180,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.375rem 0.75rem;
   background: transparent;
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: rgba(147, 155, 245, 0.8);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -4208,7 +4208,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.875rem 1rem;
   background: rgba(255, 255, 255, 0.02);
   border: 2px solid rgba(147, 155, 245, 0.08);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   transition: all 0.2s ease;
 }
 
@@ -4265,7 +4265,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.02);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: rgba(147, 155, 245, 0.9);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -4284,7 +4284,7 @@ h1, h2, h3, h4, h5, h6 {
 .pack-option {
   background: rgba(255, 255, 255, 0.02);
   border: 2px solid rgba(147, 155, 245, 0.15);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;

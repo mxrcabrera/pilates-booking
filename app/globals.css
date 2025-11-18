@@ -945,12 +945,13 @@ h1, h2, h3, h4, h5, h6 {
    NAVBAR
    ======================================== */
 .dashboard-nav {
-  background: rgba(23, 19, 32, 0.9);
+  background: rgba(23, 19, 32, 0.95);
   backdrop-filter: blur(40px);
   border-bottom: 1px solid rgba(147, 155, 245, 0.15);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
+  isolation: isolate;
 }
 
 .nav-container {
@@ -2325,6 +2326,50 @@ h1, h2, h3, h4, h5, h6 {
   outline: none;
 }
 
+/* Date inputs con el mismo estilo que time */
+.form-group input[type="date"],
+.form-group input[type="datetime-local"] {
+  color: #ffffff;
+  color-scheme: dark;
+  background: #939bf5;
+  border: 1.5px solid #939bf5;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.form-group input[type="date"]::-webkit-calendar-picker-indicator,
+.form-group input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1);
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.form-group input[type="date"]:hover::-webkit-calendar-picker-indicator,
+.form-group input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+.form-group input[type="date"]:hover,
+.form-group input[type="datetime-local"]:hover {
+  background: #a5abf7;
+  border-color: #a5abf7;
+}
+
+.form-group input[type="date"]:focus,
+.form-group input[type="datetime-local"]:focus {
+  background: #939bf5;
+  border-color: #939bf5;
+  box-shadow: 0 0 0 3px rgba(147, 155, 245, 0.3);
+  outline: none;
+}
+
 .form-hint {
   font-size: 0.9375rem;
   color: rgba(255, 255, 255, 0.4);
@@ -2434,10 +2479,25 @@ h1, h2, h3, h4, h5, h6 {
    FORMULARIOS
    ======================================== */
 .form-message {
+  position: sticky;
+  top: 1rem;
   padding: 12px 16px;
   border-radius: var(--radius-md);
   font-size: 0.9375rem;
   margin-bottom: 1rem;
+  z-index: 50;
+  animation: slideInDown 0.3s ease;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .form-message.success {
@@ -2468,11 +2528,16 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(147, 155, 245, 0.08);
   border: 1.5px solid rgba(147, 155, 245, 0.25);
   border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
+  padding: 1rem 2.5rem 1rem 1.25rem;
   color: rgba(255, 255, 255, var(--opacity-text-primary));
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 16px;
 }
 
 .form-group select:focus {
@@ -2691,8 +2756,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .horario-slot {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1.5rem;
   padding: 1.5rem 2rem;
   background: rgba(147, 155, 245, 0.05);
@@ -2798,14 +2865,12 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(147, 155, 245, 0.4);
 }
 
-.horario-slot-main {
-  display: contents;
-}
-
 .horario-slot-info {
   display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
+  gap: 0.5rem;
 }
 
 .horario-slot-time-container {

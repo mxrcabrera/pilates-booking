@@ -80,8 +80,15 @@ body::before {
 }
 
 @keyframes morphWaves {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }
-  50% { transform: translate(20px, -20px) scale(1.1); opacity: 0.8; }
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    will-change: transform, opacity;
+  }
+  50% {
+    transform: translate3d(20px, -20px, 0) scale(1.1);
+    opacity: 0.8;
+  }
 }
 
 /* ========================================
@@ -132,8 +139,15 @@ body::before {
 }
 
 @keyframes morphWaves2 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }
-  50% { transform: translate(-30px, 30px) scale(1.15); opacity: 0.9; }
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    will-change: transform, opacity;
+  }
+  50% {
+    transform: translate3d(-30px, 30px, 0) scale(1.15);
+    opacity: 0.9;
+  }
 }
 
 /* ========================================
@@ -156,8 +170,8 @@ body::before {
 }
 
 @keyframes cardFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -6px, 0); }
 }
 
 .login-header {

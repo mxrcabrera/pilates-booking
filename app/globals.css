@@ -2101,7 +2101,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .accordion-body {
-  padding: 0 1.25rem 2rem 1.25rem;
+  padding: 0 0 2rem 0;
 }
 
 @media (max-width: 768px) {
@@ -2114,7 +2114,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .accordion-body {
-    padding: 0 1.5rem 1.5rem 1.5rem;
+    padding: 0 0 1.5rem 0;
   }
 
   .settings-accordion-container {

@@ -2148,7 +2148,7 @@ h1, h2, h3, h4, h5, h6 {
 .section-actions {
   display: flex;
   justify-content: flex-end;
-  padding-top: 1.5rem;
+  padding: 1.5rem 1.25rem 0 1.25rem;
   margin-bottom: 1.5rem;
 }
 
@@ -2163,6 +2163,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  padding: 0 1.25rem;
 }
 
 .form-group {
@@ -2237,7 +2238,7 @@ h1, h2, h3, h4, h5, h6 {
 .form-divider {
   height: 1px;
   background: rgba(147, 155, 245, 0.15);
-  margin: 2rem 0;
+  margin: 0.5rem 0;
 }
 
 .form-actions {
@@ -2564,6 +2565,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  padding: 0 1.25rem;
 }
 
 .horario-dia {

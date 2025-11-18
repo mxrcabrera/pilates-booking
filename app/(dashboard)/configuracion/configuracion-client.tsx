@@ -141,7 +141,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
         <div className="form-divider" style={{ margin: '3rem 0' }}></div>
 
         {/* Configuración de Horarios */}
-        <div>
+        <div className="section-content">
           <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'rgba(255, 255, 255, 0.95)', marginBottom: '1.5rem' }}>
             Configuración de Clases
           </h3>
@@ -234,7 +234,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
         title="Packs y Precios"
         icon={<DollarSign size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
-        <div style={{ marginTop: '1rem' }}>
+        <div className="section-content">
           {messagePacks && (
             <div className={`form-message ${messagePacks.type}`} style={{ marginBottom: '1.5rem' }}>
               {messagePacks.text}
@@ -288,7 +288,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
         title="Integraciones y Sistema"
         icon={<Settings2 size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
-        <div style={{ marginTop: '1rem' }}>
+        <div className="section-content">
           {messageSistema && (
             <div className={`form-message ${messageSistema.type}`} style={{ marginBottom: '1.5rem' }}>
               {messageSistema.text}

@@ -678,6 +678,9 @@ body::before {
   font-weight: 500;
   color: #939BF5;
   min-width: 80px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .clase-info {
@@ -2218,6 +2221,9 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.2s ease;
   width: 100%;
   box-sizing: border-box;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .form-group input[type="time"]::-webkit-calendar-picker-indicator {
@@ -3723,6 +3729,9 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.9375rem;
   font-weight: 500;
   color: rgba(147, 155, 245, 1);
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .clase-info-mobile {
@@ -3996,6 +4005,9 @@ h1, h2, h3, h4, h5, h6 {
   color: rgba(255, 255, 255, 0.95);
   line-height: 1;
   margin: 0.5rem 0;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .dashboard-next-alumno {
@@ -4142,6 +4154,9 @@ h1, h2, h3, h4, h5, h6 {
   color: rgba(147, 155, 245, 0.9);
   flex-shrink: 0;
   min-width: 50px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .dashboard-clase-compact-info {

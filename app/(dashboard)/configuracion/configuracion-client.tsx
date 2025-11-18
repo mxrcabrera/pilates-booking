@@ -1,7 +1,7 @@
 'use client'
 
 import { Calendar, DollarSign, Settings2 } from 'lucide-react'
-import { Accordion } from '@/components/accordion'
+import { AccordionGroup, Accordion } from '@/components/accordion'
 import { HorariosSection } from './horarios-section'
 import { PacksSection } from './packs-section'
 import { updatePreferencias } from './actions'
@@ -108,9 +108,10 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
   }
 
   return (
-    <div className="settings-accordion-container">
+    <AccordionGroup>
       {/* Sección: Horarios y Disponibilidad */}
       <Accordion
+        id="horarios"
         title="Horarios y Disponibilidad"
         icon={<Calendar size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
@@ -215,6 +216,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
 
       {/* Sección: Packs y Precios */}
       <Accordion
+        id="packs"
         title="Packs y Precios"
         icon={<DollarSign size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
@@ -269,6 +271,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
 
       {/* Sección: Integraciones y Sistema */}
       <Accordion
+        id="integraciones"
         title="Integraciones y Sistema"
         icon={<Settings2 size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
@@ -334,6 +337,6 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
         </form>
         </div>
       </Accordion>
-    </div>
+    </AccordionGroup>
   )
 }

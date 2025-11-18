@@ -1,23 +1,56 @@
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { useState, ReactNode, createContext, useContext } from 'react'
 import { ChevronDown } from 'lucide-react'
 
+// Context para manejar accordions exclusivos
+const AccordionGroupContext = createContext<{
+  openId: string | null
+  setOpenId: (id: string | null) => void
+} | null>(null)
+
+interface AccordionGroupProps {
+  children: ReactNode
+}
+
+export function AccordionGroup({ children }: AccordionGroupProps) {
+  const [openId, setOpenId] = useState<string | null>(null)
+
+  return (
+    <AccordionGroupContext.Provider value={{ openId, setOpenId }}>
+      <div className="settings-accordion-container">
+        {children}
+      </div>
+    </AccordionGroupContext.Provider>
+  )
+}
+
 interface AccordionProps {
+  id: string
   title: string
   icon?: ReactNode
   children: ReactNode
-  defaultOpen?: boolean
 }
 
-export function Accordion({ title, icon, children, defaultOpen = false }: AccordionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen)
+export function Accordion({ id, title, icon, children }: AccordionProps) {
+  const context = useContext(AccordionGroupContext)
+
+  if (!context) {
+    throw new Error('Accordion must be used within AccordionGroup')
+  }
+
+  const { openId, setOpenId } = context
+  const isOpen = openId === id
+
+  const handleToggle = () => {
+    setOpenId(isOpen ? null : id)
+  }
 
   return (
     <div className="accordion-item">
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="accordion-header"
         aria-expanded={isOpen}
       >

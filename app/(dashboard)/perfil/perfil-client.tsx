@@ -1,7 +1,7 @@
 'use client'
 
 import { User, Lock } from 'lucide-react'
-import { Accordion } from '@/components/accordion'
+import { AccordionGroup, Accordion } from '@/components/accordion'
 import { ProfileForm } from '../configuracion/profile-form'
 import { PasswordForm } from '../configuracion/password-form'
 
@@ -18,9 +18,10 @@ interface PerfilClientProps {
 
 export function PerfilClient({ profesor }: PerfilClientProps) {
   return (
-    <div className="settings-accordion-container">
+    <AccordionGroup>
       {/* Sección: Datos Personales */}
       <Accordion
+        id="datos-personales"
         title="Datos Personales"
         icon={<User size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
@@ -29,11 +30,12 @@ export function PerfilClient({ profesor }: PerfilClientProps) {
 
       {/* Sección: Seguridad */}
       <Accordion
+        id="seguridad"
         title="Seguridad"
         icon={<Lock size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
         <PasswordForm />
       </Accordion>
-    </div>
+    </AccordionGroup>
   )
 }

@@ -164,7 +164,6 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
                   disabled={isLoadingHorarios}
                   className="form-time-input"
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>a</span>
                 <input
                   type="time"
                   name="horarioMananaFin"
@@ -188,7 +187,6 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
                   disabled={isLoadingHorarios}
                   className="form-time-input"
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>a</span>
                 <input
                   type="time"
                   name="horarioTardeFin"
@@ -236,13 +234,14 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
         title="Packs y Precios"
         icon={<DollarSign size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
-        {messagePacks && (
-          <div className={`form-message ${messagePacks.type}`} style={{ marginBottom: '1.5rem' }}>
-            {messagePacks.text}
-          </div>
-        )}
+        <div style={{ marginTop: '1rem' }}>
+          {messagePacks && (
+            <div className={`form-message ${messagePacks.type}`} style={{ marginBottom: '1.5rem' }}>
+              {messagePacks.text}
+            </div>
+          )}
 
-        <form onSubmit={handlePacksSubmit} className="form-content">
+          <form onSubmit={handlePacksSubmit} className="form-content">
           <div className="form-group">
             <label>Anticipación Mínima para Reservas</label>
             <select
@@ -281,6 +280,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           </p>
           <PacksSection packs={packs} />
         </div>
+        </div>
       </Accordion>
 
       {/* Sección: Integraciones y Sistema */}
@@ -288,13 +288,14 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
         title="Integraciones y Sistema"
         icon={<Settings2 size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
       >
-        {messageSistema && (
-          <div className={`form-message ${messageSistema.type}`} style={{ marginBottom: '1.5rem' }}>
-            {messageSistema.text}
-          </div>
-        )}
+        <div style={{ marginTop: '1rem' }}>
+          {messageSistema && (
+            <div className={`form-message ${messageSistema.type}`} style={{ marginBottom: '1.5rem' }}>
+              {messageSistema.text}
+            </div>
+          )}
 
-        <form onSubmit={handleSistemaSubmit} className="form-content">
+          <form onSubmit={handleSistemaSubmit} className="form-content">
           <div className="form-group">
             <label>Espacio Compartido</label>
             <input
@@ -347,6 +348,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
             </button>
           </div>
         </form>
+        </div>
       </Accordion>
     </div>
   )

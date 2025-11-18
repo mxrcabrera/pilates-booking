@@ -38,6 +38,68 @@
     /* Success y warnings brillantes */
     --success: 34 197 94;
     --warning: 251 191 36;
+
+    /* ============================================
+       SISTEMA DE DISEÑO - VARIABLES UNIFICADAS
+       ============================================ */
+
+    /* ESPACIADO - Sistema de 4px base */
+    --space-xs: 0.25rem;    /* 4px */
+    --space-sm: 0.5rem;     /* 8px */
+    --space-md: 0.75rem;    /* 12px */
+    --space-lg: 1rem;       /* 16px */
+    --space-xl: 1.5rem;     /* 24px */
+    --space-2xl: 2rem;      /* 32px */
+    --space-3xl: 2.5rem;    /* 40px */
+    --space-4xl: 3rem;      /* 48px */
+
+    /* BORDER RADIUS - Sistema consistente */
+    --radius-sm: 0.5rem;    /* 8px - inputs pequeños, badges */
+    --radius-md: 0.75rem;   /* 12px - botones, inputs */
+    --radius-lg: 1rem;      /* 16px - cards */
+    --radius-xl: 1.25rem;   /* 20px - modales */
+    --radius-2xl: 1.5rem;   /* 24px - containers grandes */
+
+    /* OPACIDADES - Jerarquía simplificada */
+    --opacity-border-subtle: 0.1;
+    --opacity-border-default: 0.2;
+    --opacity-border-strong: 0.3;
+
+    --opacity-bg-subtle: 0.03;
+    --opacity-bg-default: 0.05;
+    --opacity-bg-medium: 0.08;
+    --opacity-bg-strong: 0.12;
+
+    --opacity-text-primary: 0.95;
+    --opacity-text-secondary: 0.75;
+    --opacity-text-tertiary: 0.5;
+    --opacity-text-disabled: 0.3;
+
+    /* TAMAÑOS DE FUENTE - Sistema consistente */
+    --font-xs: 0.75rem;      /* 12px */
+    --font-sm: 0.875rem;     /* 14px */
+    --font-base: 1rem;       /* 16px */
+    --font-lg: 1.125rem;     /* 18px */
+    --font-xl: 1.25rem;      /* 20px */
+    --font-2xl: 1.5rem;      /* 24px */
+    --font-3xl: 2rem;        /* 32px */
+
+    /* FONT WEIGHTS - Jerarquía clara */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+
+    /* TAMAÑOS DE ICONOS - Sistema consistente */
+    --icon-sm: 1rem;         /* 16px */
+    --icon-md: 1.25rem;      /* 20px */
+    --icon-lg: 1.5rem;       /* 24px */
+    --icon-xl: 2rem;         /* 32px */
+
+    /* HEIGHTS - Alturas consistentes */
+    --height-input: 2.75rem;  /* 44px - todos los inputs */
+    --height-button-sm: 2rem; /* 32px - botones pequeños */
+    --height-button: 2.75rem; /* 44px - botones normales */
   }
 }
 
@@ -2200,12 +2262,13 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-group input,
 .form-group select {
-  background: rgba(147, 155, 245, 0.05);
-  border: 1.5px solid rgba(147, 155, 245, 0.2);
-  border-radius: 12px;
-  padding: 1rem 0.8rem;
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 0.8rem;
+  background: rgba(147, 155, 245, var(--opacity-bg-default));
+  border: 1.5px solid rgba(147, 155, 245, var(--opacity-border-default));
+  border-radius: var(--radius-md);
+  padding: var(--space-lg) var(--space-md);
+  color: rgba(255, 255, 255, var(--opacity-text-primary));
+  font-size: var(--font-base);
+  min-height: var(--height-input);
   transition: all 0.2s ease;
 }
 
@@ -2983,10 +3046,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .modal-body,
 .dialog-body {
-  padding: 2.5rem;
+  padding: var(--space-3xl);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--space-xl);
 }
 
 .modal-footer,
@@ -3308,10 +3371,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-slot="dialog-content"] .dialog-body {
-  padding: 2rem !important;
+  padding: var(--space-2xl) !important;
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: var(--space-xl);
   overflow-y: auto !important;
   flex: 1 !important;
   min-height: 0;

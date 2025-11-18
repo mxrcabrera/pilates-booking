@@ -50,7 +50,18 @@ export default async function CalendarioPage() {
         lte: finRango
       }
     },
-    include: {
+    select: {
+      id: true,
+      fecha: true,
+      horaInicio: true,
+      horaRecurrente: true,
+      estado: true,
+      esClasePrueba: true,
+      esRecurrente: true,
+      frecuenciaSemanal: true,
+      diasSemana: true,
+      profesorId: true,
+      alumnoId: true,
       alumno: {
         select: {
           id: true,

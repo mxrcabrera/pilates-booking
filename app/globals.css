@@ -2593,8 +2593,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .horario-slot {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  display: flex;
   align-items: center;
   gap: 1.25rem;
   padding: 1.25rem 1.75rem;

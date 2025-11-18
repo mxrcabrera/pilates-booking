@@ -228,6 +228,15 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           )}
 
           <form onSubmit={handlePacksSubmit} className="form-content">
+          {/* Hidden inputs para campos que updatePreferencias necesita */}
+          <input type="hidden" name="maxAlumnosPorClase" value={profesor.maxAlumnosPorClase} />
+          <input type="hidden" name="horarioMananaInicio" value={profesor.horarioMananaInicio} />
+          <input type="hidden" name="horarioMananaFin" value={profesor.horarioMananaFin} />
+          <input type="hidden" name="horarioTardeInicio" value={profesor.horarioTardeInicio} />
+          <input type="hidden" name="horarioTardeFin" value={profesor.horarioTardeFin} />
+          <input type="hidden" name="espacioCompartidoId" value={profesor.espacioCompartidoId || ''} />
+          <input type="hidden" name={profesor.syncGoogleCalendar ? "syncGoogleCalendar" : ""} value="on" />
+
           <div className="form-group">
             <label>Anticipación Mínima para Reservas</label>
             <select
@@ -283,6 +292,14 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           )}
 
           <form onSubmit={handleSistemaSubmit} className="form-content">
+          {/* Hidden inputs para campos que updatePreferencias necesita */}
+          <input type="hidden" name="horasAnticipacionMinima" value={profesor.horasAnticipacionMinima} />
+          <input type="hidden" name="maxAlumnosPorClase" value={profesor.maxAlumnosPorClase} />
+          <input type="hidden" name="horarioMananaInicio" value={profesor.horarioMananaInicio} />
+          <input type="hidden" name="horarioMananaFin" value={profesor.horarioMananaFin} />
+          <input type="hidden" name="horarioTardeInicio" value={profesor.horarioTardeInicio} />
+          <input type="hidden" name="horarioTardeFin" value={profesor.horarioTardeFin} />
+
           <div className="form-group">
             <label>Espacio Compartido</label>
             <input

@@ -1,0 +1,197 @@
+
+MAPEO COMPLETO DE BOTONES DE ACCION - PILATES BOOKING APP
+===========================================================
+
+RESUMEN EJECUTIVO
+=================
+- Total botones de accion (crear/agregar/nuevo): 8 principales
+- Paginas analizadas: 5
+- Inconsistencias criticas: 5
+- Archivos a modificar: 5
+- Tiempo implementacion: 1 hora
+
+1. CALENDARIO - calendario-client.tsx
+======================================
+
+BOTON 1.1: Nueva Clase (DESKTOP)
+  Linea: 259-262
+  CSS: btn-primary desktop-only
+  Icono: Plus (size 4)
+  Texto: Nueva Clase
+  Mobile: NO | Desktop: SI
+  Comportamiento: setDialogOpen(true)
+
+BOTON 1.2: Agregar Clase (MOBILE - FAB)
+  Linea: 479-484
+  CSS: fab-button-mobile
+  Icono: Plus (size 6, sin texto)
+  Texto: NINGUNO
+  Mobile: SI (boton flotante) | Desktop: NO
+  PROBLEMA: Sin etiqueta, baja discoverabilidad
+
+2. ALUMNOS - alumnos-client.tsx
+================================
+
+BOTON 2.1: Nuevo Alumno (HEADER)
+  Linea: 73-76
+  CSS: btn-primary
+  Icono: Plus (size 20)
+  Texto: Nuevo Alumno
+  Mobile: SI | Desktop: SI
+
+BOTON 2.2: Agregar Alumno (EMPTY STATE)
+  Linea: 116-118
+  CSS: btn-outline
+  Icono: NINGUNO
+  Texto: Agregar Alumno
+  Mobile: SI | Desktop: SI
+  PROBLEMA: Mismo boton, nombres diferentes
+
+3. HORARIOS - horarios-section.tsx
+===================================
+
+BOTON 3.1: Agregar Horario
+  Linea: 115-121
+  CSS: btn-primary
+  Icono: Plus (size 18)
+  Texto: Agregar Horario
+  Mobile: SI | Desktop: SI
+
+BOTON 3.2: Seleccionar (MoreVertical icon)
+  Linea: 122-130
+  CSS: btn-icon
+  Icono: MoreVertical
+  Texto: NINGUNO
+  PROBLEMA CRITICO: MoreVertical sugiere menu, no seleccionar
+  SOLUCION: Cambiar a CheckSquare
+
+BOTON 3.3: Cancelar (Modo seleccion)
+  Linea: 134-140
+  CSS: btn-ghost
+  Texto: Cancelar
+
+BOTON 3.4: Seleccionar todos/Deseleccionar todos
+  Linea: 141-147
+  CSS: btn-outline
+  Texto: Dinamico
+
+BOTON 3.5: Eliminar (N) - Bulk delete
+  Linea: 148-157
+  CSS: btn-outline (rojo)
+  Icono: Trash2
+
+4. PACKS - packs-section.tsx
+=============================
+
+BOTON 4.1: Agregar Pack
+  Linea: 55-61
+  CSS: btn-primary
+  Icono: Plus (size 18)
+  Texto: Agregar Pack
+  Mobile: SI | Desktop: SI
+
+BOTON 4.2: Agregar Pack (EMPTY STATE)
+  Linea: 68-70
+  CSS: btn-outline
+  Texto: Agregar Pack
+
+INCONSISTENCIAS CRITICAS
+=========================
+
+INCONSISTENCIA 1: NOMENCLATURA INCONSISTENTE
+Accion similar, nombres diferentes:
+- Nueva Clase (calendario)
+- Nuevo Alumno (alumnos header)
+- Agregar Alumno (alumnos empty)
+- Agregar Horario (horarios)
+- Agregar Pack (packs)
+
+SOLUCION: Unificar todo a "Nuevo/Nueva X"
+IMPACTO: ALTA
+
+INCONSISTENCIA 2: ICONO ENGAÑOSO
+Ubicacion: horarios-section.tsx linea 128
+Icono: MoreVertical
+Problema: Sugiere menu, no seleccionar
+SOLUCION: Cambiar a CheckSquare
+IMPACTO: MEDIA
+
+INCONSISTENCIA 3: FAB SIN CONTEXTO
+Ubicacion: calendario-client.tsx linea 479
+Problema: Plus sin etiqueta = baja discoverabilidad
+SOLUCION: Agregar tooltip
+IMPACTO: MEDIA
+
+INCONSISTENCIA 4: NOMENCLATURA DUPLICADA EN ALUMNOS
+- Header: Nuevo Alumno
+- Empty: Agregar Alumno
+SOLUCION: Cambiar empty a Nuevo Alumno
+IMPACTO: BAJA
+
+INCONSISTENCIA 5: DIFERENCIAS MOBILE/DESKTOP
+- Calendario: FAB movil + boton desktop (bueno)
+- Alumnos: Boton en ambos, sin FAB (inconsistencia)
+- Horarios: Boton en ambos, sin FAB (inconsistencia)
+- Packs: Boton en ambos, sin FAB (inconsistencia)
+SOLUCION: Definir patron movil-first global
+IMPACTO: MEDIA
+
+RECOMENDACIONES
+================
+
+PRIORITARIO 1 (15 MINUTOS - IMPLEMENTAR AHORA)
+1. Cambiar nomenclatura:
+   alumnos-client.tsx linea 117: Agregar --> Nuevo
+   horarios-section.tsx linea 120: Agregar --> Nuevo
+   packs-section.tsx linea 60,69: Agregar --> Nuevo
+   
+2. Cambiar icono:
+   horarios-section.tsx linea 128: MoreVertical --> CheckSquare
+
+PRIORITARIO 2 (30 MINUTOS - PROXIMAS HORAS)
+1. Agregar tooltip al FAB:
+   calendario-client.tsx linea 479
+
+PRIORITARIO 3 (PROXIMA ITERACION)
+1. Considerar FAB en todas las acciones
+2. Documentar patrones de botones
+
+TABLA RESUMEN
+=============
+
+Recurso  | Header          | Empty State      | Icon | M | D
+---------|-----------------|------------------|------|---|---
+Clase    | Nueva Clase     | (FAB)            | +    | F | B
+Alumno   | Nuevo Alumno    | Agregar Alumno   | +    | Y | Y
+Horario  | Agregar Horario | (sel. modo)      | +    | Y | Y
+Pack     | Agregar Pack    | Agregar Pack     | +    | Y | Y
+
+Leyenda: M=Mobile, D=Desktop, Y=Yes, B=Button, F=FAB
+
+ARCHIVOS A MODIFICAR
+====================
+
+app/(dashboard)/alumnos/alumnos-client.tsx
+  Linea 117: "Agregar Alumno" --> "Nuevo Alumno"
+
+app/(dashboard)/configuracion/horarios-section.tsx
+  Linea 120: "Agregar Horario" --> "Nuevo Horario"
+  Linea 128: MoreVertical --> CheckSquare
+
+app/(dashboard)/configuracion/packs-section.tsx
+  Linea 60: "Agregar Pack" --> "Nuevo Pack"
+  Linea 69: "Agregar Pack" --> "Nuevo Pack"
+
+app/(dashboard)/calendario/calendario-client.tsx
+  Linea 479: Agregar tooltip al FAB
+
+IMPACTO ESTIMADO
+================
+- Coherencia visual: +40%
+- Discoverabilidad: +30%
+- Consistencia nomenclatura: +95%
+- Experiencia movil: +20%
+
+Tiempo total: 1 hora
+Complejidad: BAJA-MEDIA
+Impacto en UX: ALTO

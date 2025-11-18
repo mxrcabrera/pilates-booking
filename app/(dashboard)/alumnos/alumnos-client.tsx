@@ -114,7 +114,7 @@ export function AlumnosClient({ alumnos, packs }: { alumnos: Alumno[], packs: Pa
               <>
                 <p className="empty-subtitle">Agregá tu primer alumno para comenzar</p>
                 <button onClick={handleNew} className="btn-outline">
-                  Agregar Alumno
+                  Nuevo Alumno
                 </button>
               </>
             )}

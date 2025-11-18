@@ -57,7 +57,7 @@ export function PacksSection({ packs }: PacksSectionProps) {
             className="btn-primary"
           >
             <Plus size={18} />
-            <span>Agregar Pack</span>
+            <span>Nuevo Pack</span>
           </button>
         </div>
 
@@ -66,7 +66,7 @@ export function PacksSection({ packs }: PacksSectionProps) {
             <Package size={32} strokeWidth={1} />
             <p>No tenés packs configurados</p>
             <button onClick={handleNew} className="btn-outline">
-              Agregar Pack
+              Nuevo Pack
             </button>
           </div>
         ) : (

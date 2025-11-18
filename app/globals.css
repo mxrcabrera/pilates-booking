@@ -2946,7 +2946,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem 2rem;
+  padding: 2rem 2rem;
   border-bottom: 1px solid rgba(147, 155, 245, 0.1);
 }
 
@@ -3241,7 +3241,6 @@ h1, h2, h3, h4, h5, h6 {
 [data-slot="dialog-content"] {
   background: rgba(23, 19, 32, 0.98) !important;
   border: 1.5px solid rgba(147, 155, 245, 0.2) !important;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
   border-radius: 20px !important;
   padding: 0 !important;
   width: calc(100vw - 2rem) !important;
@@ -3281,8 +3280,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-slot="dialog-close"] {
-  position: absolute !important;
-  top: 0.4rem !important;
   right: 2rem !important;
   width: 40px !important;
   height: 40px !important;

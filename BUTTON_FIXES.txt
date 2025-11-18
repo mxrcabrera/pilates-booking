@@ -1,0 +1,166 @@
+CAMBIOS ESPECIFICOS RECOMENDADOS - BOTONES DE ACCION
+=====================================================
+
+ARCHIVO 1: app/(dashboard)/alumnos/alumnos-client.tsx
+=====================================================
+
+LINEA 117 - CAMBIO 1 DE 6
+FROM:  <button onClick={handleNew} className="btn-outline">
+         Agregar Alumno
+       </button>
+
+TO:    <button onClick={handleNew} className="btn-outline">
+         Nuevo Alumno
+       </button>
+
+RAZON: Unificar nomenclatura con header ("Nuevo Alumno")
+
+
+ARCHIVO 2: app/(dashboard)/configuracion/horarios-section.tsx
+==============================================================
+
+LINEA 120 - CAMBIO 2 DE 6
+FROM:  <Plus size={18} />
+       <span>Agregar Horario</span>
+
+TO:    <Plus size={18} />
+       <span>Nuevo Horario</span>
+
+RAZON: Unificar nomenclatura a "Nuevo X"
+
+
+LINEA 128 - CAMBIO 3 DE 6
+FROM:  import { ... MoreVertical ... } from 'lucide-react'
+
+TO:    import { ... CheckSquare ... } from 'lucide-react'
+
+RAZON: Import del nuevo icono
+
+
+LINEA 128 - CAMBIO 4 DE 6 (mismo lugar, HTML)
+FROM:  <MoreVertical size={20} />
+
+TO:    <CheckSquare size={20} />
+
+RAZON: Cambiar icono engañoso a algo mas intuitivo
+       MoreVertical sugiere menu, CheckSquare sugiere seleccionar
+
+
+ARCHIVO 3: app/(dashboard)/configuracion/packs-section.tsx
+===========================================================
+
+LINEA 60 - CAMBIO 5 DE 6
+FROM:  <Plus size={18} />
+       <span>Agregar Pack</span>
+
+TO:    <Plus size={18} />
+       <span>Nuevo Pack</span>
+
+RAZON: Unificar nomenclatura a "Nuevo X"
+
+
+LINEA 69 - CAMBIO 6 DE 6
+FROM:  <button onClick={handleNew} className="btn-outline">
+         Agregar Pack
+       </button>
+
+TO:    <button onClick={handleNew} className="btn-outline">
+         Nuevo Pack
+       </button>
+
+RAZON: Unificar nomenclatura a "Nuevo X"
+
+
+OPCIONAL - ARCHIVO 4: app/(dashboard)/calendario/calendario-client.tsx
+=======================================================================
+
+LINEA 479 - CAMBIO OPCIONAL 1 (Mejorar UX)
+FROM:  <button
+         onClick={() => setDialogOpen(true)}
+         className="fab-button-mobile"
+       >
+         <Plus className="w-6 h-6 text-white" />
+       </button>
+
+TO:    <button
+         onClick={() => setDialogOpen(true)}
+         className="fab-button-mobile"
+         aria-label="Nueva clase"
+         title="Nueva clase"
+       >
+         <Plus className="w-6 h-6 text-white" />
+       </button>
+
+RAZON: Agregar etiquetas de accesibilidad
+       aria-label: Para lectores de pantalla
+       title: Para tooltip al pasar mouse
+       
+NOTA: Si existe componente Tooltip, envolver el boton:
+      <Tooltip text="Nueva clase">
+        <button ...>...</button>
+      </Tooltip>
+
+
+RESUMEN DE CAMBIOS
+==================
+
+Total de cambios: 6 principales + 1 opcional
+
+Archivos afectados:
+1. alumnos-client.tsx - 1 cambio
+2. horarios-section.tsx - 2 cambios
+3. packs-section.tsx - 2 cambios
+4. calendario-client.tsx - 1 cambio opcional
+
+Lineas totales a cambiar: 6 lineas (15-20 minutos)
+
+Cambios por tipo:
+- Buscar/Reemplazar nomenclatura: 5 cambios
+- Cambiar icono (import + uso): 2 cambios
+- Agregar atributos accesibilidad: 1 cambio opcional
+
+Impacto en compilacion: NINGUNO (cambios simples)
+Riesgo de regresi+n: BAJO
+Testing requerido: Visual (verificar UI)
+
+ORDEN DE IMPLEMENTACION SUGERIDO
+=================================
+
+1. Hacer cambios en nomenclatura (5 buscar/reemplazar)
+   Tiempo: 5 minutos
+   
+2. Cambiar icono MoreVertical (import + uso)
+   Tiempo: 5 minutos
+   
+3. Agregar tooltip/aria-label FAB (opcional)
+   Tiempo: 5 minutos
+
+4. Verificar visualmente los cambios en navegador
+   Tiempo: 5 minutos
+
+TOTAL: 15-20 minutos
+
+VALIDACION POST-CAMBIOS
+========================
+
+Verificar en navegador:
+1. Pagina Alumnos: Boton empty state dice "Nuevo Alumno"
+2. Pagina Horarios: Boton dice "Nuevo Horario"
+3. Pagina Horarios: Icono es CheckSquare (cuadrado)
+4. Pagina Packs: Boton dice "Nuevo Pack"
+5. Pagina Calendario (Mobile): Boton FAB tiene etiqueta al pasar mouse
+
+CHECKLIST
+=========
+
+[ ] Cambiar Agregar Alumno a Nuevo Alumno (alumnos-client linea 117)
+[ ] Cambiar Agregar Horario a Nuevo Horario (horarios-section linea 120)
+[ ] Cambiar import MoreVertical a CheckSquare (horarios-section linea 5)
+[ ] Cambiar <MoreVertical> a <CheckSquare> (horarios-section linea 128)
+[ ] Cambiar Agregar Pack a Nuevo Pack (packs-section linea 60)
+[ ] Cambiar Agregar Pack a Nuevo Pack (packs-section linea 69)
+[ ] Agregar aria-label al FAB (calendario-client linea 479) - OPCIONAL
+[ ] Verificar visualmente en navegador
+[ ] Probar en mobile y desktop
+[ ] Commit y push a rama
+

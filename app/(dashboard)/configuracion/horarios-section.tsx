@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, Plus, Trash2, Edit2, MoreVertical } from 'lucide-react'
+import { Clock, Plus, Trash2, Edit2, CheckSquare } from 'lucide-react'
 import { HorarioDialog } from './horario-dialog'
 import { deleteHorario, toggleHorario } from './actions'
 
@@ -117,7 +117,7 @@ export function HorariosSection({
                 className="btn-primary"
               >
                 <Plus size={18} />
-                <span>Agregar Horario</span>
+                <span>Nuevo Horario</span>
               </button>
               {horarios.length > 0 && (
                 <button
@@ -125,7 +125,7 @@ export function HorariosSection({
                   className="btn-icon"
                   title="Seleccionar horarios"
                 >
-                  <MoreVertical size={20} />
+                  <CheckSquare size={20} />
                 </button>
               )}
             </>
@@ -164,7 +164,7 @@ export function HorariosSection({
             <Clock size={32} strokeWidth={1} />
             <p>No tenés horarios configurados</p>
             <button onClick={handleNew} className="btn-outline">
-              Agregar Horario
+              Nuevo Horario
             </button>
           </div>
         ) : (

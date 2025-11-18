@@ -2759,18 +2759,15 @@ h1, h2, h3, h4, h5, h6 {
 
 .horario-slot {
   position: relative;
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1rem;
   padding: 1.5rem 2rem;
   background: rgba(147, 155, 245, 0.05);
   border: 2px solid rgba(147, 155, 245, 0.15);
   border-radius: 16px;
   transition: all 0.2s ease;
-  min-width: 0;
-  flex-wrap: nowrap;
 }
 
 .horario-slot.inactive {
@@ -2873,10 +2870,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: row;
   align-items: center;
-  flex: 1;
-  min-width: 0;
   gap: 1rem;
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .horario-slot-time-container {
@@ -2884,7 +2879,6 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: row;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .horario-time {
@@ -2921,8 +2915,6 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-shrink: 0;
-  margin-left: auto;
 }
 
 .btn-icon-xs {

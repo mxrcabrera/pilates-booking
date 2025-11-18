@@ -45,9 +45,6 @@ export default async function ConfiguracionPage() {
       <ConfiguracionClient
         profesor={{
           id: user.id,
-          nombre: user.nombre,
-          email: user.email,
-          telefono: user.telefono,
           horasAnticipacionMinima: user.horasAnticipacionMinima,
           maxAlumnosPorClase: user.maxAlumnosPorClase,
           horarioMananaInicio: user.horarioMananaInicio,

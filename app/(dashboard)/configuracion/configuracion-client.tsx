@@ -1,9 +1,7 @@
 'use client'
 
-import { User, Calendar, DollarSign, Settings2 } from 'lucide-react'
+import { Calendar, DollarSign, Settings2 } from 'lucide-react'
 import { Accordion } from '@/components/accordion'
-import { ProfileForm } from './profile-form'
-import { PasswordForm } from './password-form'
 import { HorariosSection } from './horarios-section'
 import { PacksSection } from './packs-section'
 import { updatePreferencias } from './actions'
@@ -28,9 +26,6 @@ type Pack = {
 
 type Profesor = {
   id: string
-  nombre: string
-  email: string
-  telefono: string | null
   horasAnticipacionMinima: number
   maxAlumnosPorClase: number
   horarioMananaInicio: string
@@ -114,17 +109,6 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
 
   return (
     <div className="settings-accordion-container">
-      {/* Sección: Mi Perfil */}
-      <Accordion
-        title="Mi Perfil"
-        icon={<User size={24} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
-        defaultOpen={true}
-      >
-        <ProfileForm profesor={profesor} />
-        <div className="form-divider" style={{ margin: '2rem 0' }}></div>
-        <PasswordForm />
-      </Accordion>
-
       {/* Sección: Horarios y Disponibilidad */}
       <Accordion
         title="Horarios y Disponibilidad"

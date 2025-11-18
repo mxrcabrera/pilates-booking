@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, Clock } from 'lucide-react'
+import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, User } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 
 type Profesor = {
@@ -16,6 +16,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { href: '/calendario', icon: Calendar, label: 'Calendario' },
   { href: '/alumnos', icon: Users, label: 'Alumnos' },
+  { href: '/perfil', icon: User, label: 'Mi Perfil' },
   { href: '/configuracion', icon: Settings, label: 'Configuración' },
 ]
 
@@ -24,11 +25,8 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const isConfigPage = pathname === '/configuracion'
-
   const handleAvatarClick = () => {
-    // Always navigate to config page (Mi Perfil accordion opens by default)
-    router.push('/configuracion')
+    router.push('/perfil')
   }
 
   return (

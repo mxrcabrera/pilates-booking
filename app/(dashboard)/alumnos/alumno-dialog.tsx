@@ -86,7 +86,8 @@ export function AlumnoDialog({
   const formatDateForInput = (dateString: string | null) => {
     if (!dateString) return ''
     return dateString.split('T')[0]
-}
+  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

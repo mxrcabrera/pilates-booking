@@ -101,22 +101,39 @@ export async function saveHorario(formData: FormData) {
   }
 
   if (id) {
-    // Actualizar
+    // Actualizar (modo edición)
     await prisma.horarioDisponible.update({
       where: { id },
       data: { diaSemana, horaInicio, horaFin, esManiana }
     })
   } else {
-    // Crear
-    await prisma.horarioDisponible.create({
-      data: {
+    // Modo crear: buscar si ya existe un horario con el mismo día + turno
+    const existente = await prisma.horarioDisponible.findFirst({
+      where: {
         profesorId: userId,
         diaSemana,
-        horaInicio,
-        horaFin,
         esManiana
       }
     })
+
+    if (existente) {
+      // Si existe, actualizarlo (upsert)
+      await prisma.horarioDisponible.update({
+        where: { id: existente.id },
+        data: { horaInicio, horaFin }
+      })
+    } else {
+      // Si no existe, crear uno nuevo
+      await prisma.horarioDisponible.create({
+        data: {
+          profesorId: userId,
+          diaSemana,
+          horaInicio,
+          horaFin,
+          esManiana
+        }
+      })
+    }
   }
 
   revalidatePath('/configuracion')

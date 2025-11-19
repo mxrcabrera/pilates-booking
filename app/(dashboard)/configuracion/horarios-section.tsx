@@ -109,23 +109,26 @@ export function HorariosSection({
   return (
     <div className="settings-section">
       <div className="section-content">
-        <div className="section-actions" style={{ marginBottom: '1.5rem', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {!isSelectionMode ? (
             <>
               <button
                 onClick={handleNew}
                 className="btn-primary"
+                style={{ fontSize: '0.875rem', padding: '0.5rem 1rem', minHeight: 'auto', border: '2px solid transparent', boxShadow: 'none', whiteSpace: 'nowrap', flex: 1 }}
               >
-                <Plus size={18} />
+                <Plus size={16} />
                 <span>Nuevo Horario</span>
               </button>
               {horarios.length > 0 && (
                 <button
                   onClick={() => setIsSelectionMode(true)}
-                  className="btn-icon"
-                  title="Seleccionar horarios"
+                  className="btn-ghost"
+                  title="Seleccionar múltiples"
+                  style={{ fontSize: '0.875rem', padding: '0.5rem 1rem', minHeight: 'auto', whiteSpace: 'nowrap', flex: 1 }}
                 >
-                  <CheckSquare size={20} />
+                  <CheckSquare size={16} />
+                  <span>Seleccionar</span>
                 </button>
               )}
             </>
@@ -192,14 +195,12 @@ export function HorariosSection({
                           />
                         )}
                         <div className="horario-slot-info">
-                          <div className="horario-slot-time-container">
-                            <span className="horario-time">
-                              {horario.horaInicio} - {horario.horaFin}
-                            </span>
-                            <span className="horario-turno">
-                              {horario.esManiana ? 'Mañana' : 'Tarde'}
-                            </span>
-                          </div>
+                          <span className="horario-time">
+                            {horario.horaInicio} - {horario.horaFin}
+                          </span>
+                          <span className="horario-turno">
+                            {horario.esManiana ? 'Mañana' : 'Tarde'}
+                          </span>
                         </div>
                         {!horario.estaActivo && (
                           <span className="horario-status-badge">Inactivo</span>

@@ -105,7 +105,7 @@ export function ClaseDialog({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    
+
     if (esRecurrente && (!frecuencia || diasSeleccionados.length !== frecuencia)) {
       setError(`Debes seleccionar exactamente ${frecuencia} día${frecuencia === 1 ? '' : 's'}`)
       return
@@ -115,7 +115,7 @@ export function ClaseDialog({
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-    
+
     if (esRecurrente && diasSeleccionados.length > 0) {
       formData.append('diasSemana', JSON.stringify(diasSeleccionados))
     }

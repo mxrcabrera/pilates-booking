@@ -27,7 +27,9 @@
       "Bash(git restore:*)",
       "Bash(ls:*)",
       "Bash(tree:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(\"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\app\\globals.css.tmp\")"
     ],
     "deny": [],
     "ask": []

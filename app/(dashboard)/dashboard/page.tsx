@@ -51,7 +51,7 @@ export default async function DashboardPage() {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div>
-          <h1>Bienvenida</h1>
+          <h1>Bienvenido</h1>
           <p className="date-text">
             {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
           </p>

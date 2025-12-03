@@ -29,7 +29,10 @@
       "Bash(tree:*)",
       "Bash(python:*)",
       "Bash(npm uninstall:*)",
-      "Bash(\"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\app\\globals.css.tmp\")"
+      "Bash(\"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\app\\globals.css.tmp\")",
+      "Bash(npx dotenv:*)",
+      "Bash(npx prisma validate)",
+      "Bash(del \"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\.env.local\")"
     ],
     "deny": [],
     "ask": []

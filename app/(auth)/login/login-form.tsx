@@ -37,7 +37,7 @@ export function LoginForm() {
     <div className="login-card animate-fade-in-up">
       <div className="login-header">
         <h1>Pilates Booking</h1>
-        <p>Bienvenida de vuelta</p>
+        <p>Bienvenido de vuelta</p>
       </div>
       
       {error && (

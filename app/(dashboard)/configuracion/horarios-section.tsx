@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Clock, Plus, Trash2, Edit2, CheckSquare } from 'lucide-react'
 import { HorarioDialog } from './horario-dialog'
 import { deleteHorarioAPI, toggleHorarioAPI } from '@/lib/api'
@@ -34,7 +33,6 @@ export function HorariosSection({
   horarioTardeInicio,
   horarioTardeFin
 }: HorariosSectionProps) {
-  const router = useRouter()
   const { showSuccess, showError } = useToast()
   const [horarios, setHorarios] = useState(initialHorarios)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -289,6 +287,14 @@ export function HorariosSection({
           } else {
             setHorarios(prev => [...prev, newHorario])
           }
+        }}
+        onBatchCreate={(nuevosHorarios) => {
+          setHorarios(prev => {
+            // Merge: reemplazar existentes por id, agregar nuevos
+            const horariosMap = new Map(prev.map(h => [h.id, h]))
+            nuevosHorarios.forEach(h => horariosMap.set(h.id, h))
+            return Array.from(horariosMap.values())
+          })
         }}
       />
 

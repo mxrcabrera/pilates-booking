@@ -72,6 +72,15 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs }: { alumnos: Alu
     setIsDialogOpen(true)
   }
 
+  const handleAlumnoSuccess = (alumno: Alumno, isEdit: boolean) => {
+    if (isEdit) {
+      setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, ...alumno } : a))
+    } else {
+      // Agregar nuevo alumno con _count por defecto
+      setAlumnos(prev => [...prev, { ...alumno, _count: { clases: 0, pagos: 0 } }])
+    }
+  }
+
   const handleToggleStatus = async (alumno: Alumno) => {
     // Actualización optimista
     setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, estaActivo: !a.estaActivo } : a))
@@ -190,6 +199,7 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs }: { alumnos: Alu
         }}
         alumno={editingAlumno}
         packs={packs}
+        onSuccess={handleAlumnoSuccess}
       />
 
       <AlumnoDetailSheet

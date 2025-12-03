@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { createAlumnoAPI, updateAlumnoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import {
@@ -22,6 +21,11 @@ type Alumno = {
   packType: string
   clasesPorMes: number | null
   precio: string
+  estaActivo: boolean
+  _count: {
+    clases: number
+    pagos: number
+  }
 }
 
 type Pack = {
@@ -40,14 +44,15 @@ export function AlumnoDialog({
   isOpen,
   onClose,
   alumno,
-  packs
+  packs,
+  onSuccess
 }: {
   isOpen: boolean
   onClose: () => void
   alumno: Alumno | null
   packs: Pack[]
+  onSuccess?: (alumno: Alumno, isEdit: boolean) => void
 }) {
-  const router = useRouter()
   const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -83,13 +88,14 @@ export function AlumnoDialog({
 
     try {
       if (alumno) {
-        await updateAlumnoAPI({ id: alumno.id, ...data })
+        const result = await updateAlumnoAPI({ id: alumno.id, ...data })
         showSuccess('Alumno actualizado')
+        onSuccess?.(result.alumno, true)
       } else {
-        await createAlumnoAPI(data)
+        const result = await createAlumnoAPI(data)
         showSuccess('Alumno creado')
+        onSuccess?.(result.alumno, false)
       }
-      router.refresh()
       onClose()
     } catch (err: any) {
       showError(err.message || 'Error al guardar alumno')

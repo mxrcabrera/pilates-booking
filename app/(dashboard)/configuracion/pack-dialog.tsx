@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { savePackAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import {
@@ -31,7 +30,6 @@ export function PackDialog({
   pack: Pack | null
   onSuccess?: (pack: Pack, isEdit: boolean) => void
 }) {
-  const router = useRouter()
   const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,10 +56,8 @@ export function PackDialog({
         estaActivo: pack ? formData.get('estaActivo') === 'on' : true
       })
       showSuccess(pack ? 'Pack actualizado' : 'Pack creado')
-      if (onSuccess && result.pack) {
-        onSuccess(result.pack, !!pack)
-      } else {
-        router.refresh()
+      if (result.pack) {
+        onSuccess?.(result.pack, !!pack)
       }
       onClose()
     } catch (err: any) {

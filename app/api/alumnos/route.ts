@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       case 'create': {
         const { nombre, email, telefono, cumpleanos, patologias, packType, clasesPorMes, precio } = data
 
-        await prisma.alumno.create({
+        const alumno = await prisma.alumno.create({
           data: {
             profesorId: userId,
             nombre,
@@ -30,16 +30,19 @@ export async function POST(request: NextRequest) {
             packType,
             clasesPorMes: clasesPorMes ? parseInt(clasesPorMes) : null,
             precio: new Decimal(parseFloat(precio))
+          },
+          include: {
+            _count: { select: { clases: true, pagos: true } }
           }
         })
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, alumno })
       }
 
       case 'update': {
         const { id, nombre, email, telefono, cumpleanos, patologias, packType, clasesPorMes, precio } = data
 
-        await prisma.alumno.update({
+        const alumno = await prisma.alumno.update({
           where: { id },
           data: {
             nombre,
@@ -50,10 +53,13 @@ export async function POST(request: NextRequest) {
             packType,
             clasesPorMes: clasesPorMes ? parseInt(clasesPorMes) : null,
             precio: new Decimal(parseFloat(precio))
+          },
+          include: {
+            _count: { select: { clases: true, pagos: true } }
           }
         })
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, alumno })
       }
 
       case 'toggleStatus': {

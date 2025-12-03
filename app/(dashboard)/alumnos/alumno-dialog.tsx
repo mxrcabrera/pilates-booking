@@ -77,15 +77,21 @@ export function AlumnoDialog({
     const formData = new FormData(e.currentTarget)
     const packType = formData.get('packType') as string
 
-    // Obtener precio del pack seleccionado si es un pack personalizado
+    // Obtener precio según el tipo de pack
     let precio = 0
-    if (packType.startsWith('pack_')) {
+    if (packType === 'por_clase') {
+      // Precio manual ingresado por el usuario
+      const precioPorClase = formData.get('precioPorClase') as string
+      precio = precioPorClase ? parseFloat(precioPorClase) : 0
+    } else if (packType.startsWith('pack_')) {
+      // Precio del pack personalizado
       const packId = packType.replace('pack_', '')
       const pack = packs.find(p => p.id === packId)
       if (pack) {
         precio = parseFloat(pack.precio)
       }
     }
+    // Para 'mensual' el precio es 0 (o podría venir de config)
 
     const data = {
       nombre: formData.get('nombre') as string,
@@ -264,6 +270,22 @@ export function AlumnoDialog({
                 max="31"
                 required
                 defaultValue={alumno?.clasesPorMes || ''}
+                disabled={isLoading}
+              />
+            </div>
+          )}
+
+          {selectedPack === 'por_clase' && (
+            <div className="form-group">
+              <label>Precio por Clase</label>
+              <input
+                type="number"
+                name="precioPorClase"
+                placeholder="1500"
+                min="0"
+                step="0.01"
+                required
+                defaultValue={alumno?.precio || ''}
                 disabled={isLoading}
               />
             </div>

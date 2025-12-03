@@ -305,6 +305,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           <input type="hidden" name="horarioTardeInicio" value={profesor.horarioTardeInicio} />
           <input type="hidden" name="horarioTardeFin" value={profesor.horarioTardeFin} />
 
+          {/* Espacio Compartido - comentado por ahora
           <div className="form-group">
             <label>Espacio Compartido</label>
             <input
@@ -322,6 +323,10 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           </div>
 
           <div className="form-divider" style={{ margin: '2rem 0' }}></div>
+          */}
+
+          {/* Hidden input para espacioCompartidoId ya que está comentado */}
+          <input type="hidden" name="espacioCompartidoId" value={profesor.espacioCompartidoId || ''} />
 
           <div className="form-group">
             <label>Sincronización con Google Calendar</label>

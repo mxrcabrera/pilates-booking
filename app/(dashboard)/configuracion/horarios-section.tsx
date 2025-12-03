@@ -209,7 +209,7 @@ export function HorariosSection({
                 className="btn-outline"
                 style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem', height: '36px', flex: '1 1 auto', minWidth: 0 }}
               >
-                {selectedHorarios.size === horarios.length ? 'Ninguno' : 'Todos'}
+                {selectedHorarios.size === horarios.length ? 'Quitar selección' : 'Seleccionar todo'}
               </button>
               {selectedHorarios.size > 0 && (
                 <button

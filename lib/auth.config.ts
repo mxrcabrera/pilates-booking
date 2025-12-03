@@ -1,39 +1,9 @@
 import Google from 'next-auth/providers/google'
 import Credentials from 'next-auth/providers/credentials'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import { prisma } from './prisma'
 import bcrypt from 'bcrypt'
 import type { NextAuthConfig, User } from 'next-auth'
-import type { Adapter } from 'next-auth/adapters'
-
-// Custom adapter que mapea name → nombre
-function customPrismaAdapter(): Adapter {
-  const baseAdapter = PrismaAdapter(prisma) as Adapter
-
-  return {
-    ...baseAdapter,
-    async createUser(data) {
-      const { name, ...rest } = data
-      const userData = {
-        ...rest,
-        nombre: name || '',
-      }
-
-      const user = await prisma.user.create({
-        data: userData,
-      })
-
-      return {
-        ...user,
-        name: user.nombre,
-        emailVerified: user.emailVerified || null,
-      }
-    },
-  }
-}
 
 export const authConfig: NextAuthConfig = {
-  adapter: customPrismaAdapter(),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -49,6 +19,9 @@ export const authConfig: NextAuthConfig = {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
+
+        // Dynamic import to avoid Edge Runtime issues
+        const { prisma } = await import('./prisma')
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
@@ -72,7 +45,8 @@ export const authConfig: NextAuthConfig = {
           email: user.email,
           name: user.nombre,
           image: user.image,
-        } as User
+          role: user.role,
+        } as User & { role: string }
       },
     }),
   ],
@@ -81,11 +55,9 @@ export const authConfig: NextAuthConfig = {
       if (token.sub && session.user) {
         session.user.id = token.sub
       }
-      // Pass role to session
       if (token.role) {
         (session.user as any).role = token.role
       }
-      // Pass tokens to session for Google Calendar API
       if (token.accessToken) {
         (session as any).accessToken = token.accessToken
       }
@@ -95,56 +67,17 @@ export const authConfig: NextAuthConfig = {
       return session
     },
     async jwt({ token, user, account }) {
-      if (user?.id) {
+      if (user) {
         token.sub = user.id
+        token.role = (user as any).role || 'PROFESOR'
 
-        // For Google OAuth first-time login, set default values
-        if (account?.provider === 'google' && user.email) {
-          // Guardar access_token y refresh_token para Google Calendar API
-          if (account.access_token) {
-            token.accessToken = account.access_token
-          }
-          if (account.refresh_token) {
-            token.refreshToken = account.refresh_token
-          }
-
-          const dbUser = await prisma.user.findUnique({
-            where: { email: user.email },
-          })
-
-          // Check if user needs defaults (newly created by PrismaAdapter)
-          if (dbUser && !dbUser.telefono) {
-            await prisma.user.update({
-              where: { id: dbUser.id },
-              data: {
-                horasAnticipacionMinima: 1,
-                maxAlumnosPorClase: 4,
-                horarioMananaInicio: '08:00',
-                horarioMananaFin: '14:00',
-                horarioTardeInicio: '17:00',
-                horarioTardeFin: '22:00',
-              },
-            })
-          }
-
-          // Store role in token
-          if (dbUser) {
-            token.role = dbUser.role
-          }
+        if (account?.access_token) {
+          token.accessToken = account.access_token
+        }
+        if (account?.refresh_token) {
+          token.refreshToken = account.refresh_token
         }
       }
-
-      // Always fetch latest role from database
-      if (token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { role: true },
-        })
-        if (dbUser) {
-          token.role = dbUser.role
-        }
-      }
-
       return token
     },
   },
@@ -155,5 +88,4 @@ export const authConfig: NextAuthConfig = {
     strategy: 'jwt',
   },
   secret: process.env.AUTH_SECRET,
-  debug: true,
 }

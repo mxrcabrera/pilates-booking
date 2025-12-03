@@ -207,7 +207,7 @@ export function HorariosSection({
               <button
                 onClick={toggleSelectAll}
                 className="btn-outline"
-                style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem', height: '36px', flex: '1 1 auto', minWidth: 0 }}
+                style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem', height: '36px', flex: '1 1 auto', minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 {selectedHorarios.size === horarios.length ? 'Quitar selección' : 'Seleccionar todo'}
               </button>

@@ -153,38 +153,16 @@ export const authConfig: NextAuthConfig = {
 
       // Rutas públicas
       const isPublicRoute = pathname === '/login' || pathname === '/register'
-      const isOnboarding = pathname === '/onboarding'
 
-      // Si está logueado y trata de acceder a login/register, redirigir según rol
+      // Si está logueado y trata de acceder a login/register, redirigir al dashboard
+      // La redirección según rol se maneja en las páginas
       if (isLoggedIn && isPublicRoute) {
-        const user = await prisma.user.findUnique({
-          where: { email: auth.user.email! },
-          select: { role: true },
-        })
-
-        if (user?.role === 'PROFESOR') {
-          return Response.redirect(new URL('/dashboard', request.url))
-        } else if (user?.role === 'ALUMNO') {
-          return Response.redirect(new URL('/alumno/dashboard', request.url))
-        }
+        return Response.redirect(new URL('/dashboard', request.url))
       }
 
       // Si no está logueado y trata de acceder a rutas protegidas
       if (!isLoggedIn && !isPublicRoute) {
         return Response.redirect(new URL('/login', request.url))
-      }
-
-      // Si está logueado, verificar que tenga rol asignado
-      if (isLoggedIn && !isPublicRoute && !isOnboarding) {
-        const user = await prisma.user.findUnique({
-          where: { email: auth.user.email! },
-          select: { role: true },
-        })
-
-        // Si no tiene rol o es el rol por defecto y no tiene configuración, enviar a onboarding
-        if (!user) {
-          return Response.redirect(new URL('/onboarding', request.url))
-        }
       }
 
       return true

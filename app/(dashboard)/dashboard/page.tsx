@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Calendar, Users, DollarSign } from 'lucide-react'
@@ -7,9 +8,20 @@ import { DashboardClient } from './dashboard-client'
 
 export default async function DashboardPage() {
   const userId = await getCurrentUser()
-  
+
   if (!userId) {
-    return null
+    redirect('/login')
+  }
+
+  // Verificar rol del usuario
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  })
+
+  // Si es alumno, redirigir al dashboard de alumno
+  if (user?.role === 'ALUMNO') {
+    redirect('/alumno/dashboard')
   }
 
   const hoy = format(new Date(), 'yyyy-MM-dd')

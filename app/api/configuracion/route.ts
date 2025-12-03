@@ -81,6 +81,88 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, horario })
       }
 
+      case 'saveHorariosBatch': {
+        const { horarios: horariosData } = data as {
+          horarios: Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }>
+        }
+
+        if (!horariosData || !Array.isArray(horariosData) || horariosData.length === 0) {
+          return NextResponse.json({ error: 'No hay horarios para crear' }, { status: 400 })
+        }
+
+        // Obtener horarios por defecto configurados una sola vez
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            horarioMananaInicio: true,
+            horarioMananaFin: true,
+            horarioTardeInicio: true,
+            horarioTardeFin: true
+          }
+        })
+
+        if (!user) {
+          return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+        }
+
+        // Validar todos los horarios primero
+        for (const h of horariosData) {
+          if (h.esManiana) {
+            if (h.horaInicio < user.horarioMananaInicio || h.horaFin > user.horarioMananaFin) {
+              return NextResponse.json({
+                error: `El horario de mañana debe estar entre ${user.horarioMananaInicio} y ${user.horarioMananaFin}`
+              }, { status: 400 })
+            }
+          } else {
+            if (h.horaInicio < user.horarioTardeInicio || h.horaFin > user.horarioTardeFin) {
+              return NextResponse.json({
+                error: `El horario de tarde debe estar entre ${user.horarioTardeInicio} y ${user.horarioTardeFin}`
+              }, { status: 400 })
+            }
+          }
+          if (h.horaInicio >= h.horaFin) {
+            return NextResponse.json({
+              error: 'La hora de inicio debe ser anterior a la hora de fin'
+            }, { status: 400 })
+          }
+        }
+
+        // Obtener horarios existentes para este profesor de una sola vez
+        const existentes = await prisma.horarioDisponible.findMany({
+          where: { profesorId: userId }
+        })
+        const existentesMap = new Map(
+          existentes.map(h => [`${h.diaSemana}-${h.esManiana}`, h])
+        )
+
+        // Crear/actualizar todos en una transacción
+        const resultados = await prisma.$transaction(
+          horariosData.map(h => {
+            const key = `${h.diaSemana}-${h.esManiana}`
+            const existente = existentesMap.get(key)
+
+            if (existente) {
+              return prisma.horarioDisponible.update({
+                where: { id: existente.id },
+                data: { horaInicio: h.horaInicio, horaFin: h.horaFin }
+              })
+            } else {
+              return prisma.horarioDisponible.create({
+                data: {
+                  profesorId: userId,
+                  diaSemana: h.diaSemana,
+                  horaInicio: h.horaInicio,
+                  horaFin: h.horaFin,
+                  esManiana: h.esManiana
+                }
+              })
+            }
+          })
+        )
+
+        return NextResponse.json({ success: true, horarios: resultados })
+      }
+
       case 'deleteHorario': {
         const { id } = data
         await prisma.horarioDisponible.delete({ where: { id } })

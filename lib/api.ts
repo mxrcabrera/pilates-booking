@@ -37,6 +37,15 @@ export async function toggleHorarioAPI(id: string) {
   return apiCall('toggleHorario', { id })
 }
 
+export async function saveHorariosBatchAPI(horarios: Array<{
+  diaSemana: number
+  horaInicio: string
+  horaFin: string
+  esManiana: boolean
+}>) {
+  return apiCall('saveHorariosBatch', { horarios })
+}
+
 // Packs
 export async function savePackAPI(data: {
   id?: string

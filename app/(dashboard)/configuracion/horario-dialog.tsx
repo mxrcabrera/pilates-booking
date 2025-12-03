@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { saveHorarioAPI } from '@/lib/api'
+import { saveHorarioAPI, saveHorariosBatchAPI } from '@/lib/api'
 import { ConfirmDialog } from './confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import {
@@ -115,87 +115,84 @@ export function HorarioDialog({
 
   async function procesarHorarios(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false): Promise<Horario[]> {
     const rango = RANGOS_DIAS.find(r => r.value === rangoSeleccionado)
-    const horariosCreados: Horario[] = []
+
+    // Build array of horarios to create
+    const horariosToCreate: Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }> = []
 
     if (rango && rango.dias.length > 0) {
       for (const dia of rango.dias) {
         if (excluirSabadoTarde && dia === 6 && (turnoSeleccionado === 'tarde' || turnoSeleccionado === 'ambos')) {
           if (turnoSeleccionado === 'tarde') continue
-          const result = await saveHorarioAPI({
+          horariosToCreate.push({
             diaSemana: dia,
             horaInicio: formData.get('horaInicioManiana') as string,
             horaFin: formData.get('horaFinManiana') as string,
             esManiana: true
           })
-          if (result.horario) horariosCreados.push(result.horario)
           continue
         }
 
         if (excluirDomingo && dia === 0) continue
 
         if (turnoSeleccionado === 'ambos') {
-          const result1 = await saveHorarioAPI({
+          horariosToCreate.push({
             diaSemana: dia,
             horaInicio: formData.get('horaInicioManiana') as string,
             horaFin: formData.get('horaFinManiana') as string,
             esManiana: true
           })
-          if (result1.horario) horariosCreados.push(result1.horario)
 
           // Skip tarde for Saturday if no tarde shifts are configured
           if (dia !== 6 || sabadoTieneTarde) {
-            const result2 = await saveHorarioAPI({
+            horariosToCreate.push({
               diaSemana: dia,
               horaInicio: formData.get('horaInicioTarde') as string,
               horaFin: formData.get('horaFinTarde') as string,
               esManiana: false
             })
-            if (result2.horario) horariosCreados.push(result2.horario)
           }
         } else {
-          const result = await saveHorarioAPI({
+          horariosToCreate.push({
             diaSemana: dia,
             horaInicio: formData.get('horaInicio') as string,
             horaFin: formData.get('horaFin') as string,
             esManiana: turnoSeleccionado === 'maniana'
           })
-          if (result.horario) horariosCreados.push(result.horario)
         }
       }
     } else {
-      if (turnoSeleccionado === 'ambos') {
-        const diaSemana = parseInt(formData.get('diaSemana') as string)
+      const diaSemana = parseInt(formData.get('diaSemana') as string)
 
-        const result1 = await saveHorarioAPI({
+      if (turnoSeleccionado === 'ambos') {
+        horariosToCreate.push({
           diaSemana,
           horaInicio: formData.get('horaInicioManiana') as string,
           horaFin: formData.get('horaFinManiana') as string,
           esManiana: true
         })
-        if (result1.horario) horariosCreados.push(result1.horario)
 
         // Skip tarde for Saturday if no tarde shifts are configured
         if (diaSemana !== 6 || sabadoTieneTarde) {
-          const result2 = await saveHorarioAPI({
+          horariosToCreate.push({
             diaSemana,
             horaInicio: formData.get('horaInicioTarde') as string,
             horaFin: formData.get('horaFinTarde') as string,
             esManiana: false
           })
-          if (result2.horario) horariosCreados.push(result2.horario)
         }
       } else {
-        const result = await saveHorarioAPI({
-          diaSemana: parseInt(formData.get('diaSemana') as string),
+        horariosToCreate.push({
+          diaSemana,
           horaInicio: formData.get('horaInicio') as string,
           horaFin: formData.get('horaFin') as string,
           esManiana: turnoSeleccionado === 'maniana'
         })
-        if (result.horario) horariosCreados.push(result.horario)
       }
     }
 
-    return horariosCreados
+    // Single batch API call
+    const result = await saveHorariosBatchAPI(horariosToCreate)
+    return result.horarios || []
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

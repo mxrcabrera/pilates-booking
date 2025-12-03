@@ -5,6 +5,47 @@ import { Decimal } from '@prisma/client/runtime/library'
 
 export const runtime = 'nodejs'
 
+export async function GET() {
+  try {
+    const userId = await getCurrentUser()
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const [alumnos, packs] = await Promise.all([
+      prisma.alumno.findMany({
+        where: { profesorId: userId },
+        include: {
+          _count: { select: { clases: true, pagos: true } }
+        },
+        orderBy: { nombre: 'asc' }
+      }),
+      prisma.pack.findMany({
+        where: { profesorId: userId, estaActivo: true },
+        orderBy: { clasesPorSemana: 'asc' }
+      })
+    ])
+
+    const alumnosSerializados = alumnos.map(alumno => ({
+      ...alumno,
+      precio: alumno.precio.toString(),
+      cumpleanos: alumno.cumpleanos ? alumno.cumpleanos.toISOString() : null,
+    }))
+
+    const packsSerializados = packs.map(pack => ({
+      id: pack.id,
+      nombre: pack.nombre,
+      clasesPorSemana: pack.clasesPorSemana,
+      precio: pack.precio.toString()
+    }))
+
+    return NextResponse.json({ alumnos: alumnosSerializados, packs: packsSerializados })
+  } catch (error: any) {
+    console.error('Alumnos GET error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const userId = await getCurrentUser()

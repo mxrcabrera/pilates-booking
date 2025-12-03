@@ -4,8 +4,99 @@ import { getCurrentUser } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
 import { auth } from '@/lib/auth-new'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
+import { checkPreferencesComplete } from '@/lib/preferences-guard'
 
 export const runtime = 'nodejs'
+
+export async function GET() {
+  try {
+    const userId = await getCurrentUser()
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    // Check if preferences are complete
+    const preferencesCheck = await checkPreferencesComplete(userId)
+    if (!preferencesCheck.isComplete) {
+      return NextResponse.json({
+        preferencesIncomplete: true,
+        missingFields: preferencesCheck.missingFields
+      })
+    }
+
+    const hoy = new Date()
+    const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
+    const finRango = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0)
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        espacioCompartidoId: true,
+        horarioMananaInicio: true,
+        horarioMananaFin: true,
+        horarioTardeInicio: true,
+        horarioTardeFin: true
+      }
+    })
+
+    let profesorIds = [userId]
+    if (user?.espacioCompartidoId) {
+      const usuariosEnEspacio = await prisma.user.findMany({
+        where: { espacioCompartidoId: user.espacioCompartidoId },
+        select: { id: true }
+      })
+      profesorIds = usuariosEnEspacio.map(p => p.id)
+    }
+
+    const [clases, alumnos] = await Promise.all([
+      prisma.clase.findMany({
+        where: {
+          profesorId: { in: profesorIds },
+          fecha: { gte: inicioRango, lte: finRango }
+        },
+        select: {
+          id: true,
+          fecha: true,
+          horaInicio: true,
+          horaRecurrente: true,
+          estado: true,
+          esClasePrueba: true,
+          esRecurrente: true,
+          frecuenciaSemanal: true,
+          diasSemana: true,
+          profesorId: true,
+          alumnoId: true,
+          alumno: { select: { id: true, nombre: true } },
+          profesor: { select: { id: true, nombre: true } }
+        },
+        orderBy: { horaInicio: 'asc' }
+      }),
+      prisma.alumno.findMany({
+        where: { profesorId: userId, estaActivo: true },
+        select: { id: true, nombre: true },
+        orderBy: { nombre: 'asc' }
+      })
+    ])
+
+    const clasesNormalizadas = clases.map(clase => ({
+      ...clase,
+      fecha: new Date(clase.fecha.getTime() + clase.fecha.getTimezoneOffset() * 60000).toISOString()
+    }))
+
+    return NextResponse.json({
+      clases: clasesNormalizadas,
+      alumnos,
+      currentUserId: userId,
+      horarioMananaInicio: user?.horarioMananaInicio || '08:00',
+      horarioMananaFin: user?.horarioMananaFin || '14:00',
+      horarioTardeInicio: user?.horarioTardeInicio || '17:00',
+      horarioTardeFin: user?.horarioTardeFin || '22:00'
+    })
+  } catch (error: any) {
+    console.error('Clases GET error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,52 +1,63 @@
-import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { AlumnosClient } from './alumnos-client'
+import AlumnosLoading from './loading'
 
-export default async function AlumnosPage() {
-  const userId = await getCurrentUser()
-  if (!userId) return null
+type Alumno = {
+  id: string
+  nombre: string
+  email: string
+  telefono: string
+  cumpleanos: string | null
+  patologias: string | null
+  packType: string
+  clasesPorMes: number | null
+  precio: string
+  estaActivo: boolean
+  _count: {
+    clases: number
+    pagos: number
+  }
+}
 
-  const [alumnos, packs] = await Promise.all([
-    prisma.alumno.findMany({
-      where: {
-        profesorId: userId
-      },
-      include: {
-        _count: {
-          select: {
-            clases: true,
-            pagos: true
-          }
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+}
+
+export default function AlumnosPage() {
+  const [data, setData] = useState<{ alumnos: Alumno[], packs: Pack[] } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/alumnos')
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          setError(data.error)
+        } else {
+          setData(data)
         }
-      },
-      orderBy: {
-        nombre: 'asc'
-      }
-    }),
-    prisma.pack.findMany({
-      where: {
-        profesorId: userId,
-        estaActivo: true
-      },
-      orderBy: {
-        clasesPorSemana: 'asc'
-      }
-    })
-  ])
+      })
+      .catch(err => setError(err.message))
+  }, [])
 
-  // Serializar datos para el cliente
-  const alumnosSerializados = alumnos.map(alumno => ({
-    ...alumno,
-    precio: alumno.precio.toString(), // Convertir Decimal a string
-    cumpleanos: alumno.cumpleanos ? alumno.cumpleanos.toISOString() : null, // Date a string
-  }))
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="content-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <p style={{ color: 'rgba(255,100,100,0.9)' }}>Error: {error}</p>
+        </div>
+      </div>
+    )
+  }
 
-  const packsSerializados = packs.map(pack => ({
-    id: pack.id,
-    nombre: pack.nombre,
-    clasesPorSemana: pack.clasesPorSemana,
-    precio: pack.precio.toString()
-  }))
+  if (!data) {
+    return <AlumnosLoading />
+  }
 
-  return <AlumnosClient alumnos={alumnosSerializados} packs={packsSerializados} />
+  return <AlumnosClient alumnos={data.alumnos} packs={data.packs} />
 }

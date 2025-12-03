@@ -4,6 +4,62 @@ import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
+export async function GET() {
+  try {
+    const userId = await getCurrentUser()
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        horariosDisponibles: {
+          orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }]
+        },
+        packs: {
+          orderBy: { createdAt: 'desc' }
+        },
+        accounts: {
+          select: { provider: true }
+        }
+      }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+    }
+
+    const hasGoogleAccount = user.accounts.some(account => account.provider === 'google')
+
+    return NextResponse.json({
+      profesor: {
+        id: user.id,
+        horasAnticipacionMinima: user.horasAnticipacionMinima,
+        maxAlumnosPorClase: user.maxAlumnosPorClase,
+        horarioMananaInicio: user.horarioMananaInicio,
+        horarioMananaFin: user.horarioMananaFin,
+        horarioTardeInicio: user.horarioTardeInicio,
+        horarioTardeFin: user.horarioTardeFin,
+        espacioCompartidoId: user.espacioCompartidoId,
+        syncGoogleCalendar: user.syncGoogleCalendar,
+        hasGoogleAccount
+      },
+      horarios: user.horariosDisponibles,
+      packs: user.packs.map(pack => ({
+        id: pack.id,
+        nombre: pack.nombre,
+        clasesPorSemana: pack.clasesPorSemana,
+        precio: pack.precio.toString(),
+        estaActivo: pack.estaActivo
+      }))
+    })
+  } catch (error: any) {
+    console.error('Config GET error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const userId = await getCurrentUser()

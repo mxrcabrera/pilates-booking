@@ -1,37 +1,75 @@
-import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { ConfiguracionClient } from './configuracion-client'
+import ConfiguracionLoading from './loading'
 
-export default async function ConfiguracionPage() {
-  const userId = await getCurrentUser()
-  if (!userId) return null
+type Profesor = {
+  id: string
+  horasAnticipacionMinima: number
+  maxAlumnosPorClase: number
+  horarioMananaInicio: string
+  horarioMananaFin: string
+  horarioTardeInicio: string
+  horarioTardeFin: string
+  espacioCompartidoId: string | null
+  syncGoogleCalendar: boolean
+  hasGoogleAccount: boolean
+}
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      horariosDisponibles: {
-        orderBy: [
-          { diaSemana: 'asc' },
-          { horaInicio: 'asc' }
-        ]
-      },
-      packs: {
-        orderBy: {
-          createdAt: 'desc'
+type Horario = {
+  id: string
+  diaSemana: number
+  horaInicio: string
+  horaFin: string
+  esManiana: boolean
+  estaActivo: boolean
+}
+
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+  estaActivo: boolean
+}
+
+type ConfigData = {
+  profesor: Profesor
+  horarios: Horario[]
+  packs: Pack[]
+}
+
+export default function ConfiguracionPage() {
+  const [data, setData] = useState<ConfigData | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/configuracion')
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          setError(data.error)
+        } else {
+          setData(data)
         }
-      },
-      accounts: {
-        select: {
-          provider: true
-        }
-      }
-    }
-  })
+      })
+      .catch(err => setError(err.message))
+  }, [])
 
-  if (!user) return null
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="content-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <p style={{ color: 'rgba(255,100,100,0.9)' }}>Error: {error}</p>
+        </div>
+      </div>
+    )
+  }
 
-  // Check if user has a Google account linked
-  const hasGoogleAccount = user.accounts.some(account => account.provider === 'google')
+  if (!data) {
+    return <ConfiguracionLoading />
+  }
 
   return (
     <div className="page-container">
@@ -43,26 +81,9 @@ export default async function ConfiguracionPage() {
       </div>
 
       <ConfiguracionClient
-        profesor={{
-          id: user.id,
-          horasAnticipacionMinima: user.horasAnticipacionMinima,
-          maxAlumnosPorClase: user.maxAlumnosPorClase,
-          horarioMananaInicio: user.horarioMananaInicio,
-          horarioMananaFin: user.horarioMananaFin,
-          horarioTardeInicio: user.horarioTardeInicio,
-          horarioTardeFin: user.horarioTardeFin,
-          espacioCompartidoId: user.espacioCompartidoId,
-          syncGoogleCalendar: user.syncGoogleCalendar,
-          hasGoogleAccount
-        }}
-        horarios={user.horariosDisponibles}
-        packs={user.packs.map(pack => ({
-          id: pack.id,
-          nombre: pack.nombre,
-          clasesPorSemana: pack.clasesPorSemana,
-          precio: pack.precio.toString(),
-          estaActivo: pack.estaActivo
-        }))}
+        profesor={data.profesor}
+        horarios={data.horarios}
+        packs={data.packs}
       />
     </div>
   )

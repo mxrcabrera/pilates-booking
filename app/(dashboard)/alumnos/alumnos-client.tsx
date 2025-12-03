@@ -180,6 +180,7 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs }: { alumnos: Alu
               <AlumnoCard
                 key={alumno.id}
                 alumno={alumno}
+                packs={packs}
                 onEdit={() => handleEdit(alumno)}
                 onView={() => handleView(alumno)}
                 onDelete={() => handleDeleteClick(alumno)}

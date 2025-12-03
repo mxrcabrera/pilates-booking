@@ -23,22 +23,21 @@ type Alumno = {
   }
 }
 
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+}
+
 const PACK_LABELS: Record<string, string> = {
   'mensual': 'Mensual',
   'por_clase': 'Por Clase',
-  'pack_4': 'Pack 4',
-  'pack_8': 'Pack 8',
-  'pack_12': 'Pack 12'
-}
-
-const PACK_CLASES: Record<string, number> = {
-  'pack_4': 4,
-  'pack_8': 8,
-  'pack_12': 12
 }
 
 export function AlumnoCard({
   alumno,
+  packs,
   onEdit,
   onView,
   onDelete,
@@ -46,6 +45,7 @@ export function AlumnoCard({
   viewMode = 'list'
 }: {
   alumno: Alumno
+  packs: Pack[]
   onEdit: () => void
   onView: () => void
   onDelete: () => void
@@ -55,6 +55,30 @@ export function AlumnoCard({
   const [showMenu, setShowMenu] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Obtener label del pack
+  const getPackLabel = () => {
+    if (PACK_LABELS[alumno.packType]) {
+      return PACK_LABELS[alumno.packType]
+    }
+    // Si es pack personalizado (pack_{uuid})
+    if (alumno.packType.startsWith('pack_')) {
+      const packId = alumno.packType.replace('pack_', '')
+      const pack = packs.find(p => p.id === packId)
+      if (pack) return pack.nombre
+    }
+    return alumno.packType
+  }
+
+  // Obtener clases del pack
+  const getPackClases = () => {
+    if (alumno.packType.startsWith('pack_')) {
+      const packId = alumno.packType.replace('pack_', '')
+      const pack = packs.find(p => p.id === packId)
+      if (pack) return pack.clasesPorSemana
+    }
+    return null
+  }
 
   // Listener global para cerrar menu
   useEffect(() => {
@@ -103,8 +127,9 @@ export function AlumnoCard({
     if (alumno.packType === 'mensual' && alumno.clasesPorMes) {
       return `${alumno.clasesPorMes}/mes`
     }
-    if (PACK_CLASES[alumno.packType]) {
-      return `${PACK_CLASES[alumno.packType]}/sem`
+    const packClases = getPackClases()
+    if (packClases) {
+      return `${packClases}/sem`
     }
     return null
   }
@@ -136,7 +161,7 @@ export function AlumnoCard({
           
           <div className="alumno-list-bottom-row">
             <div className="alumno-list-info-row">
-              <span className="pack-label-new">{PACK_LABELS[alumno.packType]}</span>
+              <span className="pack-label-new">{getPackLabel()}</span>
               {getClasesDisplay() && (
                 <>
                   <span className="separator-dot">•</span>
@@ -222,7 +247,7 @@ export function AlumnoCard({
             <span>{alumno.telefono}</span>
           </div>
           <div className="pack-info">
-            <span className="pack-badge">{PACK_LABELS[alumno.packType]}</span>
+            <span className="pack-badge">{getPackLabel()}</span>
             {getClasesDisplay() && (
               <span className="pack-detail">{getClasesDisplay()}</span>
             )}

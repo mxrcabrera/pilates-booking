@@ -1,33 +1,51 @@
 'use client'
 
 import { useState } from 'react'
-import { login, signup, loginWithGoogle } from './actions'
+import { useRouter } from 'next/navigation'
+import { loginWithGoogle } from './actions'
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignup, setIsSignup] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
-    
+
     const formData = new FormData(e.currentTarget)
-    
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const nombre = formData.get('nombre') as string
+
     try {
-      if (isSignup) {
-        await signup(formData)
-      } else {
-        await login(formData)
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          nombre: isSignup ? nombre : undefined,
+          action: isSignup ? 'signup' : 'login',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al procesar la solicitud')
       }
-      // No hacer router.push - el server action ya hace redirect
+
+      if (data.redirectTo) {
+        router.push(data.redirectTo)
+        router.refresh()
+      }
     } catch (err: any) {
-      // Ignorar el error NEXT_REDIRECT que es normal
-      if (err.message?.includes('NEXT_REDIRECT')) {
-        return
-      }
       setError(err.message || 'Error al procesar la solicitud')
       setIsLoading(false)
     }

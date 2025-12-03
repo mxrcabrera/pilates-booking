@@ -33,7 +33,8 @@
       "Bash(npx dotenv:*)",
       "Bash(npx prisma validate)",
       "Bash(del \"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\.env.local\")",
-      "Bash(npx prisma db pull:*)"
+      "Bash(npx prisma db pull:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

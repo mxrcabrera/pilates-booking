@@ -317,21 +317,25 @@ body::before {
 }
 
 .login-card .password-toggle {
-  position: absolute;
-  right: 0.75rem;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.35);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: right;
-  padding: 0.25rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  z-index: 2;
-  height: 32px;
-  width: 32px;
+  position: absolute !important;
+  right: 0.75rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.25rem !important;
+  border-radius: 6px !important;
+  transition: color 0.2s ease !important;
+  z-index: 10 !important;
+  height: 32px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
 }
 
 .login-card .password-toggle:hover:not(:disabled) {
@@ -339,7 +343,7 @@ body::before {
 }
 
 .login-card .password-toggle:active {
-  transform: translateY(-50%) scale(0.95);
+  opacity: 0.8;
 }
 
 .login-card .password-toggle:disabled {
@@ -394,7 +398,7 @@ body::before {
   transform: none;
 }
 
-.login-card button[type="button"] {
+.login-card button[type="button"]:not(.password-toggle) {
   background: transparent;
   color: rgba(147, 155, 245, 0.8);
   font-weight: 400;
@@ -406,7 +410,7 @@ body::before {
   transition: all 0.2s ease;
 }
 
-.login-card button[type="button"]:hover {
+.login-card button[type="button"]:not(.password-toggle):hover {
   color: rgba(147, 155, 245, 1);
 }
 

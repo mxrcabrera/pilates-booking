@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Clock, Plus, Trash2, Edit2, CheckSquare } from 'lucide-react'
 import { HorarioDialog } from './horario-dialog'
-import { deleteHorario, toggleHorario } from './actions'
+import { deleteHorarioAPI, toggleHorarioAPI } from '@/lib/api'
 
 type Horario = {
   id: string
@@ -31,6 +32,7 @@ export function HorariosSection({
   horarioTardeInicio,
   horarioTardeFin
 }: HorariosSectionProps) {
+  const router = useRouter()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingHorario, setEditingHorario] = useState<Horario | null>(null)
   const [isSelectionMode, setIsSelectionMode] = useState(false)
@@ -49,7 +51,8 @@ export function HorariosSection({
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás segura de eliminar este horario?')) return
     try {
-      await deleteHorario(id)
+      await deleteHorarioAPI(id)
+      router.refresh()
     } catch (err: any) {
       alert(err.message)
     }
@@ -57,7 +60,8 @@ export function HorariosSection({
 
   const handleToggle = async (id: string) => {
     try {
-      await toggleHorario(id)
+      await toggleHorarioAPI(id)
+      router.refresh()
     } catch (err: any) {
       alert(err.message)
     }
@@ -86,9 +90,10 @@ export function HorariosSection({
     if (!confirm(`¿Estás segura de eliminar ${selectedHorarios.size} horario(s)?`)) return
 
     try {
-      await Promise.all(Array.from(selectedHorarios).map(id => deleteHorario(id)))
+      await Promise.all(Array.from(selectedHorarios).map(id => deleteHorarioAPI(id)))
       setSelectedHorarios(new Set())
       setIsSelectionMode(false)
+      router.refresh()
     } catch (err: any) {
       alert(err.message)
     }

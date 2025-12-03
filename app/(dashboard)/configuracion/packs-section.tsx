@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Package, Plus, Trash2, Edit2 } from 'lucide-react'
 import { PackDialog } from './pack-dialog'
-import { deletePack, togglePack } from './actions'
+import { deletePackAPI, togglePackAPI } from '@/lib/api'
 
 type Pack = {
   id: string
@@ -18,6 +19,7 @@ type PacksSectionProps = {
 }
 
 export function PacksSection({ packs }: PacksSectionProps) {
+  const router = useRouter()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingPack, setEditingPack] = useState<Pack | null>(null)
 
@@ -34,7 +36,8 @@ export function PacksSection({ packs }: PacksSectionProps) {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás segura de eliminar este pack?')) return
     try {
-      await deletePack(id)
+      await deletePackAPI(id)
+      router.refresh()
     } catch (err: any) {
       alert(err.message)
     }
@@ -42,7 +45,8 @@ export function PacksSection({ packs }: PacksSectionProps) {
 
   const handleToggle = async (id: string) => {
     try {
-      await togglePack(id)
+      await togglePackAPI(id)
+      router.refresh()
     } catch (err: any) {
       alert(err.message)
     }

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { savePack } from './actions'
+import { useRouter } from 'next/navigation'
+import { savePackAPI } from '@/lib/api'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ export function PackDialog({
   onClose: () => void
   pack: Pack | null
 }) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,10 +46,14 @@ export function PackDialog({
     const formData = new FormData(e.currentTarget)
 
     try {
-      if (pack) {
-        formData.append('id', pack.id)
-      }
-      await savePack(formData)
+      await savePackAPI({
+        id: pack?.id,
+        nombre: formData.get('nombre') as string,
+        clasesPorSemana: parseInt(formData.get('clasesPorSemana') as string),
+        precio: parseFloat(formData.get('precio') as string),
+        estaActivo: pack ? formData.get('estaActivo') === 'on' : true
+      })
+      router.refresh()
       onClose()
     } catch (err: any) {
       setError(err.message || 'Error al guardar pack')

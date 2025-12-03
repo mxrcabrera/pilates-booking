@@ -61,13 +61,20 @@ export function HorariosSection({
   }
 
   const handleDelete = async () => {
-    if (!deleteConfirm.id) return
     const idToDelete = deleteConfirm.id
+    if (!idToDelete) return
+
+    // Guardar referencia antes de cerrar modal
+    const horarioToDelete = horarios.find(h => h.id === idToDelete)
+
+    // Cerrar modal primero
+    setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
 
     // Optimistic: eliminar de UI inmediatamente
-    const horarioToDelete = horarios.find(h => h.id === idToDelete)
-    setHorarios(prev => prev.filter(h => h.id !== idToDelete))
-    setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
+    setHorarios(prev => {
+      const filtered = prev.filter(h => h.id !== idToDelete)
+      return filtered
+    })
     showSuccess('Horario eliminado')
 
     // Si es ID temporal, no llamar API (todavía no existe en DB)
@@ -165,7 +172,7 @@ export function HorariosSection({
   return (
     <div className="settings-section">
       <div className="section-content">
-        <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           {!isSelectionMode ? (
             <>
               <button
@@ -189,32 +196,32 @@ export function HorariosSection({
               )}
             </>
           ) : (
-            <>
+            <div style={{ display: 'flex', gap: '0.5rem', width: '100%', alignItems: 'stretch' }}>
               <button
                 onClick={cancelSelectionMode}
-                className="btn-ghost"
-                style={{ fontSize: '0.875rem' }}
+                className="btn-outline"
+                style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem', height: '36px', flex: '0 0 auto' }}
               >
                 Cancelar
               </button>
               <button
                 onClick={toggleSelectAll}
                 className="btn-outline"
-                style={{ fontSize: '0.875rem' }}
+                style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem', height: '36px', flex: '1 1 auto', minWidth: 0 }}
               >
-                {selectedHorarios.size === horarios.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                {selectedHorarios.size === horarios.length ? 'Ninguno' : 'Todos'}
               </button>
               {selectedHorarios.size > 0 && (
                 <button
                   onClick={handleBulkDeleteClick}
                   className="btn-outline"
-                  style={{ fontSize: '0.875rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}
+                  style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem', height: '36px', color: '#ff6b6b', borderColor: '#ff6b6b', flex: '0 0 auto' }}
                 >
-                  <Trash2 size={16} />
-                  <span>Eliminar ({selectedHorarios.size})</span>
+                  <Trash2 size={14} />
+                  <span>{selectedHorarios.size}</span>
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
 

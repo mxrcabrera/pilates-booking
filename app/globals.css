@@ -2989,9 +2989,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pack-card.inactive {
-  opacity: 0.5;
   background: rgba(255, 255, 255, 0.02);
   border-color: rgba(147, 155, 245, 0.08);
+}
+
+.pack-card.inactive .pack-card-info {
+  opacity: 0.5;
 }
 
 .pack-card:hover {

@@ -147,26 +147,6 @@ export const authConfig: NextAuthConfig = {
 
       return token
     },
-    async authorized({ auth, request }) {
-      const { pathname } = request.nextUrl
-      const isLoggedIn = !!auth?.user
-
-      // Rutas públicas
-      const isPublicRoute = pathname === '/login' || pathname === '/register'
-
-      // Si está logueado y trata de acceder a login/register, redirigir al dashboard
-      // La redirección según rol se maneja en las páginas
-      if (isLoggedIn && isPublicRoute) {
-        return Response.redirect(new URL('/dashboard', request.url))
-      }
-
-      // Si no está logueado y trata de acceder a rutas protegidas
-      if (!isLoggedIn && !isPublicRoute) {
-        return Response.redirect(new URL('/login', request.url))
-      }
-
-      return true
-    },
   },
   pages: {
     signIn: '/login',

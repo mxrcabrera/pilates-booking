@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { AlertCircle } from 'lucide-react'
+import { Settings } from 'lucide-react'
 
 interface PreferencesRequiredProps {
   missingFields: string[]
@@ -7,103 +7,98 @@ interface PreferencesRequiredProps {
 
 export function PreferencesRequired({ missingFields }: PreferencesRequiredProps) {
   return (
-    <div className="page-container">
-      <div className="content-card" style={{ maxWidth: '600px', margin: '2rem auto' }}>
+    <div className="page-container" style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 'calc(100vh - 120px)'
+    }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '2rem',
+        textAlign: 'center',
+        maxWidth: '400px',
+        padding: '2rem'
+      }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, rgba(147, 155, 245, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%)',
+          border: '2px solid rgba(147, 155, 245, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Settings size={36} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />
+        </div>
+
+        <div>
+          <h2 style={{
+            fontSize: '1.75rem',
+            fontWeight: '600',
+            color: 'rgba(255, 255, 255, 0.95)',
+            marginBottom: '0.75rem'
+          }}>
+            Completá tu configuración
+          </h2>
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '1rem',
+            lineHeight: '1.6'
+          }}>
+            Para usar el calendario, primero necesitás configurar:
+          </p>
+        </div>
+
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1.5rem',
-          padding: '2rem',
-          textAlign: 'center'
+          gap: '0.75rem',
+          width: '100%'
         }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            background: 'rgba(255, 180, 100, 0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <AlertCircle size={32} style={{ color: 'rgba(255, 180, 100, 0.9)' }} />
-          </div>
-
-          <div>
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '600',
-              color: 'rgba(255, 255, 255, 0.95)',
-              marginBottom: '0.5rem'
-            }}>
-              Completá tu configuración
-            </h2>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontSize: '1rem',
-              lineHeight: '1.6'
-            }}>
-              Para acceder a esta sección, necesitás completar tu configuración primero.
-            </p>
-          </div>
-
-          {missingFields.length > 0 && (
-            <div style={{
-              background: 'rgba(255, 180, 100, 0.05)',
-              border: '1px solid rgba(255, 180, 100, 0.2)',
+          {missingFields.map((field, index) => (
+            <div key={index} style={{
+              background: 'rgba(147, 155, 245, 0.08)',
+              border: '1px solid rgba(147, 155, 245, 0.2)',
               borderRadius: '12px',
-              padding: '1.25rem',
-              width: '100%',
-              textAlign: 'left'
+              padding: '1rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
             }}>
-              <p style={{
-                color: 'rgba(255, 180, 100, 0.9)',
-                fontWeight: '600',
-                marginBottom: '0.75rem',
-                fontSize: '0.875rem'
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: 'rgba(147, 155, 245, 0.6)',
+                flexShrink: 0
+              }} />
+              <span style={{
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '0.9375rem',
+                fontWeight: '500'
               }}>
-                Campos faltantes:
-              </p>
-              <ul style={{
-                listStyle: 'none',
-                padding: 0,
-                margin: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem'
-              }}>
-                {missingFields.map((field, index) => (
-                  <li key={index} style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontSize: '0.875rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <span style={{
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      background: 'rgba(255, 180, 100, 0.6)'
-                    }} />
-                    {field}
-                  </li>
-                ))}
-              </ul>
+                {field}
+              </span>
             </div>
-          )}
-
-          <Link
-            href="/configuracion"
-            className="btn-primary"
-            style={{
-              marginTop: '0.5rem',
-              textDecoration: 'none'
-            }}
-          >
-            Ir a Configuración
-          </Link>
+          ))}
         </div>
+
+        <Link
+          href="/configuracion"
+          className="btn-primary"
+          style={{
+            marginTop: '0.5rem',
+            textDecoration: 'none',
+            width: '100%',
+            justifyContent: 'center'
+          }}
+        >
+          Ir a Configuración
+        </Link>
       </div>
     </div>
   )

@@ -31,7 +31,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav profesor={user} />
-      <main className="container mx-auto py-6 px-4">
+      <main>
         {children}
       </main>
     </div>

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { AlumnosClient } from './alumnos-client'
-import AlumnosLoading from './loading'
+import { PageLoading } from '@/components/page-loading'
+import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
 
 type Alumno = {
   id: string
@@ -28,22 +29,32 @@ type Pack = {
   precio: string
 }
 
+type AlumnosData = {
+  alumnos: Alumno[]
+  packs: Pack[]
+}
+
 export default function AlumnosPage() {
-  const [data, setData] = useState<{ alumnos: Alumno[], packs: Pack[] } | null>(null)
+  const [data, setData] = useState<AlumnosData | null>(() =>
+    getCachedData<AlumnosData>(CACHE_KEYS.ALUMNOS)
+  )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (data) return
+
     fetch('/api/alumnos')
       .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          setError(data.error)
+      .then(responseData => {
+        if (responseData.error) {
+          setError(responseData.error)
         } else {
-          setData(data)
+          setCachedData(CACHE_KEYS.ALUMNOS, responseData)
+          setData(responseData)
         }
       })
       .catch(err => setError(err.message))
-  }, [])
+  }, [data])
 
   if (error) {
     return (
@@ -56,7 +67,7 @@ export default function AlumnosPage() {
   }
 
   if (!data) {
-    return <AlumnosLoading />
+    return <PageLoading />
   }
 
   return <AlumnosClient alumnos={data.alumnos} packs={data.packs} />

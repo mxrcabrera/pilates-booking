@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { ConfiguracionClient } from './configuracion-client'
-import ConfiguracionLoading from './loading'
+import { PageLoading } from '@/components/page-loading'
+import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
 
 type Profesor = {
   id: string
@@ -41,21 +42,28 @@ type ConfigData = {
 }
 
 export default function ConfiguracionPage() {
-  const [data, setData] = useState<ConfigData | null>(null)
+  // Inicializar con datos cacheados si existen
+  const [data, setData] = useState<ConfigData | null>(() =>
+    getCachedData<ConfigData>(CACHE_KEYS.CONFIGURACION)
+  )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Si ya tenemos datos cacheados, no hacer fetch
+    if (data) return
+
     fetch('/api/configuracion')
       .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          setError(data.error)
+      .then(responseData => {
+        if (responseData.error) {
+          setError(responseData.error)
         } else {
-          setData(data)
+          setCachedData(CACHE_KEYS.CONFIGURACION, responseData)
+          setData(responseData)
         }
       })
       .catch(err => setError(err.message))
-  }, [])
+  }, [data])
 
   if (error) {
     return (
@@ -68,7 +76,7 @@ export default function ConfiguracionPage() {
   }
 
   if (!data) {
-    return <ConfiguracionLoading />
+    return <PageLoading />
   }
 
   return (

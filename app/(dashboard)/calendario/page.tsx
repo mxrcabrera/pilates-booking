@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { CalendarioClient } from './calendario-client'
 import { PreferencesRequired } from '@/components/preferences-required'
-import CalendarioLoading from './loading'
+import { PageLoading } from '@/components/page-loading'
+import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
 
 type ClaseAPI = {
   id: string
@@ -38,30 +39,52 @@ type CalendarioData = {
   horarioTardeFin: string
 }
 
+// Para el cache guardamos las fechas como strings
+type CalendarioDataCached = Omit<CalendarioData, 'clases'> & {
+  clases: ClaseAPI[]
+}
+
+function parseCalendarioData(cached: CalendarioDataCached): CalendarioData {
+  return {
+    ...cached,
+    clases: cached.clases.map(c => ({
+      ...c,
+      fecha: new Date(c.fecha)
+    }))
+  }
+}
+
 export default function CalendarioPage() {
-  const [data, setData] = useState<CalendarioData | null>(null)
+  const [data, setData] = useState<CalendarioData | null>(() => {
+    const cached = getCachedData<CalendarioDataCached>(CACHE_KEYS.CALENDARIO)
+    return cached ? parseCalendarioData(cached) : null
+  })
   const [preferencesIncomplete, setPreferencesIncomplete] = useState<string[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (data) return
+
     fetch('/api/clases')
       .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          setError(data.error)
-        } else if (data.preferencesIncomplete) {
-          setPreferencesIncomplete(data.missingFields)
+      .then(responseData => {
+        if (responseData.error) {
+          setError(responseData.error)
+        } else if (responseData.preferencesIncomplete) {
+          setPreferencesIncomplete(responseData.missingFields)
         } else {
-          // Parse dates back from API strings to Date objects
-          const clasesConFechas: Clase[] = data.clases.map((c: ClaseAPI) => ({
+          // Cache the raw API response (with string dates)
+          setCachedData(CACHE_KEYS.CALENDARIO, responseData)
+          // Parse dates for component use
+          const clasesConFechas: Clase[] = responseData.clases.map((c: ClaseAPI) => ({
             ...c,
             fecha: new Date(c.fecha)
           }))
-          setData({ ...data, clases: clasesConFechas })
+          setData({ ...responseData, clases: clasesConFechas })
         }
       })
       .catch(err => setError(err.message))
-  }, [])
+  }, [data])
 
   if (error) {
     return (
@@ -78,7 +101,7 @@ export default function CalendarioPage() {
   }
 
   if (!data) {
-    return <CalendarioLoading />
+    return <PageLoading />
   }
 
   return (

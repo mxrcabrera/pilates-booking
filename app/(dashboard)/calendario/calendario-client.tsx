@@ -311,7 +311,12 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                 )}
               </>
             )}
-            <Button className="btn-primary desktop-only" onClick={() => setDialogOpen(true)}>
+            <Button
+              className="btn-primary desktop-only"
+              onClick={() => setDialogOpen(true)}
+              disabled={alumnos.length === 0}
+              title={alumnos.length === 0 ? 'Primero debes agregar alumnos' : ''}
+            >
               <Plus className="w-4 h-4" />
               Nueva Clase
             </Button>
@@ -531,12 +536,14 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
           </div>
 
           {/* Botón flotante mobile */}
-          <button
-            onClick={() => setDialogOpen(true)}
-            className="fab-button-mobile"
-          >
-            <Plus className="w-6 h-6 text-white" />
-          </button>
+          {alumnos.length > 0 && (
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="fab-button-mobile"
+            >
+              <Plus className="w-6 h-6 text-white" />
+            </button>
+          )}
         </div>
 
         {/* Vista Desktop: Semana */}

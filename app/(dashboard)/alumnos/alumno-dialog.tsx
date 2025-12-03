@@ -75,15 +75,27 @@ export function AlumnoDialog({
     setError(null)
 
     const formData = new FormData(e.currentTarget)
+    const packType = formData.get('packType') as string
+
+    // Obtener precio del pack seleccionado si es un pack personalizado
+    let precio = 0
+    if (packType.startsWith('pack_')) {
+      const packId = packType.replace('pack_', '')
+      const pack = packs.find(p => p.id === packId)
+      if (pack) {
+        precio = parseFloat(pack.precio)
+      }
+    }
+
     const data = {
       nombre: formData.get('nombre') as string,
       email: formData.get('email') as string,
       telefono: formData.get('telefono') as string,
       cumpleanos: formData.get('cumpleanos') as string || undefined,
       patologias: formData.get('patologias') as string || undefined,
-      packType: formData.get('packType') as string,
+      packType,
       clasesPorMes: formData.get('clasesPorMes') ? parseInt(formData.get('clasesPorMes') as string) : undefined,
-      precio: parseFloat(formData.get('precio') as string),
+      precio,
     }
 
     try {
@@ -256,20 +268,6 @@ export function AlumnoDialog({
               />
             </div>
           )}
-
-          <div className="form-group">
-            <label>Precio (ARS)</label>
-            <input
-              type="number"
-              name="precio"
-              placeholder="5000"
-              min="0"
-              step="0.01"
-              required
-              defaultValue={alumno?.precio?.toString() || ''}
-              disabled={isLoading}
-            />
-          </div>
 
           <DialogFooter>
             <button

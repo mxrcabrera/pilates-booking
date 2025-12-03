@@ -1,9 +1,13 @@
-import { SignJWT, jwtVerify } from 'jose'
+import { SignJWT, jwtVerify, decodeJwt } from 'jose'
 import { cookies } from 'next/headers'
 import bcrypt from 'bcrypt'
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo-en-produccion'
+)
+
+const authSecret = new TextEncoder().encode(
+  process.env.AUTH_SECRET || ''
 )
 
 export async function hashPassword(password: string) {
@@ -52,8 +56,39 @@ export async function removeAuthCookie() {
   cookieStore.delete('auth-token')
 }
 
+// Verificar token de NextAuth directamente (sin llamar a auth())
+async function verifyNextAuthToken(token: string) {
+  try {
+    // NextAuth usa un formato de JWT específico con AUTH_SECRET
+    const verified = await jwtVerify(token, authSecret, {
+      algorithms: ['HS256'],
+    })
+    return verified.payload.sub || null
+  } catch {
+    return null
+  }
+}
+
 export async function getCurrentUser() {
-  // Primero intentar con NextAuth
+  const cookieStore = await cookies()
+
+  // 1. Primero intentar con JWT personalizado (más rápido)
+  const customToken = cookieStore.get('auth-token')?.value
+  if (customToken) {
+    const payload = await verifyToken(customToken)
+    if (payload) return payload.userId
+  }
+
+  // 2. Intentar con el session token de NextAuth (sin llamar auth())
+  const nextAuthToken = cookieStore.get('authjs.session-token')?.value
+    || cookieStore.get('__Secure-authjs.session-token')?.value
+
+  if (nextAuthToken && authSecret.length > 0) {
+    const userId = await verifyNextAuthToken(nextAuthToken)
+    if (userId) return userId
+  }
+
+  // 3. Fallback: usar auth() de NextAuth (más lento)
   const { auth } = await import('./auth-new')
   const session = await auth()
 
@@ -61,12 +96,5 @@ export async function getCurrentUser() {
     return session.user.id
   }
 
-  // Si no hay sesión de NextAuth, intentar con JWT personalizado
-  const token = await getAuthCookie()
-  if (!token) return null
-
-  const payload = await verifyToken(token)
-  if (!payload) return null
-
-  return payload.userId
+  return null
 }

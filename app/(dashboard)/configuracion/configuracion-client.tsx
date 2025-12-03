@@ -138,6 +138,11 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
           )}
 
           <form onSubmit={handleHorariosSubmit} className="form-content">
+            {/* Hidden inputs para campos que updatePreferencias necesita */}
+            <input type="hidden" name="horasAnticipacionMinima" value={profesor.horasAnticipacionMinima} />
+            <input type="hidden" name="espacioCompartidoId" value={profesor.espacioCompartidoId || ''} />
+            {profesor.syncGoogleCalendar && <input type="hidden" name="syncGoogleCalendar" value="on" />}
+
             <div className="form-group">
               <label>Horario de Mañana por Default</label>
               <div className="form-row">

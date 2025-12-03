@@ -81,6 +81,10 @@ export const authConfig: NextAuthConfig = {
       if (token.sub && session.user) {
         session.user.id = token.sub
       }
+      // Pass role to session
+      if (token.role) {
+        (session.user as any).role = token.role
+      }
       // Pass tokens to session for Google Calendar API
       if (token.accessToken) {
         (session as any).accessToken = token.accessToken
@@ -122,9 +126,68 @@ export const authConfig: NextAuthConfig = {
               },
             })
           }
+
+          // Store role in token
+          if (dbUser) {
+            token.role = dbUser.role
+          }
         }
       }
+
+      // Always fetch latest role from database
+      if (token.sub) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true },
+        })
+        if (dbUser) {
+          token.role = dbUser.role
+        }
+      }
+
       return token
+    },
+    async authorized({ auth, request }) {
+      const { pathname } = request.nextUrl
+      const isLoggedIn = !!auth?.user
+
+      // Rutas públicas
+      const isPublicRoute = pathname === '/login' || pathname === '/register'
+      const isOnboarding = pathname === '/onboarding'
+
+      // Si está logueado y trata de acceder a login/register, redirigir según rol
+      if (isLoggedIn && isPublicRoute) {
+        const user = await prisma.user.findUnique({
+          where: { email: auth.user.email! },
+          select: { role: true },
+        })
+
+        if (user?.role === 'PROFESOR') {
+          return Response.redirect(new URL('/dashboard', request.url))
+        } else if (user?.role === 'ALUMNO') {
+          return Response.redirect(new URL('/alumno/dashboard', request.url))
+        }
+      }
+
+      // Si no está logueado y trata de acceder a rutas protegidas
+      if (!isLoggedIn && !isPublicRoute) {
+        return Response.redirect(new URL('/login', request.url))
+      }
+
+      // Si está logueado, verificar que tenga rol asignado
+      if (isLoggedIn && !isPublicRoute && !isOnboarding) {
+        const user = await prisma.user.findUnique({
+          where: { email: auth.user.email! },
+          select: { role: true },
+        })
+
+        // Si no tiene rol o es el rol por defecto y no tiene configuración, enviar a onboarding
+        if (!user) {
+          return Response.redirect(new URL('/onboarding', request.url))
+        }
+      }
+
+      return true
     },
   },
   pages: {

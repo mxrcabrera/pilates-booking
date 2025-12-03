@@ -4,7 +4,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://postgres.gfvjigctirdhmvnejcjl:ee438c9aded95720@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+}
+
+enum UserRole {
+  PROFESOR
+  ALUMNO
 }
 
 model User {
@@ -15,6 +20,7 @@ model User {
   password                 String?
   emailVerified            DateTime? @map("email_verified")
   image                    String?
+  role                     UserRole  @default(PROFESOR)
   horasAnticipacionMinima  Int       @default(1) @map("horas_anticipacion_minima")
   maxAlumnosPorClase       Int       @default(4) @map("max_alumnos_por_clase")
   horarioMananaInicio      String    @default("08:00") @map("horario_manana_inicio")
@@ -26,14 +32,17 @@ model User {
   googleCalendarId         String?   @map("google_calendar_id")
   createdAt                DateTime  @default(now()) @map("created_at")
 
-  alumnos             Alumno[]
-  horariosDisponibles HorarioDisponible[]
-  clases              Clase[]
-  packs               Pack[]
-  accounts            Account[]
-  sessions            Session[]
+  alumnos                  Alumno[]
+  horariosDisponibles      HorarioDisponible[]
+  clases                   Clase[]
+  packs                    Pack[]
+  accounts                 Account[]
+  sessions                 Session[]
+  reservasComoAlumno       Reserva[]              @relation("AlumnoReservas")
+  reservasComoProfesor     Reserva[]              @relation("ProfesorReservas")
+  notificacionesRecibidas  Notificacion[]
 
-  @@map("profesores")
+  @@map("users")
 }
 
 model Pack {
@@ -162,4 +171,48 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model Reserva {
+  id                String   @id @default(uuid())
+  alumnoUserId      String   @map("alumno_user_id")
+  profesorId        String   @map("profesor_id")
+  fecha             DateTime @db.Date
+  horaInicio        String   @map("hora_inicio")
+  horaFin           String   @map("hora_fin")
+  estado            String   @default("confirmada") // confirmada, cancelada, completada
+  notasAlumno       String?  @map("notas_alumno")
+  createdAt         DateTime @default(now()) @map("created_at")
+  canceladaEn       DateTime? @map("cancelada_en")
+
+  alumnoUser User @relation("AlumnoReservas", fields: [alumnoUserId], references: [id], onDelete: Cascade)
+  profesor   User @relation("ProfesorReservas", fields: [profesorId], references: [id], onDelete: Cascade)
+  notificaciones Notificacion[]
+
+  @@map("reservas")
+}
+
+enum NotificationType {
+  RESERVA_NUEVA
+  RESERVA_CANCELADA
+  CLASE_MODIFICADA
+  CLASE_CANCELADA
+  RECORDATORIO_CLASE
+}
+
+model Notificacion {
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  tipo        NotificationType
+  titulo      String
+  mensaje     String
+  leida       Boolean          @default(false)
+  reservaId   String?          @map("reserva_id")
+  emailEnviado Boolean         @default(false) @map("email_enviado")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reserva Reserva? @relation(fields: [reservaId], references: [id], onDelete: SetNull)
+
+  @@map("notificaciones")
 }

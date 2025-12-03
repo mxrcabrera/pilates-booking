@@ -4474,3 +4474,107 @@ input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="date"]::-webkit-datetime-edit-year-field {
   font-variant-numeric: tabular-nums;
 }
+
+/* ========================================
+   ONBOARDING PAGE
+   ======================================== */
+.onboarding-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  background: rgb(var(--background));
+}
+
+.onboarding-card {
+  max-width: 600px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px solid rgba(147, 155, 245, 0.15);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-4xl);
+  text-align: center;
+}
+
+.onboarding-card h1 {
+  font-size: var(--font-3xl);
+  font-weight: var(--font-bold);
+  color: rgba(255, 255, 255, var(--opacity-text-primary));
+  margin-bottom: var(--space-md);
+}
+
+.onboarding-subtitle {
+  font-size: var(--font-lg);
+  color: rgba(255, 255, 255, var(--opacity-text-secondary));
+  margin-bottom: var(--space-3xl);
+}
+
+.role-selection {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-3xl);
+}
+
+.role-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px solid rgba(147, 155, 245, 0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3xl) var(--space-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.role-card:hover:not(:disabled) {
+  background: rgba(147, 155, 245, 0.08);
+  border-color: rgba(147, 155, 245, 0.3);
+  transform: translateY(-4px);
+}
+
+.role-card.selected {
+  background: rgba(147, 155, 245, 0.15);
+  border-color: rgba(147, 155, 245, 0.4);
+  box-shadow: 0 0 0 3px rgba(147, 155, 245, 0.2);
+}
+
+.role-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.role-icon {
+  font-size: 4rem;
+  line-height: 1;
+  margin-bottom: var(--space-sm);
+}
+
+.role-card h2 {
+  font-size: var(--font-xl);
+  font-weight: var(--font-semibold);
+  color: rgba(255, 255, 255, var(--opacity-text-primary));
+  margin: 0;
+}
+
+.role-card p {
+  font-size: var(--font-sm);
+  color: rgba(255, 255, 255, var(--opacity-text-secondary));
+  margin: 0;
+}
+
+.onboarding-submit {
+  width: 100%;
+  padding: var(--space-lg) var(--space-2xl);
+  font-size: var(--font-lg);
+}
+
+@media (max-width: 640px) {
+  .role-selection {
+    grid-template-columns: 1fr;
+  }
+}

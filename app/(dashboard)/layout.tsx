@@ -1,51 +1,70 @@
-import { redirect } from 'next/navigation'
-import { Suspense } from 'react'
-import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardNav } from './dashboard/dashboard-nav'
-import { unstable_cache } from 'next/cache'
 
-// Cache user data for 5 minutes
-const getCachedUser = unstable_cache(
-  async (userId: string) => {
-    return prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        nombre: true,
-        email: true,
-      }
-    })
-  },
-  ['user-data'],
-  { revalidate: 300 } // 5 minutes
-)
+type User = {
+  id: string
+  nombre: string
+  email: string
+}
 
-export default async function DashboardLayout({
+// Cache del usuario en memoria del cliente
+let cachedUser: User | null = null
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const userId = await getCurrentUser()
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(cachedUser)
+  const [loading, setLoading] = useState(!cachedUser)
 
-  if (!userId) {
-    redirect('/login')
-  }
+  useEffect(() => {
+    // Si ya tenemos el usuario en cache, no hacer fetch
+    if (cachedUser) {
+      setUser(cachedUser)
+      setLoading(false)
+      return
+    }
 
-  const user = await getCachedUser(userId)
+    // Fetch del usuario actual
+    fetch('/api/auth/me')
+      .then(res => {
+        if (!res.ok) {
+          router.push('/login')
+          return null
+        }
+        return res.json()
+      })
+      .then(data => {
+        if (data?.user) {
+          cachedUser = data.user
+          setUser(data.user)
+        }
+        setLoading(false)
+      })
+      .catch(() => {
+        router.push('/login')
+      })
+  }, [router])
 
-  if (!user) {
-    redirect('/login')
+  // Mostrar nada mientras carga (el contenido de la página tiene su propio loading)
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="dashboard-nav" style={{ height: '64px' }} />
+        <main>{children}</main>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav profesor={user} />
-      <main>
-        <Suspense>
-          {children}
-        </Suspense>
-      </main>
+      <main>{children}</main>
     </div>
   )
 }

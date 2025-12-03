@@ -4144,6 +4144,60 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
 }
 
+/* ========================================
+   LOADING SKELETONS
+   ======================================== */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.loading-skeleton {
+  padding: 1rem;
+}
+
+.skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.skeleton-title,
+.skeleton-line,
+.skeleton-button {
+  background: rgba(147, 155, 245, 0.15);
+  border-radius: 8px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-title {
+  height: 32px;
+  width: 200px;
+}
+
+.skeleton-line {
+  height: 20px;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+.skeleton-button {
+  height: 44px;
+  width: 140px;
+}
+
+.skeleton-card {
+  background: rgba(23, 19, 32, 0.6);
+  border: 1px solid rgba(147, 155, 245, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
 .dashboard-next-card::before {
   content: '';
   position: absolute;

@@ -7,6 +7,7 @@ import { PackDialog } from './pack-dialog'
 import { deletePackAPI, togglePackAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
+import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 
 type Pack = {
   id: string
@@ -52,6 +53,7 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
     try {
       await deletePackAPI(deleteConfirm.id)
       setPacks(prev => prev.filter(p => p.id !== deleteConfirm.id))
+      invalidateCache(CACHE_KEYS.ALUMNOS) // Invalidar cache de alumnos
       showSuccess('Pack eliminado')
       setDeleteConfirm({ isOpen: false, id: null })
     } catch (err: any) {
@@ -66,6 +68,7 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
     setPacks(prev => prev.map(p => p.id === id ? { ...p, estaActivo: !p.estaActivo } : p))
     try {
       await togglePackAPI(id)
+      invalidateCache(CACHE_KEYS.ALUMNOS) // Invalidar cache de alumnos
       showSuccess('Estado actualizado')
     } catch (err: any) {
       // Revertir en caso de error
@@ -151,6 +154,7 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
           } else {
             setPacks(prev => [...prev, updatedPack])
           }
+          invalidateCache(CACHE_KEYS.ALUMNOS) // Invalidar cache de alumnos
         }}
       />
 

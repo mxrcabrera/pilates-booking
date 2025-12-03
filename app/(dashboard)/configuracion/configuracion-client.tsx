@@ -6,6 +6,7 @@ import { HorariosSection } from './horarios-section'
 import { PacksSection } from './packs-section'
 import { updatePreferencias } from './actions'
 import { useState } from 'react'
+import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 
 type Horario = {
   id: string
@@ -81,6 +82,7 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
 
     try {
       await updatePreferencias(formData)
+      invalidateCache(CACHE_KEYS.ALUMNOS) // Invalidar cache de alumnos (por precioPorClase)
       setMessagePacks({ type: 'success', text: 'Configuración de packs actualizada correctamente' })
       setTimeout(() => setMessagePacks(null), 3000)
     } catch (err: any) {

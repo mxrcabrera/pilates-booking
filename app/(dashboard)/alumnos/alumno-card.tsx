@@ -2,15 +2,13 @@
 
 import { MoreVertical, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import { toggleAlumnoStatusAPI, deleteAlumnoAPI } from '@/lib/api'
-import { useToast } from '@/components/ui/toast'
-import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 type Alumno = {
   id: string
   nombre: string
   email: string
   telefono: string
+  genero: string
   cumpleanos: string | null
   patologias: string | null
   packType: string
@@ -23,13 +21,6 @@ type Alumno = {
   }
 }
 
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-}
-
 const PACK_LABELS: Record<string, string> = {
   'mensual': 'Mensual',
   'por_clase': 'Por Clase',
@@ -37,7 +28,6 @@ const PACK_LABELS: Record<string, string> = {
 
 export function AlumnoCard({
   alumno,
-  packs,
   onEdit,
   onView,
   onDelete,
@@ -45,7 +35,6 @@ export function AlumnoCard({
   viewMode = 'list'
 }: {
   alumno: Alumno
-  packs: Pack[]
   onEdit: () => void
   onView: () => void
   onDelete: () => void
@@ -56,28 +45,14 @@ export function AlumnoCard({
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Obtener label del pack
-  const getPackLabel = () => {
-    if (PACK_LABELS[alumno.packType]) {
-      return PACK_LABELS[alumno.packType]
-    }
-    // Si es pack personalizado (pack_{uuid})
-    if (alumno.packType.startsWith('pack_')) {
-      const packId = alumno.packType.replace('pack_', '')
-      const pack = packs.find(p => p.id === packId)
-      if (pack) return pack.nombre
-    }
-    return alumno.packType
-  }
+  const getPackLabel = () => PACK_LABELS[alumno.packType] || alumno.packType
 
-  // Obtener clases del pack
-  const getPackClases = () => {
-    if (alumno.packType.startsWith('pack_')) {
-      const packId = alumno.packType.replace('pack_', '')
-      const pack = packs.find(p => p.id === packId)
-      if (pack) return pack.clasesPorSemana
+  // Status con género
+  const getStatusText = () => {
+    if (alumno.genero === 'M') {
+      return alumno.estaActivo ? 'Activo' : 'Inactivo'
     }
-    return null
+    return alumno.estaActivo ? 'Activa' : 'Inactiva'
   }
 
   // Listener global para cerrar menu
@@ -86,8 +61,7 @@ export function AlumnoCard({
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node
-      
-      // Si el click NO es en el botón de menú NI en el dropdown, cerrar
+
       if (
         menuButtonRef.current && !menuButtonRef.current.contains(target) &&
         dropdownRef.current && !dropdownRef.current.contains(target)
@@ -96,7 +70,6 @@ export function AlumnoCard({
       }
     }
 
-    // Escuchar clicks en todo el documento
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showMenu])
@@ -104,11 +77,11 @@ export function AlumnoCard({
   // Cerrar con ESC
   useEffect(() => {
     if (!showMenu) return
-    
+
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setShowMenu(false)
     }
-    
+
     document.addEventListener('keydown', handleEsc)
     return () => document.removeEventListener('keydown', handleEsc)
   }, [showMenu])
@@ -121,17 +94,6 @@ export function AlumnoCard({
   const handleDelete = () => {
     setShowMenu(false)
     onDelete()
-  }
-
-  const getClasesDisplay = () => {
-    if (alumno.packType === 'mensual' && alumno.clasesPorMes) {
-      return `${alumno.clasesPorMes}/mes`
-    }
-    const packClases = getPackClases()
-    if (packClases) {
-      return `${packClases}/sem`
-    }
-    return null
   }
 
   // Vista LISTA
@@ -149,7 +111,7 @@ export function AlumnoCard({
             <h3>{alumno.nombre}</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
-                {alumno.estaActivo ? 'Activo' : 'Inactivo'}
+                {getStatusText()}
               </span>
               <button
                 ref={menuButtonRef}
@@ -163,7 +125,7 @@ export function AlumnoCard({
               </button>
             </div>
           </div>
-          
+
           {showMenu && (
             <div ref={dropdownRef} className="dropdown-menu-fixed">
               <button onClick={() => { onEdit(); setShowMenu(false); }}>
@@ -185,7 +147,7 @@ export function AlumnoCard({
     )
   }
 
-  // Vista GRID (igual)
+  // Vista GRID
   return (
     <>
       {showMenu && (
@@ -199,13 +161,13 @@ export function AlumnoCard({
           <div className="alumno-info">
             <h3>{alumno.nombre}</h3>
             <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
-              {alumno.estaActivo ? 'Activo' : 'Inactivo'}
+              {getStatusText()}
             </span>
           </div>
           <div className="alumno-menu">
-            <button 
+            <button
               ref={menuButtonRef}
-              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
+              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
               className="btn-icon-xs"
             >
               <MoreVertical size={16} />
@@ -237,10 +199,6 @@ export function AlumnoCard({
           </div>
           <div className="pack-info">
             <span className="pack-badge">{getPackLabel()}</span>
-            {getClasesDisplay() && (
-              <span className="pack-detail">{getClasesDisplay()}</span>
-            )}
-            <span className="pack-price">${alumno.precio}</span>
           </div>
         </div>
       </div>

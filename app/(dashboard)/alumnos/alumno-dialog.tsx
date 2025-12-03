@@ -16,6 +16,7 @@ type Alumno = {
   nombre: string
   email: string
   telefono: string
+  genero: string
   cumpleanos: string | null
   patologias: string | null
   packType: string
@@ -28,29 +29,20 @@ type Alumno = {
   }
 }
 
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-}
-
 const PACK_TYPES = [
-  { value: 'mensual', label: 'Mensual', requiresClases: true },
-  { value: 'por_clase', label: 'Por Clase', requiresClases: false },
+  { value: 'mensual', label: 'Mensual' },
+  { value: 'por_clase', label: 'Por Clase' },
 ]
 
 export function AlumnoDialog({
   isOpen,
   onClose,
   alumno,
-  packs,
   onSuccess
 }: {
   isOpen: boolean
   onClose: () => void
   alumno: Alumno | null
-  packs: Pack[]
   onSuccess?: (alumno: Alumno, isEdit: boolean) => void
 }) {
   const { showSuccess, showError } = useToast()
@@ -67,7 +59,7 @@ export function AlumnoDialog({
     }
   }, [isOpen, alumno])
 
-  const packConfig = PACK_TYPES.find(p => p.value === selectedPack)
+  const [selectedGenero, setSelectedGenero] = useState(alumno?.genero || 'F')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -77,31 +69,15 @@ export function AlumnoDialog({
     const formData = new FormData(e.currentTarget)
     const packType = formData.get('packType') as string
 
-    // Obtener precio según el tipo de pack
-    let precio = 0
-    if (packType === 'por_clase') {
-      // Precio manual ingresado por el usuario
-      const precioPorClase = formData.get('precioPorClase') as string
-      precio = precioPorClase ? parseFloat(precioPorClase) : 0
-    } else if (packType.startsWith('pack_')) {
-      // Precio del pack personalizado
-      const packId = packType.replace('pack_', '')
-      const pack = packs.find(p => p.id === packId)
-      if (pack) {
-        precio = parseFloat(pack.precio)
-      }
-    }
-    // Para 'mensual' el precio es 0 (o podría venir de config)
-
     const data = {
       nombre: formData.get('nombre') as string,
       email: formData.get('email') as string,
       telefono: formData.get('telefono') as string,
+      genero: selectedGenero,
       cumpleanos: formData.get('cumpleanos') as string || undefined,
       patologias: formData.get('patologias') as string || undefined,
       packType,
-      clasesPorMes: formData.get('clasesPorMes') ? parseInt(formData.get('clasesPorMes') as string) : undefined,
-      precio,
+      precio: 0,
     }
 
     try {
@@ -203,93 +179,45 @@ export function AlumnoDialog({
           </div>
 
           <div className="form-group">
-            <label>Tipo de Pack</label>
-            <input type="hidden" name="packType" value={selectedPack} required />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {/* Tipos Básicos */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
-                {PACK_TYPES.map(pack => (
-                  <button
-                    key={pack.value}
-                    type="button"
-                    onClick={() => setSelectedPack(pack.value)}
-                    disabled={isLoading}
-                    className={`pack-option ${selectedPack === pack.value ? 'selected' : ''}`}
-                  >
-                    <div className="pack-option-label">{pack.label}</div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Packs Personalizados */}
-              {packs.length > 0 && (
-                <>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    marginTop: '0.5rem'
-                  }}>
-                    Packs Personalizados
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
-                    {packs.map(pack => (
-                      <button
-                        key={pack.id}
-                        type="button"
-                        onClick={() => setSelectedPack(`pack_${pack.id}`)}
-                        disabled={isLoading}
-                        className={`pack-option ${selectedPack === `pack_${pack.id}` ? 'selected' : ''}`}
-                      >
-                        <div className="pack-option-label">{pack.nombre}</div>
-                        <div className="pack-option-details">
-                          {pack.clasesPorSemana} {pack.clasesPorSemana === 1 ? 'clase' : 'clases'}/sem
-                        </div>
-                        <div className="pack-option-price">
-                          ${parseFloat(pack.precio).toLocaleString('es-AR')}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+            <label>Género</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedGenero('F')}
+                disabled={isLoading}
+                className={`pack-option ${selectedGenero === 'F' ? 'selected' : ''}`}
+              >
+                <div className="pack-option-label">Mujer</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedGenero('M')}
+                disabled={isLoading}
+                className={`pack-option ${selectedGenero === 'M' ? 'selected' : ''}`}
+              >
+                <div className="pack-option-label">Hombre</div>
+              </button>
             </div>
           </div>
 
-          {packConfig?.requiresClases && (
-            <div className="form-group">
-              <label>Clases por Mes</label>
-              <input
-                type="number"
-                name="clasesPorMes"
-                placeholder="8"
-                min="1"
-                max="31"
-                required
-                defaultValue={alumno?.clasesPorMes || ''}
-                disabled={isLoading}
-              />
-            </div>
-          )}
+          <div className="form-group">
+            <label>Tipo de Pack</label>
+            <input type="hidden" name="packType" value={selectedPack} required />
 
-          {selectedPack === 'por_clase' && (
-            <div className="form-group">
-              <label>Precio por Clase</label>
-              <input
-                type="number"
-                name="precioPorClase"
-                placeholder="1500"
-                min="0"
-                step="0.01"
-                required
-                defaultValue={alumno?.precio || ''}
-                disabled={isLoading}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              {PACK_TYPES.map(pack => (
+                <button
+                  key={pack.value}
+                  type="button"
+                  onClick={() => setSelectedPack(pack.value)}
+                  disabled={isLoading}
+                  className={`pack-option ${selectedPack === pack.value ? 'selected' : ''}`}
+                >
+                  <div className="pack-option-label">{pack.label}</div>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           <DialogFooter>
             <button

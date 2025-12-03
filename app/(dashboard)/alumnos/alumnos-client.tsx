@@ -14,6 +14,7 @@ type Alumno = {
   nombre: string
   email: string
   telefono: string
+  genero: string
   cumpleanos: string | null
   patologias: string | null
   packType: string
@@ -26,14 +27,7 @@ type Alumno = {
   }
 }
 
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-}
-
-export function AlumnosClient({ alumnos: initialAlumnos, packs }: { alumnos: Alumno[], packs: Pack[] }) {
+export function AlumnosClient({ alumnos: initialAlumnos }: { alumnos: Alumno[] }) {
   const { showSuccess, showError } = useToast()
   const [alumnos, setAlumnos] = useState(initialAlumnos)
   const [searchTerm, setSearchTerm] = useState('')
@@ -180,7 +174,6 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs }: { alumnos: Alu
               <AlumnoCard
                 key={alumno.id}
                 alumno={alumno}
-                packs={packs}
                 onEdit={() => handleEdit(alumno)}
                 onView={() => handleView(alumno)}
                 onDelete={() => handleDeleteClick(alumno)}
@@ -199,7 +192,6 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs }: { alumnos: Alu
           setEditingAlumno(null)
         }}
         alumno={editingAlumno}
-        packs={packs}
         onSuccess={handleAlumnoSuccess}
       />
 

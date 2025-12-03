@@ -10,6 +10,7 @@ type Alumno = {
   nombre: string
   email: string
   telefono: string
+  genero: string
   cumpleanos: string | null
   patologias: string | null
   packType: string
@@ -22,16 +23,8 @@ type Alumno = {
   }
 }
 
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-}
-
 type AlumnosData = {
   alumnos: Alumno[]
-  packs: Pack[]
 }
 
 export default function AlumnosPage() {
@@ -70,5 +63,5 @@ export default function AlumnosPage() {
     return <PageLoading />
   }
 
-  return <AlumnosClient alumnos={data.alumnos} packs={data.packs} />
+  return <AlumnosClient alumnos={data.alumnos} />
 }

@@ -12,19 +12,13 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const [alumnos, packs] = await Promise.all([
-      prisma.alumno.findMany({
-        where: { profesorId: userId },
-        include: {
-          _count: { select: { clases: true, pagos: true } }
-        },
-        orderBy: { nombre: 'asc' }
-      }),
-      prisma.pack.findMany({
-        where: { profesorId: userId, estaActivo: true },
-        orderBy: { clasesPorSemana: 'asc' }
-      })
-    ])
+    const alumnos = await prisma.alumno.findMany({
+      where: { profesorId: userId },
+      include: {
+        _count: { select: { clases: true, pagos: true } }
+      },
+      orderBy: { nombre: 'asc' }
+    })
 
     const alumnosSerializados = alumnos.map(alumno => ({
       ...alumno,
@@ -32,14 +26,7 @@ export async function GET() {
       cumpleanos: alumno.cumpleanos ? alumno.cumpleanos.toISOString() : null,
     }))
 
-    const packsSerializados = packs.map(pack => ({
-      id: pack.id,
-      nombre: pack.nombre,
-      clasesPorSemana: pack.clasesPorSemana,
-      precio: pack.precio.toString()
-    }))
-
-    return NextResponse.json({ alumnos: alumnosSerializados, packs: packsSerializados })
+    return NextResponse.json({ alumnos: alumnosSerializados })
   } catch (error: any) {
     console.error('Alumnos GET error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -58,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'create': {
-        const { nombre, email, telefono, cumpleanos, patologias, packType, clasesPorMes, precio } = data
+        const { nombre, email, telefono, genero, cumpleanos, patologias, packType, precio } = data
 
         const alumno = await prisma.alumno.create({
           data: {
@@ -66,11 +53,11 @@ export async function POST(request: NextRequest) {
             nombre,
             email,
             telefono,
+            genero: genero || 'F',
             cumpleanos: cumpleanos ? new Date(cumpleanos + 'T00:00:00') : null,
             patologias: patologias || null,
             packType,
-            clasesPorMes: clasesPorMes ? parseInt(clasesPorMes) : null,
-            precio: new Decimal(parseFloat(precio))
+            precio: new Decimal(precio || 0)
           },
           include: {
             _count: { select: { clases: true, pagos: true } }
@@ -81,7 +68,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'update': {
-        const { id, nombre, email, telefono, cumpleanos, patologias, packType, clasesPorMes, precio } = data
+        const { id, nombre, email, telefono, genero, cumpleanos, patologias, packType, precio } = data
 
         const alumno = await prisma.alumno.update({
           where: { id },
@@ -89,11 +76,11 @@ export async function POST(request: NextRequest) {
             nombre,
             email,
             telefono,
+            genero: genero || 'F',
             cumpleanos: cumpleanos ? new Date(cumpleanos + 'T00:00:00') : null,
             patologias: patologias || null,
             packType,
-            clasesPorMes: clasesPorMes ? parseInt(clasesPorMes) : null,
-            precio: new Decimal(parseFloat(precio))
+            precio: new Decimal(precio || 0)
           },
           include: {
             _count: { select: { clases: true, pagos: true } }

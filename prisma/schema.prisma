@@ -66,6 +66,7 @@ model Alumno {
   nombre             String
   email              String
   telefono           String
+  genero             String    @default("F") @map("genero") // M = Masculino, F = Femenino
   cumpleanos         DateTime? @map("cumpleanos") @db.Date
   patologias         String?   @map("patologias")
   packType           String    @map("pack_type")

@@ -62,31 +62,45 @@ export function HorariosSection({
 
   const handleDelete = async () => {
     if (!deleteConfirm.id) return
-    setIsDeleting(true)
-    try {
-      await deleteHorarioAPI(deleteConfirm.id)
-      // Actualizar estado local inmediatamente
-      setHorarios(prev => prev.filter(h => h.id !== deleteConfirm.id))
-      showSuccess('Horario eliminado')
-      setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
-    } catch (err: any) {
-      showError(err.message)
-    } finally {
-      setIsDeleting(false)
+    const idToDelete = deleteConfirm.id
+
+    // Optimistic: eliminar de UI inmediatamente
+    const horarioToDelete = horarios.find(h => h.id === idToDelete)
+    setHorarios(prev => prev.filter(h => h.id !== idToDelete))
+    setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
+    showSuccess('Horario eliminado')
+
+    // Si es ID temporal, no llamar API (todavía no existe en DB)
+    if (idToDelete.startsWith('temp-')) {
+      return
     }
+
+    // API call en background
+    deleteHorarioAPI(idToDelete).catch(err => {
+      // Revertir en caso de error
+      if (horarioToDelete) {
+        setHorarios(prev => [...prev, horarioToDelete])
+      }
+      showError(err.message)
+    })
   }
 
   const handleToggle = async (id: string) => {
     // Actualización optimista
     setHorarios(prev => prev.map(h => h.id === id ? { ...h, estaActivo: !h.estaActivo } : h))
-    try {
-      await toggleHorarioAPI(id)
-      showSuccess('Estado actualizado')
-    } catch (err: any) {
+    showSuccess('Estado actualizado')
+
+    // Si es ID temporal, no llamar API
+    if (id.startsWith('temp-')) {
+      return
+    }
+
+    // API call en background
+    toggleHorarioAPI(id).catch(err => {
       // Revertir en caso de error
       setHorarios(prev => prev.map(h => h.id === id ? { ...h, estaActivo: !h.estaActivo } : h))
       showError(err.message)
-    }
+    })
   }
 
   const toggleSelection = (id: string) => {
@@ -114,19 +128,25 @@ export function HorariosSection({
 
   const handleBulkDelete = async () => {
     if (selectedHorarios.size === 0) return
-    setIsDeleting(true)
-    try {
-      await Promise.all(Array.from(selectedHorarios).map(id => deleteHorarioAPI(id)))
-      // Actualizar estado local
-      setHorarios(prev => prev.filter(h => !selectedHorarios.has(h.id)))
-      showSuccess(`${selectedHorarios.size} horario(s) eliminado(s)`)
-      setSelectedHorarios(new Set())
-      setIsSelectionMode(false)
-      setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
-    } catch (err: any) {
-      showError(err.message)
-    } finally {
-      setIsDeleting(false)
+
+    const idsToDelete = Array.from(selectedHorarios)
+    const horariosToDelete = horarios.filter(h => selectedHorarios.has(h.id))
+
+    // Optimistic: eliminar de UI inmediatamente
+    setHorarios(prev => prev.filter(h => !selectedHorarios.has(h.id)))
+    showSuccess(`${selectedHorarios.size} horario(s) eliminado(s)`)
+    setSelectedHorarios(new Set())
+    setIsSelectionMode(false)
+    setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
+
+    // Solo llamar API para IDs reales (no temporales)
+    const realIds = idsToDelete.filter(id => !id.startsWith('temp-'))
+    if (realIds.length > 0) {
+      Promise.all(realIds.map(id => deleteHorarioAPI(id))).catch(err => {
+        // Revertir en caso de error
+        setHorarios(prev => [...prev, ...horariosToDelete])
+        showError(err.message)
+      })
     }
   }
 
@@ -290,9 +310,9 @@ export function HorariosSection({
         }}
         onBatchCreate={(nuevosHorarios) => {
           setHorarios(prev => {
-            // Merge: reemplazar existentes por id, agregar nuevos
-            const horariosMap = new Map(prev.map(h => [h.id, h]))
-            nuevosHorarios.forEach(h => horariosMap.set(h.id, h))
+            // Merge por diaSemana+esManiana (no por id) para reemplazar temporales con reales
+            const horariosMap = new Map(prev.map(h => [`${h.diaSemana}-${h.esManiana}`, h]))
+            nuevosHorarios.forEach(h => horariosMap.set(`${h.diaSemana}-${h.esManiana}`, h))
             return Array.from(horariosMap.values())
           })
         }}

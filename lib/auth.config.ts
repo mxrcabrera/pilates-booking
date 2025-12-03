@@ -68,7 +68,7 @@ export const authConfig: NextAuthConfig = {
     },
     async jwt({ token, user, account }) {
       if (user) {
-        token.sub = user.id
+        token.sub = user.id as string
         token.role = (user as any).role || 'PROFESOR'
 
         if (account?.access_token) {

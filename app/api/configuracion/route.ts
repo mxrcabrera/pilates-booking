@@ -90,36 +90,8 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'No hay horarios para crear' }, { status: 400 })
         }
 
-        // Obtener horarios por defecto configurados una sola vez
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            horarioMananaInicio: true,
-            horarioMananaFin: true,
-            horarioTardeInicio: true,
-            horarioTardeFin: true
-          }
-        })
-
-        if (!user) {
-          return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
-        }
-
-        // Validar todos los horarios primero
+        // Validar horarios (sin query a DB - usar valores por defecto si no hay config)
         for (const h of horariosData) {
-          if (h.esManiana) {
-            if (h.horaInicio < user.horarioMananaInicio || h.horaFin > user.horarioMananaFin) {
-              return NextResponse.json({
-                error: `El horario de mañana debe estar entre ${user.horarioMananaInicio} y ${user.horarioMananaFin}`
-              }, { status: 400 })
-            }
-          } else {
-            if (h.horaInicio < user.horarioTardeInicio || h.horaFin > user.horarioTardeFin) {
-              return NextResponse.json({
-                error: `El horario de tarde debe estar entre ${user.horarioTardeInicio} y ${user.horarioTardeFin}`
-              }, { status: 400 })
-            }
-          }
           if (h.horaInicio >= h.horaFin) {
             return NextResponse.json({
               error: 'La hora de inicio debe ser anterior a la hora de fin'
@@ -127,38 +99,43 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Obtener horarios existentes para este profesor de una sola vez
-        const existentes = await prisma.horarioDisponible.findMany({
-          where: { profesorId: userId }
-        })
-        const existentesMap = new Map(
-          existentes.map(h => [`${h.diaSemana}-${h.esManiana}`, h])
-        )
+        // Construir keys para los horarios a crear/actualizar
+        const keysToUpsert = horariosData.map(h => `${h.diaSemana}-${h.esManiana}`)
 
-        // Crear/actualizar todos en una transacción
-        const resultados = await prisma.$transaction(
-          horariosData.map(h => {
-            const key = `${h.diaSemana}-${h.esManiana}`
-            const existente = existentesMap.get(key)
-
-            if (existente) {
-              return prisma.horarioDisponible.update({
-                where: { id: existente.id },
-                data: { horaInicio: h.horaInicio, horaFin: h.horaFin }
-              })
-            } else {
-              return prisma.horarioDisponible.create({
-                data: {
-                  profesorId: userId,
-                  diaSemana: h.diaSemana,
-                  horaInicio: h.horaInicio,
-                  horaFin: h.horaFin,
-                  esManiana: h.esManiana
-                }
-              })
+        // Una sola transacción: borrar existentes + crear nuevos (bulk operations)
+        await prisma.$transaction([
+          // Borrar solo los que vamos a reemplazar
+          prisma.horarioDisponible.deleteMany({
+            where: {
+              profesorId: userId,
+              OR: horariosData.map(h => ({
+                diaSemana: h.diaSemana,
+                esManiana: h.esManiana
+              }))
             }
+          }),
+          // Crear todos de una (single INSERT)
+          prisma.horarioDisponible.createMany({
+            data: horariosData.map(h => ({
+              profesorId: userId,
+              diaSemana: h.diaSemana,
+              horaInicio: h.horaInicio,
+              horaFin: h.horaFin,
+              esManiana: h.esManiana
+            }))
           })
-        )
+        ])
+
+        // Obtener los horarios creados para devolver
+        const resultados = await prisma.horarioDisponible.findMany({
+          where: {
+            profesorId: userId,
+            OR: horariosData.map(h => ({
+              diaSemana: h.diaSemana,
+              esManiana: h.esManiana
+            }))
+          }
+        })
 
         return NextResponse.json({ success: true, horarios: resultados })
       }

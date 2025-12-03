@@ -113,10 +113,8 @@ export function HorarioDialog({
     }
   }, [turnoSeleccionado, isOpen, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin])
 
-  async function procesarHorarios(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false): Promise<Horario[]> {
+  function buildHorariosToCreate(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false): Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }> {
     const rango = RANGOS_DIAS.find(r => r.value === rangoSeleccionado)
-
-    // Build array of horarios to create
     const horariosToCreate: Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }> = []
 
     if (rango && rango.dias.length > 0) {
@@ -142,7 +140,6 @@ export function HorarioDialog({
             esManiana: true
           })
 
-          // Skip tarde for Saturday if no tarde shifts are configured
           if (dia !== 6 || sabadoTieneTarde) {
             horariosToCreate.push({
               diaSemana: dia,
@@ -171,7 +168,6 @@ export function HorarioDialog({
           esManiana: true
         })
 
-        // Skip tarde for Saturday if no tarde shifts are configured
         if (diaSemana !== 6 || sabadoTieneTarde) {
           horariosToCreate.push({
             diaSemana,
@@ -190,9 +186,39 @@ export function HorarioDialog({
       }
     }
 
-    // Single batch API call
-    const result = await saveHorariosBatchAPI(horariosToCreate)
-    return result.horarios || []
+    return horariosToCreate
+  }
+
+  async function procesarHorarios(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false): Promise<Horario[]> {
+    const horariosToCreate = buildHorariosToCreate(formData, excluirSabadoTarde, excluirDomingo)
+
+    // Crear horarios optimistas con IDs temporales
+    const optimisticHorarios: Horario[] = horariosToCreate.map((h, i) => ({
+      id: `temp-${Date.now()}-${i}`,
+      diaSemana: h.diaSemana,
+      horaInicio: h.horaInicio,
+      horaFin: h.horaFin,
+      esManiana: h.esManiana,
+      estaActivo: true
+    }))
+
+    // Actualizar UI inmediatamente
+    onBatchCreate?.(optimisticHorarios)
+    onClose()
+    showSuccess('Horario(s) creado(s)')
+
+    // Llamar API en background y actualizar con IDs reales
+    saveHorariosBatchAPI(horariosToCreate)
+      .then(result => {
+        if (result.horarios) {
+          onBatchCreate?.(result.horarios)
+        }
+      })
+      .catch(err => {
+        showError(err.message || 'Error al guardar horarios')
+      })
+
+    return optimisticHorarios
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -217,60 +243,46 @@ export function HorarioDialog({
       return
     }
 
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      if (horario) {
-        const result = await saveHorarioAPI({
-          id: horario.id,
-          diaSemana: parseInt(formData.get('diaSemana') as string) || horario.diaSemana,
-          horaInicio: formData.get('horaInicio') as string,
-          horaFin: formData.get('horaFin') as string,
-          esManiana: turnoSeleccionado === 'maniana'
-        })
-        showSuccess('Horario actualizado')
-        if (result.horario) {
-          onSuccess?.(result.horario, true)
-        }
-      } else {
-        const horariosCreados = await procesarHorarios(formData)
-        showSuccess('Horario(s) creado(s)')
-        onBatchCreate?.(horariosCreados)
+    if (horario) {
+      // Edición - optimistic update
+      const updatedHorario: Horario = {
+        ...horario,
+        horaInicio: formData.get('horaInicio') as string,
+        horaFin: formData.get('horaFin') as string,
+        esManiana: turnoSeleccionado === 'maniana'
       }
+      onSuccess?.(updatedHorario, true)
       onClose()
-    } catch (err: any) {
-      showError(err.message || 'Error al guardar horario')
-      setError(err.message || 'Error al guardar horario')
-    } finally {
-      setIsLoading(false)
+      showSuccess('Horario actualizado')
+
+      // API call en background
+      saveHorarioAPI({
+        id: horario.id,
+        diaSemana: horario.diaSemana,
+        horaInicio: formData.get('horaInicio') as string,
+        horaFin: formData.get('horaFin') as string,
+        esManiana: turnoSeleccionado === 'maniana'
+      }).catch(err => {
+        showError(err.message || 'Error al guardar horario')
+      })
+    } else {
+      // Creación batch - procesarHorarios ya hace optimistic update
+      await procesarHorarios(formData)
     }
   }
 
   async function handleConfirm(option: 'incluir' | 'excluir') {
     if (!pendingSubmit) return
-
-    setIsLoading(true)
-    setError(null)
     setConfirmType(null)
 
-    try {
-      let horariosCreados: Horario[] = []
-      if (confirmType === 'sabado-tarde') {
-        horariosCreados = await procesarHorarios(pendingSubmit, option === 'excluir')
-      } else if (confirmType === 'domingo') {
-        horariosCreados = await procesarHorarios(pendingSubmit, false, option === 'excluir')
-      }
-      showSuccess('Horario(s) creado(s)')
-      onBatchCreate?.(horariosCreados)
-      onClose()
-    } catch (err: any) {
-      showError(err.message || 'Error al guardar horario')
-      setError(err.message || 'Error al guardar horario')
-    } finally {
-      setIsLoading(false)
-      setPendingSubmit(null)
+    // procesarHorarios ya hace optimistic update, cierra dialog y muestra success
+    if (confirmType === 'sabado-tarde') {
+      await procesarHorarios(pendingSubmit, option === 'excluir')
+    } else if (confirmType === 'domingo') {
+      await procesarHorarios(pendingSubmit, false, option === 'excluir')
     }
+
+    setPendingSubmit(null)
   }
 
   return (

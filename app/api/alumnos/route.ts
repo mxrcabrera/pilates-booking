@@ -12,13 +12,26 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const alumnos = await prisma.alumno.findMany({
-      where: { profesorId: userId },
-      include: {
-        _count: { select: { clases: true, pagos: true } }
-      },
-      orderBy: { nombre: 'asc' }
-    })
+    // Obtener alumnos, packs activos y precio por clase en paralelo
+    const [alumnos, user] = await Promise.all([
+      prisma.alumno.findMany({
+        where: { profesorId: userId },
+        include: {
+          _count: { select: { clases: true, pagos: true } }
+        },
+        orderBy: { nombre: 'asc' }
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          precioPorClase: true,
+          packs: {
+            where: { estaActivo: true },
+            orderBy: { clasesPorSemana: 'asc' }
+          }
+        }
+      })
+    ])
 
     const alumnosSerializados = alumnos.map(alumno => ({
       ...alumno,
@@ -26,7 +39,18 @@ export async function GET() {
       cumpleanos: alumno.cumpleanos ? alumno.cumpleanos.toISOString() : null,
     }))
 
-    return NextResponse.json({ alumnos: alumnosSerializados })
+    const packsSerializados = user?.packs.map(pack => ({
+      id: pack.id,
+      nombre: pack.nombre,
+      clasesPorSemana: pack.clasesPorSemana,
+      precio: pack.precio.toString()
+    })) || []
+
+    return NextResponse.json({
+      alumnos: alumnosSerializados,
+      packs: packsSerializados,
+      precioPorClase: user?.precioPorClase?.toString() || '0'
+    })
   } catch (error: any) {
     console.error('Alumnos GET error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

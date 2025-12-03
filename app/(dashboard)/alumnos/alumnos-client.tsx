@@ -27,7 +27,14 @@ type Alumno = {
   }
 }
 
-export function AlumnosClient({ alumnos: initialAlumnos }: { alumnos: Alumno[] }) {
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+}
+
+export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string }) {
   const { showSuccess, showError } = useToast()
   const [alumnos, setAlumnos] = useState(initialAlumnos)
   const [searchTerm, setSearchTerm] = useState('')
@@ -193,6 +200,8 @@ export function AlumnosClient({ alumnos: initialAlumnos }: { alumnos: Alumno[] }
         }}
         alumno={editingAlumno}
         onSuccess={handleAlumnoSuccess}
+        packs={packs}
+        precioPorClase={precioPorClase}
       />
 
       <AlumnoDetailSheet

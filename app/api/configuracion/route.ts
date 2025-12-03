@@ -43,6 +43,7 @@ export async function GET() {
         horarioTardeFin: user.horarioTardeFin,
         espacioCompartidoId: user.espacioCompartidoId,
         syncGoogleCalendar: user.syncGoogleCalendar,
+        precioPorClase: user.precioPorClase?.toString() || '0',
         hasGoogleAccount
       },
       horarios: user.horariosDisponibles,
@@ -304,7 +305,8 @@ export async function POST(request: NextRequest) {
           horarioTardeInicio,
           horarioTardeFin,
           espacioCompartidoId,
-          syncGoogleCalendar
+          syncGoogleCalendar,
+          precioPorClase
         } = data
 
         const espacioNormalizado = espacioCompartidoId?.trim().toLowerCase() || null
@@ -319,7 +321,8 @@ export async function POST(request: NextRequest) {
             horarioTardeInicio,
             horarioTardeFin,
             espacioCompartidoId: espacioNormalizado,
-            syncGoogleCalendar
+            syncGoogleCalendar,
+            ...(precioPorClase !== undefined && { precioPorClase: parseFloat(precioPorClase) || 0 })
           }
         })
         return NextResponse.json({ success: true })

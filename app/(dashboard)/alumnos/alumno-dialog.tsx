@@ -29,37 +29,72 @@ type Alumno = {
   }
 }
 
-const PACK_TYPES = [
-  { value: 'mensual', label: 'Mensual' },
-  { value: 'por_clase', label: 'Por Clase' },
-]
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+}
 
 export function AlumnoDialog({
   isOpen,
   onClose,
   alumno,
-  onSuccess
+  onSuccess,
+  packs,
+  precioPorClase
 }: {
   isOpen: boolean
   onClose: () => void
   alumno: Alumno | null
   onSuccess?: (alumno: Alumno, isEdit: boolean) => void
+  packs: Pack[]
+  precioPorClase: string
 }) {
   const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPack, setSelectedPack] = useState(alumno?.packType || 'mensual')
+  const [packType, setPackType] = useState<'mensual' | 'por_clase'>(
+    alumno?.packType === 'por_clase' ? 'por_clase' : 'mensual'
+  )
+  const [selectedPackId, setSelectedPackId] = useState<string>(
+    // Si el alumno tiene un packType que es un ID de pack, usarlo
+    alumno?.packType && alumno.packType !== 'mensual' && alumno.packType !== 'por_clase'
+      ? alumno.packType
+      : packs[0]?.id || ''
+  )
+  const [selectedGenero, setSelectedGenero] = useState(alumno?.genero || 'F')
 
   useEffect(() => {
     if (!isOpen) {
       setError(null)
-      setSelectedPack('mensual')
+      setPackType('mensual')
+      setSelectedPackId(packs[0]?.id || '')
+      setSelectedGenero('F')
     } else if (alumno) {
-      setSelectedPack(alumno.packType)
+      // Determinar si es por_clase o mensual
+      if (alumno.packType === 'por_clase') {
+        setPackType('por_clase')
+      } else {
+        setPackType('mensual')
+        // Si el packType es un ID de pack, seleccionarlo
+        const packExists = packs.find(p => p.id === alumno.packType)
+        if (packExists) {
+          setSelectedPackId(alumno.packType)
+        } else if (packs.length > 0) {
+          setSelectedPackId(packs[0].id)
+        }
+      }
+      setSelectedGenero(alumno.genero || 'F')
     }
-  }, [isOpen, alumno])
+  }, [isOpen, alumno, packs])
 
-  const [selectedGenero, setSelectedGenero] = useState(alumno?.genero || 'F')
+  // Validaciones
+  const precioPorClaseNum = parseFloat(precioPorClase) || 0
+  const hayPacks = packs.length > 0
+  const hayPrecioPorClase = precioPorClaseNum > 0
+  const puedeMensual = hayPacks
+  const puedePorClase = hayPrecioPorClase
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -67,7 +102,30 @@ export function AlumnoDialog({
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-    const packType = formData.get('packType') as string
+
+    // Determinar el packType y precio según la selección
+    let finalPackType: string
+    let finalPrecio: number
+
+    if (packType === 'por_clase') {
+      if (!puedePorClase) {
+        setError('Configurá el precio por clase en Configuración > Packs y Precios')
+        setIsLoading(false)
+        return
+      }
+      finalPackType = 'por_clase'
+      finalPrecio = precioPorClaseNum
+    } else {
+      if (!puedeMensual) {
+        setError('Creá al menos un pack en Configuración > Packs y Precios')
+        setIsLoading(false)
+        return
+      }
+      // Mensual: usar el ID del pack seleccionado
+      finalPackType = selectedPackId
+      const selectedPack = packs.find(p => p.id === selectedPackId)
+      finalPrecio = selectedPack ? parseFloat(selectedPack.precio) : 0
+    }
 
     const data = {
       nombre: formData.get('nombre') as string,
@@ -76,8 +134,8 @@ export function AlumnoDialog({
       genero: selectedGenero,
       cumpleanos: formData.get('cumpleanos') as string || undefined,
       patologias: formData.get('patologias') as string || undefined,
-      packType,
-      precio: 0,
+      packType: finalPackType,
+      precio: finalPrecio,
     }
 
     try {
@@ -201,23 +259,98 @@ export function AlumnoDialog({
           </div>
 
           <div className="form-group">
-            <label>Tipo de Pack</label>
-            <input type="hidden" name="packType" value={selectedPack} required />
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              {PACK_TYPES.map(pack => (
+            <label>Tipo de Pago</label>
+            {!puedeMensual && !puedePorClase ? (
+              <div style={{
+                padding: '1rem',
+                background: 'rgba(255, 180, 100, 0.1)',
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(255, 180, 100, 0.3)'
+              }}>
+                <p style={{ color: 'rgba(255, 180, 100, 0.9)', fontSize: '0.875rem', margin: 0 }}>
+                  No hay opciones de pago configuradas. Creá packs o configurá el precio por clase en <strong>Configuración &gt; Packs y Precios</strong>
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <button
-                  key={pack.value}
                   type="button"
-                  onClick={() => setSelectedPack(pack.value)}
-                  disabled={isLoading}
-                  className={`pack-option ${selectedPack === pack.value ? 'selected' : ''}`}
+                  onClick={() => puedeMensual && setPackType('mensual')}
+                  disabled={isLoading || !puedeMensual}
+                  className={`pack-option ${packType === 'mensual' ? 'selected' : ''}`}
+                  style={{ opacity: puedeMensual ? 1 : 0.5 }}
                 >
-                  <div className="pack-option-label">{pack.label}</div>
+                  <div className="pack-option-label">Mensual</div>
+                  {!puedeMensual && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Sin packs</div>}
                 </button>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => puedePorClase && setPackType('por_clase')}
+                  disabled={isLoading || !puedePorClase}
+                  className={`pack-option ${packType === 'por_clase' ? 'selected' : ''}`}
+                  style={{ opacity: puedePorClase ? 1 : 0.5 }}
+                >
+                  <div className="pack-option-label">Por Clase</div>
+                  {!puedePorClase && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Sin precio</div>}
+                </button>
+              </div>
+            )}
           </div>
+
+          {packType === 'mensual' && (
+            <div className="form-group">
+              <label>Pack Mensual</label>
+              {packs.length === 0 ? (
+                <p style={{ color: 'rgba(255, 180, 100, 0.9)', fontSize: '0.875rem' }}>
+                  No tenés packs configurados. Crealos en Configuracion &gt; Packs y Precios
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {packs.map(pack => (
+                    <button
+                      key={pack.id}
+                      type="button"
+                      onClick={() => setSelectedPackId(pack.id)}
+                      disabled={isLoading}
+                      className={`pack-option ${selectedPackId === pack.id ? 'selected' : ''}`}
+                      style={{ textAlign: 'left', padding: '0.75rem 1rem' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div className="pack-option-label">{pack.nombre}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem' }}>
+                            {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''} por semana
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '1rem', fontWeight: '600', color: 'rgba(147, 155, 245, 0.9)' }}>
+                          ${parseFloat(pack.precio).toLocaleString('es-AR')}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {packType === 'por_clase' && (
+            <div className="form-group">
+              <label>Precio por Clase</label>
+              <div style={{
+                padding: '1rem',
+                background: 'rgba(147, 155, 245, 0.1)',
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(147, 155, 245, 0.3)'
+              }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: '600', color: 'rgba(147, 155, 245, 0.9)' }}>
+                  ${parseFloat(precioPorClase).toLocaleString('es-AR')}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem' }}>
+                  Precio configurado en ajustes
+                </div>
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
             <button
@@ -231,7 +364,7 @@ export function AlumnoDialog({
             <button
               type="submit"
               className="btn-primary"
-              disabled={isLoading}
+              disabled={isLoading || (!puedeMensual && !puedePorClase)}
             >
               {isLoading ? 'Guardando...' : 'Guardar'}
             </button>

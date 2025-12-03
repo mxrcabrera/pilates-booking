@@ -183,6 +183,7 @@ export async function updatePreferencias(formData: FormData) {
   const horarioTardeFin = formData.get('horarioTardeFin') as string
   const espacioCompartidoId = formData.get('espacioCompartidoId') as string
   const syncGoogleCalendar = formData.get('syncGoogleCalendar') === 'on'
+  const precioPorClaseStr = formData.get('precioPorClase') as string
 
   // Normalizar el código de espacio (trim y lowercase)
   const espacioNormalizado = espacioCompartidoId?.trim().toLowerCase() || null
@@ -197,12 +198,14 @@ export async function updatePreferencias(formData: FormData) {
       horarioTardeInicio,
       horarioTardeFin,
       espacioCompartidoId: espacioNormalizado,
-      syncGoogleCalendar
+      syncGoogleCalendar,
+      ...(precioPorClaseStr && { precioPorClase: parseFloat(precioPorClaseStr) || 0 })
     }
   })
 
   revalidatePath('/configuracion')
   revalidatePath('/calendario')
+  revalidatePath('/alumnos')
   return { success: true }
 }
 

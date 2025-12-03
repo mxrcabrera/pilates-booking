@@ -27,6 +27,7 @@ model User {
   espacioCompartidoId     String?             @map("espacio_compartido_id")
   syncGoogleCalendar      Boolean             @default(false) @map("sync_google_calendar")
   googleCalendarId        String?             @map("google_calendar_id")
+  precioPorClase          Decimal             @default(0) @map("precio_por_clase") @db.Decimal(10, 2)
   createdAt               DateTime            @default(now()) @map("created_at")
   accounts                Account[]
   alumnos                 Alumno[]

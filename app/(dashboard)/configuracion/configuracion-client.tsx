@@ -34,6 +34,7 @@ type Profesor = {
   horarioTardeFin: string
   espacioCompartidoId: string | null
   syncGoogleCalendar: boolean
+  precioPorClase: string
   hasGoogleAccount: boolean
 }
 
@@ -260,6 +261,31 @@ export function ConfiguracionClient({ profesor, horarios, packs }: Configuracion
               <option value="24">24 horas</option>
             </select>
             <p className="form-hint">Tiempo mínimo de anticipación que deben tener los alumnos para reservar clases</p>
+          </div>
+
+          <div className="form-group">
+            <label>Precio por Clase Suelta</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute',
+                left: '0.75rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }}>$</span>
+              <input
+                type="number"
+                name="precioPorClase"
+                defaultValue={profesor.precioPorClase}
+                min="0"
+                step="0.01"
+                disabled={isLoadingPacks}
+                className="form-input"
+                style={{ paddingLeft: '1.5rem' }}
+                placeholder="0.00"
+              />
+            </div>
+            <p className="form-hint">Precio para alumnos que pagan por clase individual</p>
           </div>
 
           <div className="form-actions">

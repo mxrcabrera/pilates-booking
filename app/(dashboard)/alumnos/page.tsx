@@ -23,8 +23,17 @@ type Alumno = {
   }
 }
 
+type Pack = {
+  id: string
+  nombre: string
+  clasesPorSemana: number
+  precio: string
+}
+
 type AlumnosData = {
   alumnos: Alumno[]
+  packs: Pack[]
+  precioPorClase: string
 }
 
 export default function AlumnosPage() {
@@ -63,5 +72,5 @@ export default function AlumnosPage() {
     return <PageLoading />
   }
 
-  return <AlumnosClient alumnos={data.alumnos} />
+  return <AlumnosClient alumnos={data.alumnos} packs={data.packs} precioPorClase={data.precioPorClase} />
 }

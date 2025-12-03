@@ -15,6 +15,7 @@ type Profesor = {
   horarioTardeFin: string
   espacioCompartidoId: string | null
   syncGoogleCalendar: boolean
+  precioPorClase: string
   hasGoogleAccount: boolean
 }
 

@@ -55,8 +55,9 @@ export async function POST(request: NextRequest) {
           }, { status: 400 })
         }
 
+        let horario
         if (id) {
-          await prisma.horarioDisponible.update({
+          horario = await prisma.horarioDisponible.update({
             where: { id },
             data: { diaSemana, horaInicio, horaFin, esManiana }
           })
@@ -66,18 +67,18 @@ export async function POST(request: NextRequest) {
           })
 
           if (existente) {
-            await prisma.horarioDisponible.update({
+            horario = await prisma.horarioDisponible.update({
               where: { id: existente.id },
               data: { horaInicio, horaFin }
             })
           } else {
-            await prisma.horarioDisponible.create({
+            horario = await prisma.horarioDisponible.create({
               data: { profesorId: userId, diaSemana, horaInicio, horaFin, esManiana }
             })
           }
         }
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, horario })
       }
 
       case 'deleteHorario': {
@@ -101,18 +102,19 @@ export async function POST(request: NextRequest) {
 
       case 'savePack': {
         const { id, nombre, clasesPorSemana, precio, estaActivo } = data
+        let pack
 
         if (id) {
-          await prisma.pack.update({
+          pack = await prisma.pack.update({
             where: { id },
             data: { nombre, clasesPorSemana, precio, estaActivo }
           })
         } else {
-          await prisma.pack.create({
+          pack = await prisma.pack.create({
             data: { profesorId: userId, nombre, clasesPorSemana, precio, estaActivo: true }
           })
         }
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, pack })
       }
 
       case 'deletePack': {

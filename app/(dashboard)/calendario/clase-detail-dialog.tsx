@@ -1,9 +1,12 @@
 'use client'
 
-import { X, Edit2, Trash2, CheckCircle, XCircle, UserX } from 'lucide-react'
+import { useState } from 'react'
+import { Edit2, Trash2, CheckCircle, XCircle, UserX } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { deleteClase, changeClaseStatus } from './actions'
+import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import {
   Dialog,
   DialogContent,
@@ -48,31 +51,52 @@ export function ClaseDetailDialog({
   isOpen,
   onClose,
   clase,
-  onEdit
+  onEdit,
+  onDelete,
+  onStatusChange
 }: {
   isOpen: boolean
   onClose: () => void
   clase: Clase | null
   onEdit: () => void
+  onDelete?: (id: string) => Promise<void>
+  onStatusChange?: (id: string, estado: string) => Promise<void>
 }) {
+  const { showSuccess, showError } = useToast()
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+
   if (!clase) return null
 
   const handleDelete = async () => {
-    if (!confirm('¿Estás segura de eliminar esta clase?')) return
+    setIsDeleting(true)
     try {
-      await deleteClase(clase.id)
+      if (onDelete) {
+        await onDelete(clase.id)
+      } else {
+        await deleteClaseAPI(clase.id)
+        showSuccess('Clase eliminada')
+      }
+      setDeleteConfirmOpen(false)
       onClose()
     } catch (err: any) {
-      alert(err.message)
+      showError(err.message)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
   const handleStatusChange = async (nuevoEstado: string) => {
     try {
-      await changeClaseStatus(clase.id, nuevoEstado)
+      if (onStatusChange) {
+        await onStatusChange(clase.id, nuevoEstado)
+      } else {
+        await changeClaseStatusAPI(clase.id, nuevoEstado)
+        showSuccess('Estado actualizado')
+      }
       onClose()
     } catch (err: any) {
-      alert(err.message)
+      showError(err.message)
     }
   }
 
@@ -171,7 +195,7 @@ export function ClaseDetailDialog({
         </div>
 
         <DialogFooter>
-          <button onClick={handleDelete} className="btn-ghost danger">
+          <button onClick={() => setDeleteConfirmOpen(true)} className="btn-ghost danger">
             <Trash2 size={18} />
             <span>Eliminar</span>
           </button>
@@ -181,6 +205,17 @@ export function ClaseDetailDialog({
           </button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmModal
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="¿Eliminar esta clase?"
+        description={`Se eliminará la clase de ${clase.alumno?.nombre || 'Sin asignar'} del ${format(clase.fecha, "d 'de' MMMM", { locale: es })}`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </Dialog>
   )
 }

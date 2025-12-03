@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClase, updateClase } from './actions'
+import { createClaseAPI, updateClaseAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
 import { format } from 'date-fns'
 import {
   Dialog,
@@ -63,6 +64,7 @@ export function ClaseDialog({
   horarioTardeInicio: string
   horarioTardeFin: string
 }) {
+  const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [esRecurrente, setEsRecurrente] = useState(false)
@@ -115,20 +117,43 @@ export function ClaseDialog({
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-
-    if (esRecurrente && diasSeleccionados.length > 0) {
-      formData.append('diasSemana', JSON.stringify(diasSeleccionados))
-    }
+    const alumnoId = formData.get('alumnoId') as string
+    const horaInicio = formData.get('horaInicio') as string
+    const horaRecurrente = formData.get('horaRecurrente') as string
+    const fechaStr = formData.get('fecha') as string
+    const estadoVal = formData.get('estado') as string
 
     try {
       if (clase) {
-        formData.append('id', clase.id)
-        await updateClase(formData)
+        await updateClaseAPI({
+          id: clase.id,
+          alumnoId: alumnoId || undefined,
+          horaInicio,
+          horaRecurrente: horaRecurrente || undefined,
+          estado: estadoVal || clase.estado,
+          esClasePrueba,
+          esRecurrente,
+          frecuenciaSemanal: frecuencia || undefined,
+          diasSemana: esRecurrente ? diasSeleccionados : undefined,
+          fecha: fechaStr
+        })
+        showSuccess('Clase actualizada')
       } else {
-        await createClase(formData)
+        await createClaseAPI({
+          alumnoId: alumnoId || undefined,
+          horaInicio,
+          horaRecurrente: horaRecurrente || undefined,
+          esClasePrueba,
+          esRecurrente,
+          frecuenciaSemanal: frecuencia || undefined,
+          diasSemana: esRecurrente ? diasSeleccionados : undefined,
+          fecha: fechaStr
+        })
+        showSuccess(esRecurrente ? 'Clases creadas' : 'Clase creada')
       }
       onClose()
     } catch (err: any) {
+      showError(err.message || 'Error al guardar clase')
       setError(err.message || 'Error al guardar clase')
     } finally {
       setIsLoading(false)

@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createAlumno, updateAlumno } from './actions'
+import { useRouter } from 'next/navigation'
+import { createAlumnoAPI, updateAlumnoAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,8 @@ export function AlumnoDialog({
   alumno: Alumno | null
   packs: Pack[]
 }) {
+  const router = useRouter()
+  const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedPack, setSelectedPack] = useState(alumno?.packType || 'mensual')
@@ -66,16 +70,29 @@ export function AlumnoDialog({
     setError(null)
 
     const formData = new FormData(e.currentTarget)
+    const data = {
+      nombre: formData.get('nombre') as string,
+      email: formData.get('email') as string,
+      telefono: formData.get('telefono') as string,
+      cumpleanos: formData.get('cumpleanos') as string || undefined,
+      patologias: formData.get('patologias') as string || undefined,
+      packType: formData.get('packType') as string,
+      clasesPorMes: formData.get('clasesPorMes') ? parseInt(formData.get('clasesPorMes') as string) : undefined,
+      precio: parseFloat(formData.get('precio') as string),
+    }
 
     try {
       if (alumno) {
-        formData.append('id', alumno.id)
-        await updateAlumno(formData)
+        await updateAlumnoAPI({ id: alumno.id, ...data })
+        showSuccess('Alumno actualizado')
       } else {
-        await createAlumno(formData)
+        await createAlumnoAPI(data)
+        showSuccess('Alumno creado')
       }
+      router.refresh()
       onClose()
     } catch (err: any) {
+      showError(err.message || 'Error al guardar alumno')
       setError(err.message || 'Error al guardar alumno')
     } finally {
       setIsLoading(false)

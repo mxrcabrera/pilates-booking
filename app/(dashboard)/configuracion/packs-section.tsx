@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Package, Plus, Trash2, Edit2 } from 'lucide-react'
 import { PackDialog } from './pack-dialog'
 import { deletePackAPI, togglePackAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 type Pack = {
   id: string
@@ -18,10 +20,17 @@ type PacksSectionProps = {
   packs: Pack[]
 }
 
-export function PacksSection({ packs }: PacksSectionProps) {
+export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
+  const [packs, setPacks] = useState(initialPacks)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingPack, setEditingPack] = useState<Pack | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({
+    isOpen: false,
+    id: null
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleEdit = (pack: Pack) => {
     setEditingPack(pack)
@@ -33,22 +42,35 @@ export function PacksSection({ packs }: PacksSectionProps) {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás segura de eliminar este pack?')) return
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, id })
+  }
+
+  const handleDelete = async () => {
+    if (!deleteConfirm.id) return
+    setIsDeleting(true)
     try {
-      await deletePackAPI(id)
-      router.refresh()
+      await deletePackAPI(deleteConfirm.id)
+      setPacks(prev => prev.filter(p => p.id !== deleteConfirm.id))
+      showSuccess('Pack eliminado')
+      setDeleteConfirm({ isOpen: false, id: null })
     } catch (err: any) {
-      alert(err.message)
+      showError(err.message)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
   const handleToggle = async (id: string) => {
+    // Actualización optimista
+    setPacks(prev => prev.map(p => p.id === id ? { ...p, estaActivo: !p.estaActivo } : p))
     try {
       await togglePackAPI(id)
-      router.refresh()
+      showSuccess('Estado actualizado')
     } catch (err: any) {
-      alert(err.message)
+      // Revertir en caso de error
+      setPacks(prev => prev.map(p => p.id === id ? { ...p, estaActivo: !p.estaActivo } : p))
+      showError(err.message)
     }
   }
 
@@ -103,7 +125,7 @@ export function PacksSection({ packs }: PacksSectionProps) {
                     <Edit2 size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(pack.id)}
+                    onClick={() => handleDeleteClick(pack.id)}
                     className="btn-icon-sm danger"
                     title="Eliminar"
                   >
@@ -123,6 +145,24 @@ export function PacksSection({ packs }: PacksSectionProps) {
           setEditingPack(null)
         }}
         pack={editingPack}
+        onSuccess={(updatedPack, isEdit) => {
+          if (isEdit) {
+            setPacks(prev => prev.map(p => p.id === updatedPack.id ? updatedPack : p))
+          } else {
+            setPacks(prev => [...prev, updatedPack])
+          }
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        title="¿Eliminar este pack?"
+        description="Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   )

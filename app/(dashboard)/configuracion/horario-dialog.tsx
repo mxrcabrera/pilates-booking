@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveHorarioAPI } from '@/lib/api'
 import { ConfirmDialog } from './confirm-dialog'
+import { useToast } from '@/components/ui/toast'
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ type Horario = {
   horaInicio: string
   horaFin: string
   esManiana: boolean
+  estaActivo: boolean
 }
 
 const RANGOS_DIAS = [
@@ -51,6 +53,7 @@ type HorarioDialogProps = {
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
+  onSuccess?: (horario: Horario, isEdit: boolean) => void
 }
 
 export function HorarioDialog({
@@ -61,9 +64,11 @@ export function HorarioDialog({
   horarioMananaInicio,
   horarioMananaFin,
   horarioTardeInicio,
-  horarioTardeFin
+  horarioTardeFin,
+  onSuccess
 }: HorarioDialogProps) {
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rangoSeleccionado, setRangoSeleccionado] = useState('single')
@@ -210,19 +215,27 @@ export function HorarioDialog({
 
     try {
       if (horario) {
-        await saveHorarioAPI({
+        const result = await saveHorarioAPI({
           id: horario.id,
           diaSemana: parseInt(formData.get('diaSemana') as string) || horario.diaSemana,
           horaInicio: formData.get('horaInicio') as string,
           horaFin: formData.get('horaFin') as string,
           esManiana: turnoSeleccionado === 'maniana'
         })
+        showSuccess('Horario actualizado')
+        if (onSuccess && result.horario) {
+          onSuccess(result.horario, true)
+        } else {
+          router.refresh()
+        }
       } else {
         await procesarHorarios(formData)
+        showSuccess('Horario(s) creado(s)')
+        router.refresh()
       }
-      router.refresh()
       onClose()
     } catch (err: any) {
+      showError(err.message || 'Error al guardar horario')
       setError(err.message || 'Error al guardar horario')
     } finally {
       setIsLoading(false)
@@ -242,9 +255,11 @@ export function HorarioDialog({
       } else if (confirmType === 'domingo') {
         await procesarHorarios(pendingSubmit, false, option === 'excluir')
       }
+      showSuccess('Horario(s) creado(s)')
       router.refresh()
       onClose()
     } catch (err: any) {
+      showError(err.message || 'Error al guardar horario')
       setError(err.message || 'Error al guardar horario')
     } finally {
       setIsLoading(false)

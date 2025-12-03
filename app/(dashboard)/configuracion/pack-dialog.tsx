@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { savePackAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
 import {
   Dialog,
   DialogContent,
@@ -22,13 +23,16 @@ type Pack = {
 export function PackDialog({
   isOpen,
   onClose,
-  pack
+  pack,
+  onSuccess
 }: {
   isOpen: boolean
   onClose: () => void
   pack: Pack | null
+  onSuccess?: (pack: Pack, isEdit: boolean) => void
 }) {
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -46,16 +50,22 @@ export function PackDialog({
     const formData = new FormData(e.currentTarget)
 
     try {
-      await savePackAPI({
+      const result = await savePackAPI({
         id: pack?.id,
         nombre: formData.get('nombre') as string,
         clasesPorSemana: parseInt(formData.get('clasesPorSemana') as string),
         precio: parseFloat(formData.get('precio') as string),
         estaActivo: pack ? formData.get('estaActivo') === 'on' : true
       })
-      router.refresh()
+      showSuccess(pack ? 'Pack actualizado' : 'Pack creado')
+      if (onSuccess && result.pack) {
+        onSuccess(result.pack, !!pack)
+      } else {
+        router.refresh()
+      }
       onClose()
     } catch (err: any) {
+      showError(err.message || 'Error al guardar pack')
       setError(err.message || 'Error al guardar pack')
     } finally {
       setIsLoading(false)

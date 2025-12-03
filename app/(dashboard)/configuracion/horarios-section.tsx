@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Clock, Plus, Trash2, Edit2, CheckSquare } from 'lucide-react'
 import { HorarioDialog } from './horario-dialog'
 import { deleteHorarioAPI, toggleHorarioAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 type Horario = {
   id: string
@@ -26,17 +28,25 @@ type HorariosSectionProps = {
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 export function HorariosSection({
-  horarios,
+  horarios: initialHorarios,
   horarioMananaInicio,
   horarioMananaFin,
   horarioTardeInicio,
   horarioTardeFin
 }: HorariosSectionProps) {
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
+  const [horarios, setHorarios] = useState(initialHorarios)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingHorario, setEditingHorario] = useState<Horario | null>(null)
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedHorarios, setSelectedHorarios] = useState<Set<string>>(new Set())
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null; isBulk: boolean }>({
+    isOpen: false,
+    id: null,
+    isBulk: false
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleEdit = (horario: Horario) => {
     setEditingHorario(horario)
@@ -48,22 +58,36 @@ export function HorariosSection({
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás segura de eliminar este horario?')) return
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, id, isBulk: false })
+  }
+
+  const handleDelete = async () => {
+    if (!deleteConfirm.id) return
+    setIsDeleting(true)
     try {
-      await deleteHorarioAPI(id)
-      router.refresh()
+      await deleteHorarioAPI(deleteConfirm.id)
+      // Actualizar estado local inmediatamente
+      setHorarios(prev => prev.filter(h => h.id !== deleteConfirm.id))
+      showSuccess('Horario eliminado')
+      setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
     } catch (err: any) {
-      alert(err.message)
+      showError(err.message)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
   const handleToggle = async (id: string) => {
+    // Actualización optimista
+    setHorarios(prev => prev.map(h => h.id === id ? { ...h, estaActivo: !h.estaActivo } : h))
     try {
       await toggleHorarioAPI(id)
-      router.refresh()
+      showSuccess('Estado actualizado')
     } catch (err: any) {
-      alert(err.message)
+      // Revertir en caso de error
+      setHorarios(prev => prev.map(h => h.id === id ? { ...h, estaActivo: !h.estaActivo } : h))
+      showError(err.message)
     }
   }
 
@@ -85,17 +109,26 @@ export function HorariosSection({
     }
   }
 
+  const handleBulkDeleteClick = () => {
+    if (selectedHorarios.size === 0) return
+    setDeleteConfirm({ isOpen: true, id: null, isBulk: true })
+  }
+
   const handleBulkDelete = async () => {
     if (selectedHorarios.size === 0) return
-    if (!confirm(`¿Estás segura de eliminar ${selectedHorarios.size} horario(s)?`)) return
-
+    setIsDeleting(true)
     try {
       await Promise.all(Array.from(selectedHorarios).map(id => deleteHorarioAPI(id)))
+      // Actualizar estado local
+      setHorarios(prev => prev.filter(h => !selectedHorarios.has(h.id)))
+      showSuccess(`${selectedHorarios.size} horario(s) eliminado(s)`)
       setSelectedHorarios(new Set())
       setIsSelectionMode(false)
-      router.refresh()
+      setDeleteConfirm({ isOpen: false, id: null, isBulk: false })
     } catch (err: any) {
-      alert(err.message)
+      showError(err.message)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -155,7 +188,7 @@ export function HorariosSection({
               </button>
               {selectedHorarios.size > 0 && (
                 <button
-                  onClick={handleBulkDelete}
+                  onClick={handleBulkDeleteClick}
                   className="btn-outline"
                   style={{ fontSize: '0.875rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}
                 >
@@ -220,7 +253,7 @@ export function HorariosSection({
                               <Edit2 size={16} />
                             </button>
                             <button
-                              onClick={() => handleDelete(horario.id)}
+                              onClick={() => handleDeleteClick(horario.id)}
                               className="btn-icon-sm danger"
                               title="Eliminar"
                             >
@@ -250,6 +283,27 @@ export function HorariosSection({
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}
         horarioTardeFin={horarioTardeFin}
+        onSuccess={(newHorario, isEdit) => {
+          if (isEdit) {
+            setHorarios(prev => prev.map(h => h.id === newHorario.id ? newHorario : h))
+          } else {
+            setHorarios(prev => [...prev, newHorario])
+          }
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null, isBulk: false })}
+        onConfirm={deleteConfirm.isBulk ? handleBulkDelete : handleDelete}
+        title={deleteConfirm.isBulk
+          ? `¿Eliminar ${selectedHorarios.size} horario(s)?`
+          : '¿Eliminar este horario?'
+        }
+        description="Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   )

@@ -4582,3 +4582,202 @@ input[type="date"]::-webkit-datetime-edit-year-field {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+
+.toast-container {
+  position: fixed;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  animation: toast-slide-in 0.3s ease;
+  min-width: 280px;
+  max-width: 400px;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-icon {
+  flex-shrink: 0;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: var(--font-sm);
+  color: rgba(255, 255, 255, var(--opacity-text-primary));
+}
+
+.toast-close {
+  flex-shrink: 0;
+  padding: var(--space-xs);
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, var(--opacity-text-secondary));
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, var(--opacity-text-primary));
+}
+
+.toast-success {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, var(--bg-secondary) 100%);
+}
+
+.toast-success .toast-icon {
+  color: #22c55e;
+}
+
+.toast-error {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, var(--bg-secondary) 100%);
+}
+
+.toast-error .toast-icon {
+  color: #ef4444;
+}
+
+.toast-warning {
+  border-color: rgba(234, 179, 8, 0.3);
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, var(--bg-secondary) 100%);
+}
+
+.toast-warning .toast-icon {
+  color: #eab308;
+}
+
+.toast-info {
+  border-color: rgba(147, 155, 245, 0.3);
+  background: linear-gradient(135deg, rgba(147, 155, 245, 0.1) 0%, var(--bg-secondary) 100%);
+}
+
+.toast-info .toast-icon {
+  color: var(--primary-color);
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    top: auto;
+    bottom: var(--space-lg);
+    left: var(--space-md);
+    right: var(--space-md);
+  }
+
+  .toast {
+    min-width: auto;
+    max-width: none;
+  }
+}
+
+/* ============================================
+   Confirm Modal
+   ============================================ */
+
+.confirm-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+.confirm-modal-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+}
+
+.confirm-modal-icon-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.confirm-modal-icon-warning {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.confirm-modal-icon-default {
+  background: rgba(147, 155, 245, 0.15);
+  color: var(--primary-color);
+}
+
+.confirm-modal-body .dialog-header {
+  margin-bottom: var(--space-xl);
+}
+
+.confirm-modal-body .dialog-title {
+  font-size: var(--font-xl);
+}
+
+.confirm-modal-body .dialog-description {
+  margin-top: var(--space-sm);
+  color: rgba(255, 255, 255, var(--opacity-text-secondary));
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: var(--space-md);
+  width: 100%;
+  justify-content: center;
+}
+
+.confirm-modal-actions button {
+  min-width: 120px;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-medium);
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

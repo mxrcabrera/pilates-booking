@@ -2,7 +2,9 @@
 
 import { MoreVertical, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import { toggleAlumnoStatus, deleteAlumno } from './actions'
+import { toggleAlumnoStatusAPI, deleteAlumnoAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 type Alumno = {
   id: string
@@ -35,15 +37,19 @@ const PACK_CLASES: Record<string, number> = {
   'pack_12': 12
 }
 
-export function AlumnoCard({ 
-  alumno, 
-  onEdit, 
+export function AlumnoCard({
+  alumno,
+  onEdit,
   onView,
+  onDelete,
+  onToggleStatus,
   viewMode = 'list'
-}: { 
+}: {
   alumno: Alumno
   onEdit: () => void
   onView: () => void
+  onDelete: () => void
+  onToggleStatus: () => void
   viewMode?: 'list' | 'grid'
 }) {
   const [showMenu, setShowMenu] = useState(false)
@@ -83,23 +89,14 @@ export function AlumnoCard({
     return () => document.removeEventListener('keydown', handleEsc)
   }, [showMenu])
 
-  const handleToggleStatus = async () => {
+  const handleToggleStatus = () => {
     setShowMenu(false)
-    try {
-      await toggleAlumnoStatus(alumno.id)
-    } catch (err: any) {
-      alert(err.message)
-    }
+    onToggleStatus()
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     setShowMenu(false)
-    if (!confirm(`¿Estás seguro de eliminar a ${alumno.nombre}? Esta acción no se puede deshacer.`)) return
-    try {
-      await deleteAlumno(alumno.id)
-    } catch (err: any) {
-      alert(err.message)
-    }
+    onDelete()
   }
 
   const getClasesDisplay = () => {

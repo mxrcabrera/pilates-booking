@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Plus, Grid, List } from 'lucide-react'
+import { Search, Plus, Grid, List, Users } from 'lucide-react'
 import { AlumnoCard } from './alumno-card'
 import { AlumnoDialog } from './alumno-dialog'
 import { AlumnoDetailSheet } from './alumno-detail-sheet'
-import { Users } from 'lucide-react'
+import { toggleAlumnoStatusAPI, deleteAlumnoAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 type Alumno = {
   id: string
@@ -31,13 +33,20 @@ type Pack = {
   precio: string
 }
 
-export function AlumnosClient({ alumnos, packs }: { alumnos: Alumno[], packs: Pack[] }) {
+export function AlumnosClient({ alumnos: initialAlumnos, packs }: { alumnos: Alumno[], packs: Pack[] }) {
+  const { showSuccess, showError } = useToast()
+  const [alumnos, setAlumnos] = useState(initialAlumnos)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingAlumno, setEditingAlumno] = useState<Alumno | null>(null)
   const [selectedAlumno, setSelectedAlumno] = useState<Alumno | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; alumno: Alumno | null }>({
+    isOpen: false,
+    alumno: null
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const filteredAlumnos = alumnos.filter(a =>
     a.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,6 +70,43 @@ export function AlumnosClient({ alumnos, packs }: { alumnos: Alumno[], packs: Pa
   const handleNew = () => {
     setEditingAlumno(null)
     setIsDialogOpen(true)
+  }
+
+  const handleToggleStatus = async (alumno: Alumno) => {
+    // Actualización optimista
+    setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, estaActivo: !a.estaActivo } : a))
+    try {
+      await toggleAlumnoStatusAPI(alumno.id)
+      showSuccess(alumno.estaActivo ? 'Alumno desactivado' : 'Alumno activado')
+    } catch (err: any) {
+      // Revertir en caso de error
+      setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, estaActivo: !a.estaActivo } : a))
+      showError(err.message)
+    }
+  }
+
+  const handleDeleteClick = (alumno: Alumno) => {
+    setDeleteConfirm({ isOpen: true, alumno })
+  }
+
+  const handleDelete = async () => {
+    if (!deleteConfirm.alumno) return
+    setIsDeleting(true)
+    try {
+      await deleteAlumnoAPI(deleteConfirm.alumno.id)
+      setAlumnos(prev => prev.filter(a => a.id !== deleteConfirm.alumno?.id))
+      showSuccess('Alumno eliminado')
+      setDeleteConfirm({ isOpen: false, alumno: null })
+      // Cerrar sheet si estaba viendo este alumno
+      if (selectedAlumno?.id === deleteConfirm.alumno.id) {
+        setIsSheetOpen(false)
+        setSelectedAlumno(null)
+      }
+    } catch (err: any) {
+      showError(err.message)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -127,6 +173,8 @@ export function AlumnosClient({ alumnos, packs }: { alumnos: Alumno[], packs: Pa
                 alumno={alumno}
                 onEdit={() => handleEdit(alumno)}
                 onView={() => handleView(alumno)}
+                onDelete={() => handleDeleteClick(alumno)}
+                onToggleStatus={() => handleToggleStatus(alumno)}
                 viewMode={viewMode}
               />
             ))}
@@ -152,6 +200,17 @@ export function AlumnosClient({ alumnos, packs }: { alumnos: Alumno[], packs: Pa
         }}
         alumno={selectedAlumno}
         onEdit={() => handleEdit(selectedAlumno!)}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, alumno: null })}
+        onConfirm={handleDelete}
+        title={`¿Eliminar a ${deleteConfirm.alumno?.nombre}?`}
+        description="Esta acción no se puede deshacer. Se eliminarán también las clases asociadas."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   )

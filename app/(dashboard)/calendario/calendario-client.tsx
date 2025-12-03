@@ -6,7 +6,9 @@ import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2 } fro
 import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
-import { deleteClase } from './actions'
+import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 type Clase = {
   id: string
@@ -68,6 +70,7 @@ function formatearFechaDia(fecha: Date): string {
 
 export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin }: CalendarioClientProps) {
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
   const [vista, setVista] = useState<Vista>('dia')
@@ -76,6 +79,8 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [claseSeleccionada, setClaseSeleccionada] = useState<Clase | null>(null)
   const [selectedClases, setSelectedClases] = useState<Set<string>>(new Set())
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Sincronizar estado local cuando cambian las props (después del refresh)
   useEffect(() => {
@@ -209,14 +214,46 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
 
   const handleBulkDelete = async () => {
     if (selectedClases.size === 0) return
-    if (!confirm(`¿Estás segura de eliminar ${selectedClases.size} clase(s)?`)) return
+    setIsDeleting(true)
 
     try {
-      await Promise.all(Array.from(selectedClases).map(id => deleteClase(id)))
+      await Promise.all(Array.from(selectedClases).map(id => deleteClaseAPI(id)))
+      // Actualización local
+      setClases(prev => prev.filter(c => !selectedClases.has(c.id)))
       setSelectedClases(new Set())
-      router.refresh()
+      setBulkDeleteConfirm(false)
+      showSuccess(`${selectedClases.size} clase(s) eliminada(s)`)
     } catch (err: any) {
-      alert(err.message)
+      showError(err.message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Handler para eliminar una clase individual
+  const handleDeleteClase = async (id: string) => {
+    try {
+      await deleteClaseAPI(id)
+      setClases(prev => prev.filter(c => c.id !== id))
+      showSuccess('Clase eliminada')
+    } catch (err: any) {
+      showError(err.message)
+      throw err
+    }
+  }
+
+  // Handler para cambiar estado de una clase
+  const handleStatusChange = async (id: string, estado: string) => {
+    // Actualización optimista
+    setClases(prev => prev.map(c => c.id === id ? { ...c, estado } : c))
+    try {
+      await changeClaseStatusAPI(id, estado)
+      showSuccess('Estado actualizado')
+    } catch (err: any) {
+      // Revertir en caso de error
+      router.refresh()
+      showError(err.message)
+      throw err
     }
   }
 
@@ -249,7 +286,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                   {selectedClases.size === (vista === 'dia' ? clasesDelDia : clasesDeLaSemana.flatMap(d => d.clases)).length && selectedClases.size > 0 ? 'Deseleccionar todos' : 'Seleccionar todos'}
                 </Button>
                 {selectedClases.size > 0 && (
-                  <Button className="btn-outline desktop-only" onClick={handleBulkDelete} style={{ fontSize: '0.875rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}>
+                  <Button className="btn-outline desktop-only" onClick={() => setBulkDeleteConfirm(true)} style={{ fontSize: '0.875rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}>
                     <Trash2 className="w-4 h-4" />
                     Eliminar ({selectedClases.size})
                   </Button>
@@ -632,8 +669,21 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
           onClose={handleCloseDetailDialog}
           clase={claseSeleccionada}
           onEdit={handleEdit}
+          onDelete={handleDeleteClase}
+          onStatusChange={handleStatusChange}
         />
       )}
+
+      <ConfirmModal
+        isOpen={bulkDeleteConfirm}
+        onClose={() => setBulkDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`¿Eliminar ${selectedClases.size} clase(s)?`}
+        description="Esta acción no se puede deshacer. Se eliminarán todas las clases seleccionadas."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </>
   )
 }

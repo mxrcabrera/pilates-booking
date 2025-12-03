@@ -80,19 +80,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const claseExistente = await prisma.clase.findFirst({
-          where: {
-            profesorId: userId,
-            fecha,
-            horaInicio,
-            estado: { not: 'cancelada' }
-          }
-        })
-
-        if (claseExistente) {
-          return NextResponse.json({ error: 'Ya tenés una clase reservada en ese horario' }, { status: 400 })
-        }
-
+        // Validar cantidad de clases en el mismo horario (una sola query)
         const clasesEnMismoHorario = await prisma.clase.count({
           where: {
             profesorId: userId,
@@ -121,25 +109,22 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        // Sincronizar con Google Calendar si está activado
+        // Sincronizar con Google Calendar en background (fire-and-forget)
         if (user.syncGoogleCalendar) {
-          try {
-            const session = await auth()
+          auth().then(session => {
             if (session && (session as any).accessToken) {
-              const eventId = await createCalendarEvent(
+              createCalendarEvent(
                 claseCreada.id,
                 (session as any).accessToken,
                 (session as any).refreshToken
-              )
-
-              await prisma.clase.update({
-                where: { id: claseCreada.id },
-                data: { googleEventId: eventId }
-              })
+              ).then(eventId => {
+                prisma.clase.update({
+                  where: { id: claseCreada.id },
+                  data: { googleEventId: eventId }
+                }).catch(err => console.error('Error guardando eventId:', err))
+              }).catch(err => console.error('Error creando evento en Google Calendar:', err))
             }
-          } catch (error) {
-            console.error('Error al sincronizar con Google Calendar:', error)
-          }
+          }).catch(err => console.error('Error obteniendo sesión:', err))
         }
 
         // Crear clases recurrentes
@@ -245,20 +230,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const claseExistente = await prisma.clase.findFirst({
-          where: {
-            profesorId: userId,
-            fecha,
-            horaInicio,
-            estado: { not: 'cancelada' },
-            id: { not: id }
-          }
-        })
-
-        if (claseExistente) {
-          return NextResponse.json({ error: 'Ya tenés otra clase reservada en ese horario' }, { status: 400 })
-        }
-
+        // Validar cantidad de clases en el mismo horario (una sola query)
         const clasesEnMismoHorario = await prisma.clase.count({
           where: {
             profesorId: userId,
@@ -288,38 +260,33 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        // Sincronizar con Google Calendar
+        // Sincronizar con Google Calendar en background (fire-and-forget)
         if (user.syncGoogleCalendar && claseActualizada.googleEventId) {
-          try {
-            const session = await auth()
+          auth().then(session => {
             if (session && (session as any).accessToken) {
-              await updateCalendarEvent(
+              updateCalendarEvent(
                 claseActualizada.id,
-                claseActualizada.googleEventId,
+                claseActualizada.googleEventId!,
                 (session as any).accessToken,
                 (session as any).refreshToken
-              )
+              ).catch(err => console.error('Error actualizando evento en Google Calendar:', err))
             }
-          } catch (error) {
-            console.error('Error al actualizar en Google Calendar:', error)
-          }
+          }).catch(err => console.error('Error obteniendo sesión:', err))
         } else if (user.syncGoogleCalendar && !claseActualizada.googleEventId) {
-          try {
-            const session = await auth()
+          auth().then(session => {
             if (session && (session as any).accessToken) {
-              const eventId = await createCalendarEvent(
+              createCalendarEvent(
                 claseActualizada.id,
                 (session as any).accessToken,
                 (session as any).refreshToken
-              )
-              await prisma.clase.update({
-                where: { id: claseActualizada.id },
-                data: { googleEventId: eventId }
-              })
+              ).then(eventId => {
+                prisma.clase.update({
+                  where: { id: claseActualizada.id },
+                  data: { googleEventId: eventId }
+                }).catch(err => console.error('Error guardando eventId:', err))
+              }).catch(err => console.error('Error creando evento en Google Calendar:', err))
             }
-          } catch (error) {
-            console.error('Error al crear evento en Google Calendar:', error)
-          }
+          }).catch(err => console.error('Error obteniendo sesión:', err))
         }
 
         return NextResponse.json({ success: true })
@@ -328,31 +295,31 @@ export async function POST(request: NextRequest) {
       case 'delete': {
         const { id } = data
 
-        const clase = await prisma.clase.findUnique({
-          where: { id },
-          select: { googleEventId: true }
-        })
-
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { syncGoogleCalendar: true }
-        })
+        // Obtener datos antes de borrar para sync en background
+        const [clase, user] = await Promise.all([
+          prisma.clase.findUnique({
+            where: { id },
+            select: { googleEventId: true }
+          }),
+          prisma.user.findUnique({
+            where: { id: userId },
+            select: { syncGoogleCalendar: true }
+          })
+        ])
 
         await prisma.clase.delete({ where: { id } })
 
+        // Sincronizar con Google Calendar en background (fire-and-forget)
         if (user?.syncGoogleCalendar && clase?.googleEventId) {
-          try {
-            const session = await auth()
+          auth().then(session => {
             if (session && (session as any).accessToken) {
-              await deleteCalendarEvent(
-                clase.googleEventId,
+              deleteCalendarEvent(
+                clase.googleEventId!,
                 (session as any).accessToken,
                 (session as any).refreshToken
-              )
+              ).catch(err => console.error('Error eliminando evento de Google Calendar:', err))
             }
-          } catch (error) {
-            console.error('Error al eliminar de Google Calendar:', error)
-          }
+          }).catch(err => console.error('Error obteniendo sesión:', err))
         }
 
         return NextResponse.json({ success: true })

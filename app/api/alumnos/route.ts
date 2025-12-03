@@ -58,16 +58,16 @@ export async function POST(request: NextRequest) {
 
       case 'toggleStatus': {
         const { id } = data
-        const alumno = await prisma.alumno.findUnique({ where: { id } })
+        // Usar raw SQL para toggle en una sola query
+        const result = await prisma.$executeRaw`
+          UPDATE "Alumno"
+          SET "estaActivo" = NOT "estaActivo"
+          WHERE id = ${id}
+        `
 
-        if (!alumno) {
+        if (result === 0) {
           return NextResponse.json({ error: 'Alumno no encontrado' }, { status: 404 })
         }
-
-        await prisma.alumno.update({
-          where: { id },
-          data: { estaActivo: !alumno.estaActivo }
-        })
 
         return NextResponse.json({ success: true })
       }

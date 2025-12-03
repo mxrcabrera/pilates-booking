@@ -89,14 +89,15 @@ export async function POST(request: NextRequest) {
 
       case 'toggleHorario': {
         const { id } = data
-        const horario = await prisma.horarioDisponible.findUnique({ where: { id } })
-        if (!horario) {
+        // Usar raw SQL para toggle en una sola query
+        const result = await prisma.$executeRaw`
+          UPDATE "HorarioDisponible"
+          SET "estaActivo" = NOT "estaActivo"
+          WHERE id = ${id}
+        `
+        if (result === 0) {
           return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
         }
-        await prisma.horarioDisponible.update({
-          where: { id },
-          data: { estaActivo: !horario.estaActivo }
-        })
         return NextResponse.json({ success: true })
       }
 
@@ -129,14 +130,15 @@ export async function POST(request: NextRequest) {
 
       case 'togglePack': {
         const { id } = data
-        const pack = await prisma.pack.findUnique({ where: { id } })
-        if (!pack) {
+        // Usar raw SQL para toggle en una sola query
+        const result = await prisma.$executeRaw`
+          UPDATE "Pack"
+          SET "estaActivo" = NOT "estaActivo"
+          WHERE id = ${id}
+        `
+        if (result === 0) {
           return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
         }
-        await prisma.pack.update({
-          where: { id },
-          data: { estaActivo: !pack.estaActivo }
-        })
         return NextResponse.json({ success: true })
       }
 

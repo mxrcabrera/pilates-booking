@@ -141,38 +141,27 @@ export function AlumnoCard({
         {showMenu && (
           <div className="dropdown-overlay" onClick={() => setShowMenu(false)} />
         )}
-        <div 
+        <div
           className={`alumno-list-item-final ${showMenu ? 'menu-active' : ''}`}
           onClick={() => !showMenu && onView()}
         >
           <div className="alumno-list-top-row">
             <h3>{alumno.nombre}</h3>
-            <button
-              ref={menuButtonRef}
-              onClick={(e) => { 
-                e.stopPropagation()
-                setShowMenu(!showMenu)
-              }}
-              className="menu-btn-top"
-            >
-              <MoreVertical size={18} />
-            </button>
-          </div>
-          
-          <div className="alumno-list-bottom-row">
-            <div className="alumno-list-info-row">
-              <span className="pack-label-new">{getPackLabel()}</span>
-              {getClasesDisplay() && (
-                <>
-                  <span className="separator-dot">•</span>
-                  <span className="clases-mes-new">{getClasesDisplay()}</span>
-                </>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
+                {alumno.estaActivo ? 'Activo' : 'Inactivo'}
+              </span>
+              <button
+                ref={menuButtonRef}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowMenu(!showMenu)
+                }}
+                className="menu-btn-top"
+              >
+                <MoreVertical size={18} />
+              </button>
             </div>
-            
-            <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
-              {alumno.estaActivo ? 'Activa' : 'Inactiva'}
-            </span>
           </div>
           
           {showMenu && (

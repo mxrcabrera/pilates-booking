@@ -1,63 +1,68 @@
-import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Calendar, Users, DollarSign } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { DashboardClient } from './dashboard-client'
+import { PageLoading } from '@/components/page-loading'
+import { getCachedData, setCachedData } from '@/lib/client-cache'
 
-export default async function DashboardPage() {
-  const userId = await getCurrentUser()
+const CACHE_KEY = 'dashboard-data'
 
-  if (!userId) {
-    redirect('/login')
-  }
+type ClaseHoy = {
+  id: string
+  horaInicio: string
+  estado: string
+  esClasePrueba: boolean
+  alumno: { nombre: string } | null
+}
 
-  // Verificar rol del usuario
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  })
+type DashboardData = {
+  totalAlumnos: number
+  clasesHoy: ClaseHoy[]
+  pagosVencidos: number
+}
 
-  // Si es alumno, redirigir al dashboard de alumno
-  if (user?.role === 'ALUMNO') {
-    redirect('/alumno/dashboard')
-  }
+export default function DashboardPage() {
+  const router = useRouter()
+  const [data, setData] = useState<DashboardData | null>(() =>
+    getCachedData<DashboardData>(CACHE_KEY)
+  )
+  const [error, setError] = useState<string | null>(null)
 
-  const hoy = format(new Date(), 'yyyy-MM-dd')
-  
-  const totalAlumnos = await prisma.alumno.count({
-    where: {
-      profesorId: userId,
-      estaActivo: true
-    }
-  })
+  useEffect(() => {
+    if (data) return
 
-  const clasesHoy = await prisma.clase.findMany({
-    where: {
-      profesorId: userId,
-      fecha: new Date(hoy)
-    },
-    include: {
-      alumno: {
-        select: {
-          nombre: true
+    fetch('/api/dashboard')
+      .then(res => res.json())
+      .then(responseData => {
+        if (responseData.error) {
+          setError(responseData.error)
+        } else if (responseData.redirect) {
+          router.push(responseData.redirect)
+        } else {
+          setCachedData(CACHE_KEY, responseData)
+          setData(responseData)
         }
-      }
-    },
-    orderBy: {
-      horaInicio: 'asc'
-    }
-  })
+      })
+      .catch(err => setError(err.message))
+  }, [data, router])
 
-  const pagosVencidos = await prisma.pago.count({
-    where: {
-      alumno: {
-        profesorId: userId
-      },
-      estado: 'vencido'
-    }
-  })
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="content-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <p style={{ color: 'rgba(255,100,100,0.9)' }}>Error: {error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return <PageLoading />
+  }
 
   return (
     <div className="dashboard-container">
@@ -77,7 +82,7 @@ export default async function DashboardPage() {
           </div>
           <div className="stat-content">
             <p className="stat-label">Alumnos Activos</p>
-            <p className="stat-value">{totalAlumnos}</p>
+            <p className="stat-value">{data.totalAlumnos}</p>
           </div>
         </div>
 
@@ -87,7 +92,7 @@ export default async function DashboardPage() {
           </div>
           <div className="stat-content">
             <p className="stat-label">Clases Hoy</p>
-            <p className="stat-value">{clasesHoy.length}</p>
+            <p className="stat-value">{data.clasesHoy.length}</p>
           </div>
         </div>
 
@@ -97,14 +102,14 @@ export default async function DashboardPage() {
           </div>
           <div className="stat-content">
             <p className="stat-label">Pagos Pendientes</p>
-            <p className="stat-value">{pagosVencidos}</p>
+            <p className="stat-value">{data.pagosVencidos}</p>
           </div>
         </div>
       </div>
 
       <div className="agenda-card">
-        {clasesHoy.length > 0 ? (
-          <DashboardClient clasesHoy={clasesHoy} />
+        {data.clasesHoy.length > 0 ? (
+          <DashboardClient clasesHoy={data.clasesHoy} />
         ) : (
           <div className="empty-state">
             <Calendar size={48} strokeWidth={1} />

@@ -106,6 +106,10 @@ export async function POST(request: NextRequest) {
             frecuenciaSemanal,
             diasSemana,
             estado: 'reservada'
+          },
+          include: {
+            alumno: { select: { id: true, nombre: true } },
+            profesor: { select: { id: true, nombre: true } }
           }
         })
 
@@ -165,7 +169,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, clase: claseCreada })
       }
 
       case 'update': {
@@ -257,6 +261,10 @@ export async function POST(request: NextRequest) {
             esRecurrente,
             frecuenciaSemanal,
             diasSemana
+          },
+          include: {
+            alumno: { select: { id: true, nombre: true } },
+            profesor: { select: { id: true, nombre: true } }
           }
         })
 
@@ -289,7 +297,7 @@ export async function POST(request: NextRequest) {
           }).catch(err => console.error('Error obteniendo sesión:', err))
         }
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, clase: claseActualizada })
       }
 
       case 'delete': {

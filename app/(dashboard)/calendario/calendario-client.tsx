@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
@@ -69,7 +68,6 @@ function formatearFechaDia(fecha: Date): string {
 }
 
 export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin }: CalendarioClientProps) {
-  const router = useRouter()
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
@@ -174,22 +172,38 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
     setEditDialogOpen(true)
   }
 
+  // Handler para actualizar estado local cuando se crea/edita una clase
+  const handleClaseSuccess = (data: { clase?: any; isNew: boolean }) => {
+    if (!data.clase) return
+
+    // Convertir fecha de string a Date si viene como string
+    const claseConFecha = {
+      ...data.clase,
+      fecha: new Date(data.clase.fecha)
+    }
+
+    if (data.isNew) {
+      // Agregar nueva clase al estado local
+      setClases(prev => [...prev, claseConFecha])
+    } else {
+      // Actualizar clase existente
+      setClases(prev => prev.map(c => c.id === claseConFecha.id ? claseConFecha : c))
+    }
+  }
+
   const handleCloseDialog = () => {
     setDialogOpen(false)
-    router.refresh()
   }
 
   const handleCloseEditDialog = () => {
     setEditDialogOpen(false)
     setDetailDialogOpen(false)
     setClaseSeleccionada(null)
-    router.refresh()
   }
 
   const handleCloseDetailDialog = () => {
     setDetailDialogOpen(false)
     setClaseSeleccionada(null)
-    router.refresh()
   }
 
   const toggleSelection = (id: string, e?: React.MouseEvent | React.ChangeEvent) => {
@@ -244,14 +258,18 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
 
   // Handler para cambiar estado de una clase
   const handleStatusChange = async (id: string, estado: string) => {
+    // Guardar estado anterior para revertir si hay error
+    const estadoAnterior = clases.find(c => c.id === id)?.estado
     // Actualización optimista
     setClases(prev => prev.map(c => c.id === id ? { ...c, estado } : c))
     try {
       await changeClaseStatusAPI(id, estado)
       showSuccess('Estado actualizado')
     } catch (err: any) {
-      // Revertir en caso de error
-      router.refresh()
+      // Revertir al estado anterior
+      if (estadoAnterior) {
+        setClases(prev => prev.map(c => c.id === id ? { ...c, estado: estadoAnterior } : c))
+      }
       showError(err.message)
       throw err
     }
@@ -649,6 +667,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}
         horarioTardeFin={horarioTardeFin}
+        onSuccess={handleClaseSuccess}
       />
 
       <ClaseDialog
@@ -661,6 +680,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}
         horarioTardeFin={horarioTardeFin}
+        onSuccess={handleClaseSuccess}
       />
 
       {claseSeleccionada && (

@@ -52,7 +52,8 @@ export function ClaseDialog({
   horarioMananaInicio,
   horarioMananaFin,
   horarioTardeInicio,
-  horarioTardeFin
+  horarioTardeFin,
+  onSuccess
 }: {
   isOpen: boolean
   onClose: () => void
@@ -63,6 +64,7 @@ export function ClaseDialog({
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
+  onSuccess?: (data: { clase?: any; clases?: any[]; isNew: boolean }) => void
 }) {
   const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -125,7 +127,7 @@ export function ClaseDialog({
 
     try {
       if (clase) {
-        await updateClaseAPI({
+        const result = await updateClaseAPI({
           id: clase.id,
           alumnoId: alumnoId || undefined,
           horaInicio,
@@ -138,8 +140,9 @@ export function ClaseDialog({
           fecha: fechaStr
         })
         showSuccess('Clase actualizada')
+        onSuccess?.({ clase: result.clase, isNew: false })
       } else {
-        await createClaseAPI({
+        const result = await createClaseAPI({
           alumnoId: alumnoId || undefined,
           horaInicio,
           horaRecurrente: horaRecurrente || undefined,
@@ -150,6 +153,7 @@ export function ClaseDialog({
           fecha: fechaStr
         })
         showSuccess(esRecurrente ? 'Clases creadas' : 'Clase creada')
+        onSuccess?.({ clase: result.clase, isNew: true })
       }
       onClose()
     } catch (err: any) {

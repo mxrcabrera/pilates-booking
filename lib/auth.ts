@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import bcrypt from 'bcrypt'
-import { prisma } from './prisma'
+import { auth } from './auth-new'
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo-en-produccion'
@@ -53,39 +53,24 @@ export async function removeAuthCookie() {
   cookieStore.delete('auth-token')
 }
 
-// Buscar sesión de NextAuth directamente en la base de datos (más rápido que auth())
-async function getSessionFromDB(sessionToken: string) {
-  try {
-    const session = await prisma.session.findUnique({
-      where: { sessionToken },
-      select: { userId: true, expires: true }
-    })
-    if (session && session.expires > new Date()) {
-      return session.userId
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
 export async function getCurrentUser() {
   const cookieStore = await cookies()
 
-  // 1. Primero intentar con JWT personalizado (más rápido)
+  // 1. Primero intentar con JWT personalizado (credentials login)
   const customToken = cookieStore.get('auth-token')?.value
   if (customToken) {
     const payload = await verifyToken(customToken)
     if (payload) return payload.userId
   }
 
-  // 2. Buscar session token de NextAuth directamente en DB
-  const nextAuthToken = cookieStore.get('authjs.session-token')?.value
-    || cookieStore.get('__Secure-authjs.session-token')?.value
-
-  if (nextAuthToken) {
-    const userId = await getSessionFromDB(nextAuthToken)
-    if (userId) return userId
+  // 2. Usar NextAuth auth() para JWT sessions (Google OAuth)
+  try {
+    const session = await auth()
+    if (session?.user?.id) {
+      return session.user.id
+    }
+  } catch {
+    // Ignore errors
   }
 
   return null

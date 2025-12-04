@@ -9,15 +9,13 @@ export const authConfig: NextAuthConfig = {
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       allowDangerousEmailAccountLinking: true,
-      // Solo scopes básicos - sin Calendar para evitar verificación de Google
-      // Cuando quieras habilitar Calendar, descomentar y verificar la app en Google Cloud Console
-      // authorization: {
-      //   params: {
-      //     scope: 'openid email profile https://www.googleapis.com/auth/calendar',
-      //     access_type: 'offline',
-      //     prompt: 'consent',
-      //   },
-      // },
+      authorization: {
+        params: {
+          scope: 'openid email profile https://www.googleapis.com/auth/calendar',
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
     }),
     Credentials({
       credentials: {

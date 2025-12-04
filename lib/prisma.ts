@@ -1,27 +1,16 @@
 import { PrismaClient } from '@prisma/client'
-import { config } from 'dotenv'
-import { resolve } from 'path'
-
-// Load .env file explicitly
-config({ path: resolve(process.cwd(), '.env') })
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Hardcoded URL to avoid any env var issues
-const DATABASE_URL = "postgresql://postgres.wgtyxmocjzfeumtznopn:UPTNQxLyIgAxa3Ea@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+})
 
-function createPrismaClient() {
-  return new PrismaClient({
-    datasources: {
-      db: {
-        url: DATABASE_URL,
-      },
-    },
-  })
+// En desarrollo, reutilizar la conexión
+// En producción (serverless), cada request puede crear una nueva instancia
+// pero Prisma maneja el pooling internamente con PgBouncer
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
 }
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

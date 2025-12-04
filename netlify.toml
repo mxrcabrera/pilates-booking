@@ -1,0 +1,22 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[functions]
+  # Usar Node 20 para mejor performance
+  node_bundler = "esbuild"
+
+# Configuración para Next.js
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Headers para mejor caching
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

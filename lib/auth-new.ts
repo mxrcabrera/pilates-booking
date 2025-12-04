@@ -35,7 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user, account }) {
       // Primera vez que se crea el token (después del sign in)
-      if (user) {
+      if (user && user.id) {
         token.sub = user.id
         token.role = (user as any).role || 'PROFESOR'
       }

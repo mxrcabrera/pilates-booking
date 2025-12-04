@@ -8,6 +8,7 @@ import { AlumnoDetailSheet } from './alumno-detail-sheet'
 import { toggleAlumnoStatusAPI, deleteAlumnoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
+import { EmptyState } from '@/components/empty-state'
 
 type Alumno = {
   id: string
@@ -163,18 +164,20 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
         </div>
 
         {filteredAlumnos.length === 0 ? (
-          <div className="empty-state">
-            <Users size={48} strokeWidth={1} />
-            <p>{searchTerm ? 'No se encontraron alumnos' : 'No tenés alumnos registrados'}</p>
-            {!searchTerm && (
-              <>
-                <p className="empty-subtitle">Agregá tu primer alumno para comenzar</p>
-                <button onClick={handleNew} className="btn-outline">
-                  Nuevo Alumno
-                </button>
-              </>
-            )}
-          </div>
+          searchTerm ? (
+            <div className="empty-state">
+              <Users size={48} strokeWidth={1} />
+              <p>No se encontraron alumnos</p>
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Users size={36} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
+              title="Sin alumnos todavía"
+              description="Agregá tu primer alumno para empezar a gestionar tus clases"
+              actionLabel="Nuevo Alumno"
+              onAction={handleNew}
+            />
+          )
         ) : (
           <div className={viewMode === 'grid' ? 'alumnos-grid' : 'alumnos-list'}>
             {filteredAlumnos.map(alumno => (

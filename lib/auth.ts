@@ -1,13 +1,10 @@
-import { SignJWT, jwtVerify, decodeJwt } from 'jose'
+import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import bcrypt from 'bcrypt'
+import { prisma } from './prisma'
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo-en-produccion'
-)
-
-const authSecret = new TextEncoder().encode(
-  process.env.AUTH_SECRET || ''
 )
 
 export async function hashPassword(password: string) {
@@ -56,14 +53,17 @@ export async function removeAuthCookie() {
   cookieStore.delete('auth-token')
 }
 
-// Verificar token de NextAuth directamente (sin llamar a auth())
-async function verifyNextAuthToken(token: string) {
+// Buscar sesión de NextAuth directamente en la base de datos (más rápido que auth())
+async function getSessionFromDB(sessionToken: string) {
   try {
-    // NextAuth usa un formato de JWT específico con AUTH_SECRET
-    const verified = await jwtVerify(token, authSecret, {
-      algorithms: ['HS256'],
+    const session = await prisma.session.findUnique({
+      where: { sessionToken },
+      select: { userId: true, expires: true }
     })
-    return verified.payload.sub || null
+    if (session && session.expires > new Date()) {
+      return session.userId
+    }
+    return null
   } catch {
     return null
   }
@@ -79,21 +79,13 @@ export async function getCurrentUser() {
     if (payload) return payload.userId
   }
 
-  // 2. Intentar con el session token de NextAuth (sin llamar auth())
+  // 2. Buscar session token de NextAuth directamente en DB
   const nextAuthToken = cookieStore.get('authjs.session-token')?.value
     || cookieStore.get('__Secure-authjs.session-token')?.value
 
-  if (nextAuthToken && authSecret.length > 0) {
-    const userId = await verifyNextAuthToken(nextAuthToken)
+  if (nextAuthToken) {
+    const userId = await getSessionFromDB(nextAuthToken)
     if (userId) return userId
-  }
-
-  // 3. Fallback: usar auth() de NextAuth (más lento)
-  const { auth } = await import('./auth-new')
-  const session = await auth()
-
-  if (session?.user?.id) {
-    return session.user.id
   }
 
   return null

@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Users, DollarSign } from 'lucide-react'
+import { Calendar, Users, DollarSign, Sparkles } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { DashboardClient } from './dashboard-client'
 import { PageLoading } from '@/components/page-loading'
 import { getCachedData, setCachedData } from '@/lib/client-cache'
+import { EmptyState } from '@/components/empty-state'
 
 const CACHE_KEY = 'dashboard-data'
 
@@ -64,6 +65,32 @@ export default function DashboardPage() {
     return <PageLoading />
   }
 
+  // Usuario nuevo sin datos
+  if (data.totalAlumnos === 0) {
+    return (
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <div>
+            <h1>Bienvenido</h1>
+            <p className="date-text">
+              {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
+            </p>
+          </div>
+        </div>
+
+        <div className="agenda-card">
+          <EmptyState
+            icon={<Sparkles size={36} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
+            title="Empezá a usar tu estudio"
+            description="Configurá tus horarios, agregá alumnos y comenzá a gestionar tus clases"
+            actionLabel="Agregar primer alumno"
+            actionHref="/alumnos"
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -111,11 +138,11 @@ export default function DashboardPage() {
         {data.clasesHoy.length > 0 ? (
           <DashboardClient clasesHoy={data.clasesHoy} />
         ) : (
-          <div className="empty-state">
-            <Calendar size={48} strokeWidth={1} />
-            <p>No tenés clases programadas para hoy</p>
-            <p className="empty-subtitle">Disfrutá tu día libre</p>
-          </div>
+          <EmptyState
+            icon={<Calendar size={36} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
+            title="Sin clases hoy"
+            description="No tenés clases programadas para hoy. Disfrutá tu día libre"
+          />
         )}
       </div>
     </div>

@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { addWeeks } from 'date-fns'
-import { auth } from '@/lib/auth-new'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
 
 export async function createClase(formData: FormData) {
@@ -129,12 +128,23 @@ export async function createClase(formData: FormData) {
   // Sincronizar con Google Calendar si está activado
   if (user.syncGoogleCalendar) {
     try {
-      const session = await auth()
-      if (session && (session as any).accessToken) {
+      // Obtener tokens de Google de la tabla Account
+      const account = await prisma.account.findFirst({
+        where: {
+          userId: userId,
+          provider: 'google'
+        },
+        select: {
+          access_token: true,
+          refresh_token: true
+        }
+      })
+
+      if (account?.access_token) {
         const eventId = await createCalendarEvent(
           claseCreada.id,
-          (session as any).accessToken,
-          (session as any).refreshToken
+          account.access_token,
+          account.refresh_token || undefined
         )
 
         // Guardar el eventId en la clase
@@ -327,37 +337,43 @@ export async function updateClase(formData: FormData) {
   })
 
   // Sincronizar con Google Calendar si está activado
-  if (user.syncGoogleCalendar && claseActualizada.googleEventId) {
+  if (user.syncGoogleCalendar) {
     try {
-      const session = await auth()
-      if (session && (session as any).accessToken) {
-        await updateCalendarEvent(
-          claseActualizada.id,
-          claseActualizada.googleEventId,
-          (session as any).accessToken,
-          (session as any).refreshToken
-        )
+      // Obtener tokens de Google de la tabla Account
+      const account = await prisma.account.findFirst({
+        where: {
+          userId: userId,
+          provider: 'google'
+        },
+        select: {
+          access_token: true,
+          refresh_token: true
+        }
+      })
+
+      if (account?.access_token) {
+        if (claseActualizada.googleEventId) {
+          await updateCalendarEvent(
+            claseActualizada.id,
+            claseActualizada.googleEventId,
+            account.access_token,
+            account.refresh_token || undefined
+          )
+        } else {
+          // Si no tiene evento pero ahora tiene sync activado, crear uno
+          const eventId = await createCalendarEvent(
+            claseActualizada.id,
+            account.access_token,
+            account.refresh_token || undefined
+          )
+          await prisma.clase.update({
+            where: { id: claseActualizada.id },
+            data: { googleEventId: eventId }
+          })
+        }
       }
     } catch (error) {
-      console.error('Error al actualizar en Google Calendar:', error)
-    }
-  } else if (user.syncGoogleCalendar && !claseActualizada.googleEventId) {
-    // Si no tiene evento pero ahora tiene sync activado, crear uno
-    try {
-      const session = await auth()
-      if (session && (session as any).accessToken) {
-        const eventId = await createCalendarEvent(
-          claseActualizada.id,
-          (session as any).accessToken,
-          (session as any).refreshToken
-        )
-        await prisma.clase.update({
-          where: { id: claseActualizada.id },
-          data: { googleEventId: eventId }
-        })
-      }
-    } catch (error) {
-      console.error('Error al crear evento en Google Calendar:', error)
+      console.error('Error al sincronizar con Google Calendar:', error)
     }
   }
 
@@ -387,12 +403,23 @@ export async function deleteClase(id: string) {
   // Eliminar de Google Calendar si está sincronizado
   if (user?.syncGoogleCalendar && clase?.googleEventId) {
     try {
-      const session = await auth()
-      if (session && (session as any).accessToken) {
+      // Obtener tokens de Google de la tabla Account
+      const account = await prisma.account.findFirst({
+        where: {
+          userId: userId,
+          provider: 'google'
+        },
+        select: {
+          access_token: true,
+          refresh_token: true
+        }
+      })
+
+      if (account?.access_token) {
         await deleteCalendarEvent(
           clase.googleEventId,
-          (session as any).accessToken,
-          (session as any).refreshToken
+          account.access_token,
+          account.refresh_token || undefined
         )
       }
     } catch (error) {

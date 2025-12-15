@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, verifyPassword, createToken } from '@/lib/auth'
+import { hashPassword, verifyPassword, createToken } from '@/lib/auth-utils'
 import { cookies } from 'next/headers'
 
 export const runtime = 'nodejs'

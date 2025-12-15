@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth-utils'
 import { prisma } from '@/lib/prisma'
 import { PerfilClient } from './perfil-client'
 

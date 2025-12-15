@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
+import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth-utils'
 
 export const runtime = 'nodejs'
 

@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, verifyPassword, createToken, setAuthCookie, removeAuthCookie } from '@/lib/auth'
-import { signIn } from '@/lib/auth-new'
+import { hashPassword, verifyPassword, createToken, setAuthCookie, removeAuthCookie } from '@/lib/auth-utils'
+import { signIn } from '@/lib/auth'
 
 export async function login(formData: FormData) {
   const email = formData.get('email') as string

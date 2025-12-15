@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth-utils'
 import { format } from 'date-fns'
 
 export const runtime = 'nodejs'

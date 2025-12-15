@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth-utils'
 import { addWeeks } from 'date-fns'
-import { auth } from '@/lib/auth-new'
+import { auth } from '@/lib/auth'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
 import { checkPreferencesComplete } from '@/lib/preferences-guard'
 

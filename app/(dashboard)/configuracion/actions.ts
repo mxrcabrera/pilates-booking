@@ -1,9 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth-utils'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, verifyPassword } from '@/lib/auth'
 
 export async function updateProfile(formData: FormData) {
   const userId = await getCurrentUser()

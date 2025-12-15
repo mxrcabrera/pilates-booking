@@ -43,7 +43,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={`${inter.className} ${cormorant.variable} ${raleway.variable}`}>
+      <body className={`${inter.className} ${inter.variable} ${cormorant.variable} ${raleway.variable}`}>
         <Providers>{children}</Providers>
       </body>
     </html>

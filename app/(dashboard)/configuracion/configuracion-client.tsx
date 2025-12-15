@@ -206,13 +206,42 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         <div className="section-content">
           <div className="section-header">
             <h2>Configuración de Clases</h2>
-            <p className="section-subtitle">Horarios por defecto y capacidad</p>
           </div>
 
-          <div className="form-content">
+          <div className="config-grid-4">
             <div className="form-group">
-              <label>Horario de Mañana por Default</label>
-              <div className="form-row">
+              <label>Capacidad</label>
+              <select
+                name="maxAlumnosPorClase"
+                defaultValue={profesor.maxAlumnosPorClase}
+                required
+                disabled={isLoading}
+                className="form-select"
+              >
+                {[1,2,3,4,5,6,8,10].map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Anticipación</label>
+              <select
+                name="horasAnticipacionMinima"
+                defaultValue={profesor.horasAnticipacionMinima}
+                required
+                disabled={isLoading}
+                className="form-select"
+              >
+                {[1,2,3,4,6,12,24].map(n => (
+                  <option key={n} value={n}>{n}h</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Mañana</label>
+              <div className="time-range-mini">
                 <TimeInput
                   name="horarioMananaInicio"
                   defaultValue={profesor.horarioMananaInicio}
@@ -224,12 +253,11 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
                   disabled={isLoading}
                 />
               </div>
-              <p className="form-hint">Rango horario por defecto para turnos de mañana</p>
             </div>
 
             <div className="form-group">
-              <label>Horario de Tarde por Default</label>
-              <div className="form-row">
+              <label>Tarde</label>
+              <div className="time-range-mini">
                 <TimeInput
                   name="horarioTardeInicio"
                   defaultValue={profesor.horarioTardeInicio}
@@ -241,48 +269,6 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
                   disabled={isLoading}
                 />
               </div>
-              <p className="form-hint">Rango horario por defecto para turnos de tarde</p>
-            </div>
-
-            <div className="form-group">
-              <label>Capacidad Máxima por Clase</label>
-              <select
-                name="maxAlumnosPorClase"
-                defaultValue={profesor.maxAlumnosPorClase}
-                required
-                disabled={isLoading}
-                className="form-select"
-              >
-                <option value="1">1 alumno</option>
-                <option value="2">2 alumnos</option>
-                <option value="3">3 alumnos</option>
-                <option value="4">4 alumnos</option>
-                <option value="5">5 alumnos</option>
-                <option value="6">6 alumnos</option>
-                <option value="8">8 alumnos</option>
-                <option value="10">10 alumnos</option>
-              </select>
-              <p className="form-hint">Cantidad máxima de alumnos que pueden reservar la misma clase</p>
-            </div>
-
-            <div className="form-group">
-              <label>Anticipación Mínima para Reservas</label>
-              <select
-                name="horasAnticipacionMinima"
-                defaultValue={profesor.horasAnticipacionMinima}
-                required
-                disabled={isLoading}
-                className="form-select"
-              >
-                <option value="1">1 hora</option>
-                <option value="2">2 horas</option>
-                <option value="3">3 horas</option>
-                <option value="4">4 horas</option>
-                <option value="6">6 horas</option>
-                <option value="12">12 horas</option>
-                <option value="24">24 horas</option>
-              </select>
-              <p className="form-hint">Tiempo mínimo de anticipación que deben tener los alumnos para reservar clases</p>
             </div>
           </div>
         </div>
@@ -293,20 +279,13 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         <div className="section-content">
           <div className="section-header">
             <h2>Precios y Paquetes</h2>
-            <p className="section-subtitle">Tarifas y paquetes de clases</p>
           </div>
 
-          <div className="form-content">
+          <div className="form-content compact-form">
             <div className="form-group">
-              <label>Precio por Clase Suelta</label>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <span style={{
-                  position: 'absolute',
-                  left: '0.75rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'rgba(255, 255, 255, 0.5)'
-                }}>$</span>
+              <label>Clase suelta</label>
+              <div className="price-input-wrapper">
+                <span className="price-symbol">$</span>
                 <input
                   type="number"
                   name="precioPorClase"
@@ -314,20 +293,16 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
                   min="0"
                   step="0.01"
                   disabled={isLoading}
-                  style={{ paddingLeft: '1.5rem', width: '100%' }}
-                  placeholder="0.00"
+                  className="price-input"
+                  placeholder="0"
                 />
               </div>
-              <p className="form-hint">Precio para alumnos que pagan por clase individual</p>
             </div>
-          </div>
 
-          <div className="subsection">
-            <div className="subsection-header">
-              <h3>Paquetes de Clases</h3>
-              <p className="section-subtitle">Configurá tus paquetes con precios personalizados</p>
+            <div className="packs-inline">
+              <label>Paquetes</label>
+              <PacksSection packs={packs} />
             </div>
-            <PacksSection packs={packs} />
           </div>
         </div>
       </div>
@@ -337,23 +312,21 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         <div className="section-content">
           <div className="section-header">
             <h2>Avanzado</h2>
-            <p className="section-subtitle">Configuración para espacios compartidos</p>
           </div>
 
-          <div className="form-content">
+          <div className="form-content compact-form">
             <div className="form-group">
-              <label>Espacio Compartido</label>
+              <label>Espacio compartido</label>
               <input
                 type="text"
                 name="espacioCompartidoId"
                 defaultValue={profesor.espacioCompartidoId || ''}
-                placeholder="Código de espacio (ej: studio-palermo)"
+                placeholder="Código (ej: studio-palermo)"
                 disabled={isLoading}
                 className="form-input"
               />
               <p className="form-hint">
-                Si trabajás con otros profesores en el mismo lugar, usá el mismo código para coordinar horarios.
-                Todos los profesores con el mismo código verán las clases de las demás en su calendario.
+                Para coordinar horarios con otros profesores del mismo espacio
               </p>
             </div>
           </div>

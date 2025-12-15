@@ -108,6 +108,20 @@
     --height-button-sm: 2rem; /* 32px - botones pequeños */
     --height-button: 2.75rem; /* 44px - botones normales */
   }
+
+  /* Form controls - fuente Inter consistente */
+  input,
+  select,
+  textarea,
+  button {
+    font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  input[type="time"],
+  input[type="date"] {
+    font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* ========================================
@@ -133,10 +147,47 @@ input[type="datetime-local"] {
 }
 
 /* Estilos globales para todos los time/date pickers - íconos blancos */
+/* GLOBAL FORM FONT RESET - Forzar Raleway en TODOS los form elements */
+input,
+select,
+textarea,
+button,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"] {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+select option {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
 input[type="time"],
 input[type="date"],
 input[type="datetime-local"] {
   color-scheme: dark !important;
+}
+
+/* Forzar fuente Raleway en los elementos internos shadow DOM de time/date pickers */
+input[type="time"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit-fields-wrapper,
+input[type="time"]::-webkit-datetime-edit-text,
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field,
+input[type="time"]::-webkit-datetime-edit-second-field,
+input[type="time"]::-webkit-datetime-edit-ampm-field,
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
 }
 
 input[type="time"]::-webkit-calendar-picker-indicator,
@@ -1207,7 +1258,7 @@ h4, h5, h6 {
   border: none;
   border-radius: var(--radius-md);
   padding: var(--space-lg) var(--space-xl);
-  font-family: var(--font-body), 'Raleway', sans-serif;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: var(--font-base);
   font-weight: 400;
   letter-spacing: 0.03em;
@@ -1223,6 +1274,12 @@ h4, h5, h6 {
     inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
+}
+
+.btn-primary span,
+.btn-primary *,
+button span {
+  font-family: inherit !important;
 }
 
 .btn-primary::before {
@@ -2545,9 +2602,9 @@ h4, h5, h6 {
 }
 
 .form-group label {
-  font-family: var(--font-serif), 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.01em;
 }
@@ -2560,8 +2617,9 @@ h4, h5, h6 {
   }
 
   .form-group label {
-    font-size: 1rem;
-    font-weight: 600;
+    font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 500;
     text-transform: none;
     letter-spacing: 0.01em;
     color: rgba(255, 255, 255, 0.85);
@@ -2587,7 +2645,8 @@ h4, h5, h6 {
   border-radius: var(--radius-md);
   padding: var(--space-lg) var(--space-md);
   color: rgba(255, 255, 255, 0.9);
-  font-size: var(--font-base);
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
   min-height: var(--height-input);
   transition: all 0.2s ease;
   color-scheme: dark;
@@ -2615,7 +2674,6 @@ h4, h5, h6 {
 /* Time inputs */
 .form-group input[type="time"] {
   color-scheme: dark;
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
@@ -2832,16 +2890,132 @@ h4, h5, h6 {
   color: #EF4444;
 }
 
-.form-hint {
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, var(--opacity-text-tertiary));
-  margin-top: 0.25rem;
-}
-
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.2rem;
+}
+
+/* Layout compacto para configuración */
+.compact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.config-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.config-grid-4 .form-group {
+  margin-bottom: 0;
+}
+
+/* Select unificado para toda la app */
+.form-select,
+.form-select-sm {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
+  background: rgba(25, 30, 50, 0.6);
+  border: 1px solid rgba(100, 130, 200, 0.20);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.95);
+  height: 48px;
+  cursor: pointer;
+}
+
+.form-select:focus,
+.form-select-sm:focus {
+  outline: none;
+  border-color: rgba(100, 130, 200, 0.4);
+}
+
+.time-range-mini {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.time-range-mini .time-input-wrapper {
+  flex: 1;
+}
+
+.time-range-mini .time-input-custom {
+  padding: 0.75rem 2.25rem 0.75rem 0.75rem !important;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
+  height: 48px;
+}
+
+.label-small {
+  display: block;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 0.9375rem !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+@media (max-width: 768px) {
+  .config-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .config-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Input de precio */
+.price-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.price-symbol {
+  position: absolute;
+  left: 0.75rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.price-input {
+  width: 100%;
+  padding-left: 1.5rem !important;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
+}
+
+.packs-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.packs-inline > label {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 640px) {
+  .form-row-inline {
+    grid-template-columns: 1fr;
+  }
+
+  .horarios-default-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-group select {
@@ -2881,14 +3055,15 @@ h4, h5, h6 {
   background: rgba(30, 26, 43, 0.98) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   padding: 0.75rem 1rem !important;
-  font-size: 0.9375rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
   font-weight: 500;
 }
 
 @media (max-width: 640px) {
   .form-group select {
     padding: 0.75rem 2.25rem 0.75rem 0.875rem;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     border-radius: var(--radius-md);
   }
 }
@@ -2985,6 +3160,9 @@ h4, h5, h6 {
    HORARIOS
    ======================================== */
 .btn-sm {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
   font-size: 0.9375rem;
@@ -2992,6 +3170,13 @@ h4, h5, h6 {
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
+}
+
+.btn-sm svg,
+.btn-primary.btn-sm svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
 }
 
 .btn-sm.btn-ghost {
@@ -3091,13 +3276,15 @@ h4, h5, h6 {
 }
 
 .horario-item-dia {
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
 }
 
 .horario-item-tiempo {
-  font-size: 0.875rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9375rem;
   color: rgba(255, 255, 255, 0.6);
   display: flex;
   align-items: center;
@@ -3105,6 +3292,7 @@ h4, h5, h6 {
 }
 
 .horario-item-turno {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.75rem;
   padding: 0.125rem 0.5rem;
   background: rgba(100, 140, 200, 0.15);
@@ -3113,7 +3301,8 @@ h4, h5, h6 {
 }
 
 .horario-item-sin {
-  font-size: 0.8125rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.35);
   font-style: italic;
 }
@@ -3157,7 +3346,8 @@ h4, h5, h6 {
 }
 
 .horario-item-agregar {
-  font-size: 0.8125rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9375rem;
   color: rgba(140, 170, 220, 0.8);
   background: none;
   border: none;
@@ -3181,7 +3371,8 @@ h4, h5, h6 {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  font-size: 0.8125rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.5);
   padding: 0.5rem 0;
 }
@@ -3193,10 +3384,12 @@ h4, h5, h6 {
 }
 
 .horario-subitem-dia {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
   min-width: 80px;
 }
 
 .horario-subitem-tiempo {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -3219,6 +3412,12 @@ h4, h5, h6 {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.horarios-header .btn-primary,
+.horarios-header .btn-sm {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .horarios-header-title {
@@ -3519,7 +3718,8 @@ h4, h5, h6 {
 }
 
 .horario-dia-nombre {
-  font-size: 0.875rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.95);
   text-transform: uppercase;
@@ -3668,6 +3868,7 @@ h4, h5, h6 {
 }
 
 .horario-time {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 1.125rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.95);
@@ -3678,7 +3879,8 @@ h4, h5, h6 {
 }
 
 .horario-turno {
-  font-size: 0.6875rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.75rem;
   color: rgba(80, 120, 200, 1);
   font-weight: 700;
   padding: 0.375rem 0.75rem;
@@ -3693,7 +3895,8 @@ h4, h5, h6 {
 }
 
 .horario-status-badge {
-  font-size: 0.6875rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.4);
@@ -3741,131 +3944,145 @@ h4, h5, h6 {
 /* ========================================
    PACKS
    ======================================== */
+.packs-header {
+  margin-bottom: 0.75rem;
+}
+
 .packs-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.pack-card {
+.pack-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  background: rgba(30, 35, 60, 0.55);
-  border: 1px solid rgba(100, 130, 200, 0.20);
-  border-radius: var(--radius-md);
-  transition: all 0.2s ease;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(100, 130, 200, 0.12);
   position: relative;
-  min-height: 70px;
-  backdrop-filter: blur(10px);
 }
 
-.pack-card.inactive {
-  background: rgba(25, 30, 50, 0.4);
-  border-color: rgba(100, 130, 200, 0.10);
+.pack-item:last-child {
+  border-bottom: none;
 }
 
-.pack-card.inactive .pack-card-info {
+.pack-item.inactive {
   opacity: 0.5;
 }
 
-.pack-card:hover {
-  background: rgba(35, 40, 65, 0.65);
-  border-color: rgba(100, 130, 200, 0.30);
+.pack-item-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.pack-nombre {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pack-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.pack-clases {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+.pack-precio {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #5A85D5;
+}
+
+.pack-status-badge {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Pack cards - fondo muy sutil para dar cuerpo sin ruido visual */
+.pack-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(100, 130, 200, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.pack-card.inactive {
+  opacity: 0.55;
 }
 
 .pack-card-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.125rem;
+  min-width: 0;
 }
 
-.pack-nombre {
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
-  margin: 0;
+.pack-meta {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.pack-details {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.pack-clases {
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.65);
-}
-
-.pack-precio {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #5A85D5;
-}
-
-.pack-status-badge {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
+.pack-badge-inactive {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.6875rem;
-  padding: 0.25rem 0.5rem;
-  background: rgba(80, 120, 200, 0.15);
-  color: rgba(255, 255, 255, 0.6);
+  padding: 0.125rem 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.45);
   border-radius: var(--radius-sm);
-  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
 }
 
 .pack-card-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
-  .pack-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    padding: 1rem;
-    min-height: auto;
-  }
+.pack-card-actions .btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(80, 120, 200, 0.06);
+  border: 1px solid rgba(80, 120, 200, 0.12);
+}
 
-  .pack-card-info {
-    gap: 0.5rem;
-  }
+.pack-card-actions .btn-icon-sm:hover {
+  background: rgba(80, 120, 200, 0.12);
+  border-color: rgba(80, 120, 200, 0.2);
+}
 
-  .pack-nombre {
-    font-size: 0.9375rem;
-  }
-
-  .pack-details {
-    gap: 0.75rem;
-  }
-
-  .pack-clases {
-    font-size: 0.875rem;
-  }
-
-  .pack-precio {
-    font-size: 1.125rem;
-  }
-
-  .pack-card-actions {
-    width: 100%;
-    gap: 0.625rem;
-  }
-
-  .pack-card-actions .btn-icon-sm {
-    flex: 1;
-    justify-content: center;
-  }
+.pack-card-actions .btn-icon-sm.danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
 }
 
 /* ========================================
@@ -4098,7 +4315,8 @@ h4, h5, h6 {
 }
 
 .turno-label {
-  font-size: 0.9375rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
   font-weight: 500;
 }
 
@@ -4220,7 +4438,8 @@ h4, h5, h6 {
 }
 
 .checkbox-label span {
-  font-size: 0.9375rem;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
 }
 
 /* Shadcn Dialogs */
@@ -4320,6 +4539,19 @@ h4, h5, h6 {
 .time-input-custom {
   width: 100%;
   padding-right: 2.5rem !important;
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Forzar fuente en los elementos internos del time picker */
+.time-input-custom::-webkit-datetime-edit,
+.time-input-custom::-webkit-datetime-edit-fields-wrapper,
+.time-input-custom::-webkit-datetime-edit-text,
+.time-input-custom::-webkit-datetime-edit-hour-field,
+.time-input-custom::-webkit-datetime-edit-minute-field,
+.time-input-custom::-webkit-datetime-edit-second-field,
+.time-input-custom::-webkit-datetime-edit-ampm-field {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
 .time-input-custom::-webkit-calendar-picker-indicator {
@@ -6235,5 +6467,66 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   color: rgba(255, 255, 255, 0.5);
   margin-bottom: 1.5rem;
   letter-spacing: 0.02em;
+}
+
+/* ========================================
+   SISTEMA TIPOGRÁFICO UNIFICADO
+   Fuente: Raleway para body text
+   Tamaños: Sistema consistente
+   ======================================== */
+
+/* Sistema de tamaños para configuración:
+   - Títulos h2: Cormorant Garamond (serif), 1.5rem
+   - Labels: Raleway, 1rem, weight 500
+   - Inputs/Selects: Raleway, 1rem
+   - Body text: Raleway, 0.9375rem
+   - Hints/descripciones: Raleway, 0.875rem, italic
+   - Badges/tags: Raleway, 0.75rem, uppercase
+*/
+
+/* Override final para asegurar Raleway en todos los textos de configuración */
+.settings-section,
+.settings-section * {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Excepciones: Títulos usan serif */
+.settings-section h2,
+.section-header h2,
+.horarios-header-title {
+  font-family: var(--font-serif), 'Cormorant Garamond', 'Georgia', serif !important;
+}
+
+/* Labels consistentes */
+.settings-section label,
+.form-group label {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+}
+
+/* Inputs y selects consistentes */
+.settings-section input,
+.settings-section select,
+.settings-section textarea {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
+}
+
+/* Options de select */
+.settings-section select option {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
+}
+
+/* Time inputs - webkit shadow DOM elements */
+.settings-section input[type="time"]::-webkit-datetime-edit,
+.settings-section input[type="time"]::-webkit-datetime-edit-fields-wrapper,
+.settings-section input[type="time"]::-webkit-datetime-edit-text,
+.settings-section input[type="time"]::-webkit-datetime-edit-hour-field,
+.settings-section input[type="time"]::-webkit-datetime-edit-minute-field,
+.settings-section input[type="time"]::-webkit-datetime-edit-ampm-field {
+  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1rem !important;
 }
 

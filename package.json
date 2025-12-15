@@ -33,7 +33,7 @@
     "googleapis": "^166.0.0",
     "jose": "^6.1.0",
     "lucide-react": "^0.548.0",
-    "next": "16.0.1",
+    "next": "^16.0.10",
     "next-auth": "^5.0.0-beta.30",
     "prisma": "^6.19.0",
     "react": "19.2.0",

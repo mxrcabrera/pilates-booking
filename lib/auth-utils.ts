@@ -43,11 +43,6 @@ export async function setAuthCookie(token: string) {
   })
 }
 
-export async function getAuthCookie() {
-  const cookieStore = await cookies()
-  return cookieStore.get('auth-token')?.value
-}
-
 export async function removeAuthCookie() {
   const cookieStore = await cookies()
   cookieStore.delete('auth-token')

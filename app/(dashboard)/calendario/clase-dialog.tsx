@@ -11,27 +11,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-
-type Clase = {
-  id: string
-  fecha: Date
-  horaInicio: string
-  horaRecurrente: string | null
-  estado: string
-  esClasePrueba: boolean
-  esRecurrente: boolean
-  frecuenciaSemanal: number | null
-  diasSemana: number[]
-  alumno: {
-    id: string
-    nombre: string
-  } | null
-}
-
-type Alumno = {
-  id: string
-  nombre: string
-}
+import { TimeInput } from '@/components/time-input'
+import type { Clase, AlumnoSimple } from '@/lib/types'
 
 const DIAS_SEMANA = [
   { value: 1, label: 'Lunes' },
@@ -59,7 +40,7 @@ export function ClaseDialog({
   onClose: () => void
   clase: Clase | null
   fecha: Date | null
-  alumnos: Alumno[]
+  alumnos: AlumnoSimple[]
   horarioMananaInicio: string
   horarioMananaFin: string
   horarioTardeInicio: string
@@ -157,7 +138,6 @@ export function ClaseDialog({
       }
       onClose()
     } catch (err: any) {
-      showError(err.message || 'Error al guardar clase')
       setError(err.message || 'Error al guardar clase')
     } finally {
       setIsLoading(false)
@@ -214,10 +194,8 @@ export function ClaseDialog({
 
           <div className="form-group">
             <label>Hora inicial</label>
-            <input
-              type="time"
+            <TimeInput
               name="horaInicio"
-              required
               defaultValue={clase?.horaInicio || horarioMananaInicio}
               disabled={isLoading}
             />
@@ -331,11 +309,11 @@ export function ClaseDialog({
 
                   <div className="form-group">
                     <label>Hora de las clases recurrentes</label>
-                    <input
-                      type="time"
+                    <TimeInput
                       name="horaRecurrente"
                       defaultValue={clase?.horaRecurrente || horarioMananaInicio}
                       disabled={isLoading}
+                      required={false}
                     />
                     <small style={{ fontSize: '0.8125rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>
                       Dejá vacío para usar la misma hora que la clase inicial

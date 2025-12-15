@@ -72,6 +72,7 @@ model Alumno {
   googleCalendarId   String?   @map("google_calendar_id")
   createdAt          DateTime  @default(now()) @map("created_at")
   genero             String    @default("F") @map("genero")
+  consentimientoTutor Boolean  @default(false) @map("consentimiento_tutor")
   profesor           User      @relation(fields: [profesorId], references: [id], onDelete: Cascade)
   clases             Clase[]
   pagos              Pago[]

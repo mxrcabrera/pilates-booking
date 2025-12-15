@@ -2,29 +2,8 @@
 
 import { MoreVertical, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-
-type Alumno = {
-  id: string
-  nombre: string
-  email: string
-  telefono: string
-  genero: string
-  cumpleanos: string | null
-  patologias: string | null
-  packType: string
-  clasesPorMes: number | null
-  precio: string
-  estaActivo: boolean
-  _count: {
-    clases: number
-    pagos: number
-  }
-}
-
-const PACK_LABELS: Record<string, string> = {
-  'mensual': 'Mensual',
-  'por_clase': 'Por Clase',
-}
+import type { Alumno } from '@/lib/types'
+import { PACK_LABELS } from '@/lib/constants'
 
 export function AlumnoCard({
   alumno,
@@ -109,7 +88,7 @@ export function AlumnoCard({
         >
           <div className="alumno-list-top-row">
             <h3>{alumno.nombre}</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="alumno-list-actions">
               <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
                 {getStatusText()}
               </span>

@@ -4,43 +4,7 @@ import { useEffect, useState } from 'react'
 import { ConfiguracionClient } from './configuracion-client'
 import { PageLoading } from '@/components/page-loading'
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
-
-type Profesor = {
-  id: string
-  horasAnticipacionMinima: number
-  maxAlumnosPorClase: number
-  horarioMananaInicio: string
-  horarioMananaFin: string
-  horarioTardeInicio: string
-  horarioTardeFin: string
-  espacioCompartidoId: string | null
-  syncGoogleCalendar: boolean
-  precioPorClase: string
-  hasGoogleAccount: boolean
-}
-
-type Horario = {
-  id: string
-  diaSemana: number
-  horaInicio: string
-  horaFin: string
-  esManiana: boolean
-  estaActivo: boolean
-}
-
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-  estaActivo: boolean
-}
-
-type ConfigData = {
-  profesor: Profesor
-  horarios: Horario[]
-  packs: Pack[]
-}
+import type { ConfigData } from '@/lib/types'
 
 export default function ConfiguracionPage() {
   // Inicializar con datos cacheados si existen
@@ -85,7 +49,7 @@ export default function ConfiguracionPage() {
       <div className="page-header">
         <div>
           <h1>Configuración</h1>
-          <p className="page-subtitle">Administrá tu cuenta y horarios</p>
+          <p className="page-subtitle">Configurá tus días y horarios de atención</p>
         </div>
       </div>
 

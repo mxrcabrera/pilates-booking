@@ -186,3 +186,25 @@ export async function deleteClaseAPI(id: string) {
 export async function changeClaseStatusAPI(id: string, estado: string) {
   return apiCallTo('/api/clases', 'changeStatus', { id, estado })
 }
+
+// Pagos
+export async function createPagoAPI(data: {
+  alumnoId: string
+  monto: number
+  fechaVencimiento: string
+  mesCorrespondiente: string
+}) {
+  return apiCallTo('/api/pagos', 'create', data)
+}
+
+export async function marcarPagadoAPI(id: string) {
+  return apiCallTo('/api/pagos', 'marcarPagado', { id })
+}
+
+export async function marcarPendienteAPI(id: string) {
+  return apiCallTo('/api/pagos', 'marcarPendiente', { id })
+}
+
+export async function deletePagoAPI(id: string) {
+  return apiCallTo('/api/pagos', 'delete', { id })
+}

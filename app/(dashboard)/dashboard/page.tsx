@@ -9,22 +9,9 @@ import { DashboardClient } from './dashboard-client'
 import { PageLoading } from '@/components/page-loading'
 import { getCachedData, setCachedData } from '@/lib/client-cache'
 import { EmptyState } from '@/components/empty-state'
+import type { DashboardData } from '@/lib/types'
 
 const CACHE_KEY = 'dashboard-data'
-
-type ClaseHoy = {
-  id: string
-  horaInicio: string
-  estado: string
-  esClasePrueba: boolean
-  alumno: { nombre: string } | null
-}
-
-type DashboardData = {
-  totalAlumnos: number
-  clasesHoy: ClaseHoy[]
-  pagosVencidos: number
-}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -136,7 +123,11 @@ export default function DashboardPage() {
 
       <div className="agenda-card">
         {data.clasesHoy.length > 0 ? (
-          <DashboardClient clasesHoy={data.clasesHoy} />
+          <DashboardClient
+            clasesHoy={data.clasesHoy}
+            totalAlumnos={data.totalAlumnos}
+            pagosVencidos={data.pagosVencidos}
+          />
         ) : (
           <EmptyState
             icon={<Calendar size={36} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}

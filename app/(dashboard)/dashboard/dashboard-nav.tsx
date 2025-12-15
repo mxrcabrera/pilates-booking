@@ -3,19 +3,15 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
+import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, DollarSign } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
-
-type Profesor = {
-  id: string
-  nombre: string
-  email: string
-}
+import type { Profesor } from '@/lib/types'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { href: '/calendario', icon: Calendar, label: 'Calendario' },
   { href: '/alumnos', icon: Users, label: 'Alumnos' },
+  { href: '/pagos', icon: DollarSign, label: 'Pagos' },
   { href: '/configuracion', icon: Settings, label: 'Configuración' },
 ]
 

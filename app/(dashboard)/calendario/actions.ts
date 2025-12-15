@@ -38,13 +38,16 @@ export async function createClase(formData: FormData) {
 
   // Validar que la clase sea al menos X horas en el futuro (según configuración)
   const [hora, minuto] = horaInicio.split(':').map(Number)
+
+  // Construir fecha/hora de la clase en hora local Argentina
   const fechaHoraClase = new Date(fecha)
-  fechaHoraClase.setUTCHours(hora - 3, minuto, 0, 0) // Argentina es UTC-3
+  fechaHoraClase.setHours(hora, minuto, 0, 0)
 
   const ahora = new Date()
-  const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
+  const diferenciaMs = fechaHoraClase.getTime() - ahora.getTime()
+  const diferenciaHoras = diferenciaMs / (1000 * 60 * 60)
 
-  if (fechaHoraClase < tiempoMinimoAnticipacion) {
+  if (diferenciaHoras < user.horasAnticipacionMinima) {
     const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
     throw new Error(`Las clases deben reservarse con al menos ${horasTexto} de anticipación`)
   }
@@ -238,13 +241,16 @@ export async function updateClase(formData: FormData) {
 
   // Validar que la clase sea al menos X horas en el futuro (según configuración)
   const [hora, minuto] = horaInicio.split(':').map(Number)
+
+  // Construir fecha/hora de la clase en hora local Argentina
   const fechaHoraClase = new Date(fecha)
-  fechaHoraClase.setUTCHours(hora - 3, minuto, 0, 0) // Argentina es UTC-3
+  fechaHoraClase.setHours(hora, minuto, 0, 0)
 
   const ahora = new Date()
-  const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
+  const diferenciaMs = fechaHoraClase.getTime() - ahora.getTime()
+  const diferenciaHoras = diferenciaMs / (1000 * 60 * 60)
 
-  if (fechaHoraClase < tiempoMinimoAnticipacion) {
+  if (diferenciaHoras < user.horasAnticipacionMinima) {
     const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
     throw new Error(`Las clases deben modificarse con al menos ${horasTexto} de anticipación`)
   }

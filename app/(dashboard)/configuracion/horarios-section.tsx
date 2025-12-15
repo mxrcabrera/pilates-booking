@@ -6,15 +6,7 @@ import { HorarioDialog } from './horario-dialog'
 import { deleteHorarioAPI, toggleHorarioAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
-
-type Horario = {
-  id: string
-  diaSemana: number
-  horaInicio: string
-  horaFin: string
-  esManiana: boolean
-  estaActivo: boolean
-}
+import type { Horario } from '@/lib/types'
 
 type HorariosSectionProps = {
   horarios: Horario[]
@@ -178,9 +170,9 @@ export function HorariosSection({
               <button
                 onClick={handleNew}
                 className="btn-primary"
-                style={{ fontSize: '0.875rem', padding: '0.5rem 1rem', minHeight: 'auto', border: '2px solid transparent', boxShadow: 'none', whiteSpace: 'nowrap', flex: 1 }}
+                style={{ fontSize: '0.875rem', padding: '0.875rem 1.5rem', border: '2px solid transparent', boxShadow: 'none', whiteSpace: 'nowrap', flex: 1 }}
               >
-                <Plus size={16} />
+                <Plus size={18} />
                 <span>Nuevo Horario</span>
               </button>
               {horarios.length > 0 && (
@@ -188,9 +180,9 @@ export function HorariosSection({
                   onClick={() => setIsSelectionMode(true)}
                   className="btn-ghost"
                   title="Seleccionar múltiples"
-                  style={{ fontSize: '0.875rem', padding: '0.5rem 1rem', minHeight: 'auto', whiteSpace: 'nowrap', flex: 1 }}
+                  style={{ fontSize: '0.875rem', padding: '0.875rem 1.5rem', whiteSpace: 'nowrap', flex: 1 }}
                 >
-                  <CheckSquare size={16} />
+                  <CheckSquare size={18} />
                   <span>Seleccionar</span>
                 </button>
               )}

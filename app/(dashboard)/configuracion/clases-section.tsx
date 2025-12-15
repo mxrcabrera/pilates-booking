@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Calendar } from 'lucide-react'
 import { HorariosSection } from './horarios-section'
 import { updatePreferencias } from './actions'
+import { TimeInput } from '@/components/time-input'
 
 type Horario = {
   id: string
@@ -64,8 +65,6 @@ export function ClasesSection({
           horarioTardeFin={horarioTardeFin}
         />
 
-        <div className="form-divider" style={{ margin: '3rem 0' }}></div>
-
         {/* Configuración de clases */}
         <div style={{ marginTop: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -85,22 +84,16 @@ export function ClasesSection({
             <div className="form-group">
               <label>Horario de Mañana por Default</label>
               <div className="form-row">
-                <input
-                  type="time"
+                <TimeInput
                   name="horarioMananaInicio"
                   defaultValue={horarioMananaInicio}
-                  required
                   disabled={isLoading}
-                  className="form-time-input"
                 />
                 <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>a</span>
-                <input
-                  type="time"
+                <TimeInput
                   name="horarioMananaFin"
                   defaultValue={horarioMananaFin}
-                  required
                   disabled={isLoading}
-                  className="form-time-input"
                 />
               </div>
               <p className="form-hint">Rango horario por defecto para turnos de mañana</p>
@@ -109,22 +102,16 @@ export function ClasesSection({
             <div className="form-group">
               <label>Horario de Tarde por Default</label>
               <div className="form-row">
-                <input
-                  type="time"
+                <TimeInput
                   name="horarioTardeInicio"
                   defaultValue={horarioTardeInicio}
-                  required
                   disabled={isLoading}
-                  className="form-time-input"
                 />
                 <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>a</span>
-                <input
-                  type="time"
+                <TimeInput
                   name="horarioTardeFin"
                   defaultValue={horarioTardeFin}
-                  required
                   disabled={isLoading}
-                  className="form-time-input"
                 />
               </div>
               <p className="form-hint">Rango horario por defecto para turnos de tarde</p>

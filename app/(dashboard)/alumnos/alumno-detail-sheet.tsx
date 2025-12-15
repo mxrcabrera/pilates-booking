@@ -4,31 +4,8 @@ import { X, Mail, Phone, Calendar, Cake, FileText, Edit2, Trash2, UserX, UserChe
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-
-type Alumno = {
-  id: string
-  nombre: string
-  email: string
-  telefono: string
-  cumpleanos: string | null
-  patologias: string | null
-  packType: string
-  clasesPorMes: number | null
-  precio: string
-  estaActivo: boolean
-  _count: {
-    clases: number
-    pagos: number
-  }
-}
-
-const PACK_LABELS: Record<string, string> = {
-  'mensual': 'Mensual',
-  'por_clase': 'Por Clase',
-  'pack_4': 'Pack 4 Clases',
-  'pack_8': 'Pack 8 Clases',
-  'pack_12': 'Pack 12 Clases'
-}
+import type { Alumno } from '@/lib/types'
+import { PACK_LABELS } from '@/lib/constants'
 
 export function AlumnoDetailSheet({
   isOpen,

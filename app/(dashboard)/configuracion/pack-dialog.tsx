@@ -10,14 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-  estaActivo: boolean
-}
+import type { Pack } from '@/lib/types'
 
 export function PackDialog({
   isOpen,
@@ -61,7 +54,6 @@ export function PackDialog({
       }
       onClose()
     } catch (err: any) {
-      showError(err.message || 'Error al guardar pack')
       setError(err.message || 'Error al guardar pack')
     } finally {
       setIsLoading(false)

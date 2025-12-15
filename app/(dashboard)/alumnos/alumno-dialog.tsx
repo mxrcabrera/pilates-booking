@@ -10,31 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-
-type Alumno = {
-  id: string
-  nombre: string
-  email: string
-  telefono: string
-  genero: string
-  cumpleanos: string | null
-  patologias: string | null
-  packType: string
-  clasesPorMes: number | null
-  precio: string
-  estaActivo: boolean
-  _count: {
-    clases: number
-    pagos: number
-  }
-}
-
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-}
+import type { Alumno, Pack } from '@/lib/types'
 
 export function AlumnoDialog({
   isOpen,
@@ -64,6 +40,8 @@ export function AlumnoDialog({
       : packs[0]?.id || ''
   )
   const [selectedGenero, setSelectedGenero] = useState(alumno?.genero || 'F')
+  const [consentimientoTutor, setConsentimientoTutor] = useState(alumno?.consentimientoTutor || false)
+  const [esMenor, setEsMenor] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
@@ -71,6 +49,8 @@ export function AlumnoDialog({
       setPackType('mensual')
       setSelectedPackId(packs[0]?.id || '')
       setSelectedGenero('F')
+      setConsentimientoTutor(false)
+      setEsMenor(false)
     } else if (alumno) {
       // Determinar si es por_clase o mensual
       if (alumno.packType === 'por_clase') {
@@ -127,15 +107,31 @@ export function AlumnoDialog({
       finalPrecio = selectedPack ? parseFloat(selectedPack.precio) : 0
     }
 
+    const cumpleanosStr = formData.get('cumpleanos') as string
+
+    // Validar edad si se proporciona fecha de nacimiento
+    if (cumpleanosStr) {
+      const cumpleanos = new Date(cumpleanosStr)
+      const hoy = new Date()
+      const edad = Math.floor((hoy.getTime() - cumpleanos.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+
+      if (edad < 18 && !consentimientoTutor) {
+        setError('Los menores de 18 años requieren consentimiento de padre, madre o tutor')
+        setIsLoading(false)
+        return
+      }
+    }
+
     const data = {
       nombre: formData.get('nombre') as string,
       email: formData.get('email') as string,
       telefono: formData.get('telefono') as string,
       genero: selectedGenero,
-      cumpleanos: formData.get('cumpleanos') as string || undefined,
+      cumpleanos: cumpleanosStr || undefined,
       patologias: formData.get('patologias') as string || undefined,
       packType: finalPackType,
       precio: finalPrecio,
+      consentimientoTutor,
     }
 
     try {
@@ -150,7 +146,6 @@ export function AlumnoDialog({
       }
       onClose()
     } catch (err: any) {
-      showError(err.message || 'Error al guardar alumno')
       setError(err.message || 'Error al guardar alumno')
     } finally {
       setIsLoading(false)
@@ -161,6 +156,32 @@ export function AlumnoDialog({
   const formatDateForInput = (dateString: string | null) => {
     if (!dateString) return ''
     return dateString.split('T')[0]
+  }
+
+  // Handler para cambio de fecha de nacimiento
+  const handleCumpleanosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fechaStr = e.target.value
+    if (!fechaStr) {
+      setEsMenor(false)
+      setConsentimientoTutor(false)
+      return
+    }
+
+    const cumpleanos = new Date(fechaStr)
+    const hoy = new Date()
+    const edad = Math.floor((hoy.getTime() - cumpleanos.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+
+    setEsMenor(edad < 18)
+    if (edad >= 18) {
+      setConsentimientoTutor(false)
+    }
+  }
+
+  // Calcular fecha máxima (hoy menos 1 día)
+  const getMaxDate = () => {
+    const hoy = new Date()
+    hoy.setDate(hoy.getDate() - 1)
+    return hoy.toISOString().split('T')[0]
   }
 
 
@@ -219,10 +240,26 @@ export function AlumnoDialog({
             <input
                 type="date"
                 name="cumpleanos"
+                max={getMaxDate()}
                 defaultValue={formatDateForInput(alumno?.cumpleanos || null)}
+                onChange={handleCumpleanosChange}
                 disabled={isLoading}
             />
           </div>
+
+          {esMenor && (
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={consentimientoTutor}
+                  onChange={(e) => setConsentimientoTutor(e.target.checked)}
+                  disabled={isLoading}
+                />
+                <span>Tengo consentimiento de padre, madre o tutor</span>
+              </label>
+            </div>
+          )}
 
           <div className="form-group">
             <label>Patologías / Observaciones</label>
@@ -238,7 +275,7 @@ export function AlumnoDialog({
 
           <div className="form-group">
             <label>Género</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div className="genero-grid">
               <button
                 type="button"
                 onClick={() => setSelectedGenero('F')}
@@ -261,18 +298,13 @@ export function AlumnoDialog({
           <div className="form-group">
             <label>Tipo de Pago</label>
             {!puedeMensual && !puedePorClase ? (
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(255, 180, 100, 0.1)',
-                borderRadius: '0.5rem',
-                border: '1px solid rgba(255, 180, 100, 0.3)'
-              }}>
-                <p style={{ color: 'rgba(255, 180, 100, 0.9)', fontSize: '0.875rem', margin: 0 }}>
+              <div className="form-warning-box">
+                <p className="form-warning-text">
                   No hay opciones de pago configuradas. Creá packs o configurá el precio por clase en <strong>Configuración &gt; Packs y Precios</strong>
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <div className="tipo-pago-grid">
                 <button
                   type="button"
                   onClick={() => puedeMensual && setPackType('mensual')}
@@ -281,7 +313,7 @@ export function AlumnoDialog({
                   style={{ opacity: puedeMensual ? 1 : 0.5 }}
                 >
                   <div className="pack-option-label">Mensual</div>
-                  {!puedeMensual && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Sin packs</div>}
+                  {!puedeMensual && <div className="pack-option-note">Sin packs</div>}
                 </button>
                 <button
                   type="button"
@@ -291,7 +323,7 @@ export function AlumnoDialog({
                   style={{ opacity: puedePorClase ? 1 : 0.5 }}
                 >
                   <div className="pack-option-label">Por Clase</div>
-                  {!puedePorClase && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>Sin precio</div>}
+                  {!puedePorClase && <div className="pack-option-note">Sin precio</div>}
                 </button>
               </div>
             )}
@@ -301,28 +333,27 @@ export function AlumnoDialog({
             <div className="form-group">
               <label>Pack Mensual</label>
               {packs.length === 0 ? (
-                <p style={{ color: 'rgba(255, 180, 100, 0.9)', fontSize: '0.875rem' }}>
+                <p className="form-warning-text">
                   No tenés packs configurados. Crealos en Configuracion &gt; Packs y Precios
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="pack-list">
                   {packs.map(pack => (
                     <button
                       key={pack.id}
                       type="button"
                       onClick={() => setSelectedPackId(pack.id)}
                       disabled={isLoading}
-                      className={`pack-option ${selectedPackId === pack.id ? 'selected' : ''}`}
-                      style={{ textAlign: 'left', padding: '0.75rem 1rem' }}
+                      className={`pack-option pack-option-detailed ${selectedPackId === pack.id ? 'selected' : ''}`}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
+                      <div className="pack-option-content">
+                        <div className="pack-option-info">
                           <div className="pack-option-label">{pack.nombre}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem' }}>
+                          <div className="pack-option-description">
                             {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''} por semana
                           </div>
                         </div>
-                        <div style={{ fontSize: '1rem', fontWeight: '600', color: 'rgba(147, 155, 245, 0.9)' }}>
+                        <div className="pack-option-price">
                           ${parseFloat(pack.precio).toLocaleString('es-AR')}
                         </div>
                       </div>
@@ -336,16 +367,11 @@ export function AlumnoDialog({
           {packType === 'por_clase' && (
             <div className="form-group">
               <label>Precio por Clase</label>
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(147, 155, 245, 0.1)',
-                borderRadius: '0.5rem',
-                border: '1px solid rgba(147, 155, 245, 0.3)'
-              }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: '600', color: 'rgba(147, 155, 245, 0.9)' }}>
+              <div className="precio-info-box">
+                <div className="precio-info-amount">
                   ${parseFloat(precioPorClase).toLocaleString('es-AR')}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem' }}>
+                <div className="precio-info-note">
                   Precio configurado en ajustes
                 </div>
               </div>

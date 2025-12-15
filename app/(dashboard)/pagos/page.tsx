@@ -1,27 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlumnosClient } from './alumnos-client'
+import { PagosClient } from './pagos-client'
 import { PageLoading } from '@/components/page-loading'
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
-import type { AlumnosData } from '@/lib/types'
+import type { PagosData } from '@/lib/types'
 
-export default function AlumnosPage() {
-  const [data, setData] = useState<AlumnosData | null>(() =>
-    getCachedData<AlumnosData>(CACHE_KEYS.ALUMNOS)
+export default function PagosPage() {
+  const [data, setData] = useState<PagosData | null>(() =>
+    getCachedData<PagosData>(CACHE_KEYS.PAGOS)
   )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (data) return
 
-    fetch('/api/alumnos')
+    fetch('/api/pagos')
       .then(res => res.json())
       .then(responseData => {
         if (responseData.error) {
           setError(responseData.error)
         } else {
-          setCachedData(CACHE_KEYS.ALUMNOS, responseData)
+          setCachedData(CACHE_KEYS.PAGOS, responseData)
           setData(responseData)
         }
       })
@@ -42,5 +42,5 @@ export default function AlumnosPage() {
     return <PageLoading />
   }
 
-  return <AlumnosClient alumnos={data.alumnos} packs={data.packs} precioPorClase={data.precioPorClase} />
+  return <PagosClient pagos={data.pagos} alumnos={data.alumnos} />
 }

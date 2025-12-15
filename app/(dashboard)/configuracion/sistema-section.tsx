@@ -69,6 +69,7 @@ export function SistemaSection({
             </p>
           </div>
 
+          {/* Google Calendar sync temporalmente deshabilitado
           <div className="form-divider" style={{ margin: '2rem 0' }}></div>
 
           <div className="form-group">
@@ -98,6 +99,7 @@ export function SistemaSection({
               </p>
             )}
           </div>
+          */}
 
           <div className="form-actions">
             <button type="submit" className="btn-primary" disabled={isLoading}>

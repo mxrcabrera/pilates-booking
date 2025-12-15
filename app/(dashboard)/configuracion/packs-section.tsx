@@ -8,14 +8,7 @@ import { deletePackAPI, togglePackAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
-
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-  estaActivo: boolean
-}
+import type { Pack } from '@/lib/types'
 
 type PacksSectionProps = {
   packs: Pack[]
@@ -80,7 +73,7 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
   return (
     <div className="settings-section">
       <div className="section-content">
-        <div className="section-actions" style={{ marginBottom: '1.5rem' }}>
+        <div className="section-actions section-actions-spaced">
           <button
             onClick={handleNew}
             className="btn-primary"

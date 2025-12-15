@@ -9,31 +9,7 @@ import { toggleAlumnoStatusAPI, deleteAlumnoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { EmptyState } from '@/components/empty-state'
-
-type Alumno = {
-  id: string
-  nombre: string
-  email: string
-  telefono: string
-  genero: string
-  cumpleanos: string | null
-  patologias: string | null
-  packType: string
-  clasesPorMes: number | null
-  precio: string
-  estaActivo: boolean
-  _count: {
-    clases: number
-    pagos: number
-  }
-}
-
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-}
+import type { Alumno, Pack } from '@/lib/types'
 
 export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string }) {
   const { showSuccess, showError } = useToast()
@@ -171,7 +147,7 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
             </div>
           ) : (
             <EmptyState
-              icon={<Users size={36} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
+              icon={<Users size={36} className="empty-state-icon-primary" />}
               title="Sin alumnos todavía"
               description="Agregá tu primer alumno para empezar a gestionar tus clases"
               actionLabel="Nuevo Alumno"

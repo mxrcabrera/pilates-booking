@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { saveHorarioAPI, saveHorariosBatchAPI } from '@/lib/api'
 import { ConfirmDialog } from './confirm-dialog'
 import { useToast } from '@/components/ui/toast'
+import { Sun, Moon } from 'lucide-react'
+import { TimeInput } from '@/components/time-input'
 import {
   Dialog,
   DialogContent,
@@ -11,15 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-
-type Horario = {
-  id: string
-  diaSemana: number
-  horaInicio: string
-  horaFin: string
-  esManiana: boolean
-  estaActivo: boolean
-}
+import type { Horario } from '@/lib/types'
 
 const RANGOS_DIAS = [
   { value: 'single', label: 'Un solo día', dias: [] },
@@ -38,10 +32,15 @@ const DIAS_INDIVIDUALES = [
 ]
 
 const TURNOS = [
-  { value: 'maniana', label: 'Mañana', emoji: '☀️' },
-  { value: 'tarde', label: 'Tarde', emoji: '🌙' },
-  { value: 'ambos', label: 'Mañana y Tarde', emoji: '☀️🌙' },
+  { value: 'maniana', label: 'Mañana', icon: 'sun' },
+  { value: 'tarde', label: 'Tarde', icon: 'moon' },
 ]
+
+function TurnoIcon({ type, size = 18 }: { type: string; size?: number }) {
+  if (type === 'sun') return <Sun size={size} className="turno-icon turno-icon-sun" />
+  if (type === 'moon') return <Moon size={size} className="turno-icon turno-icon-moon" />
+  return null
+}
 
 type HorarioDialogProps = {
   isOpen: boolean
@@ -338,7 +337,7 @@ export function HorarioDialog({
                 )}
 
                 <div className="form-group">
-                  <label>¿Qué turno?</label>
+                  <label>Turno</label>
                   <div className="turno-grid">
                     {TURNOS.map(turno => (
                       <button
@@ -347,7 +346,7 @@ export function HorarioDialog({
                         className={`turno-btn ${turnoSeleccionado === turno.value ? 'active' : ''}`}
                         onClick={() => setTurnoSeleccionado(turno.value)}
                       >
-                        <span className="turno-emoji">{turno.emoji}</span>
+                        <TurnoIcon type={turno.icon} />
                         <span className="turno-label">{turno.label}</span>
                       </button>
                     ))}
@@ -369,27 +368,23 @@ export function HorarioDialog({
 
                 <div className="form-group">
                   <label>Turno</label>
-                  <div className="radio-group">
-                    <label className="radio-option">
-                      <input
-                        type="radio"
-                        name="esManiana"
-                        value="true"
-                        checked={turnoSeleccionado === 'maniana'}
-                        onChange={() => setTurnoSeleccionado('maniana')}
-                      />
-                      <span>☀️ Mañana</span>
-                    </label>
-                    <label className="radio-option">
-                      <input
-                        type="radio"
-                        name="esManiana"
-                        value="false"
-                        checked={turnoSeleccionado === 'tarde'}
-                        onChange={() => setTurnoSeleccionado('tarde')}
-                      />
-                      <span>🌙 Tarde</span>
-                    </label>
+                  <div className="turno-grid">
+                    <button
+                      type="button"
+                      className={`turno-btn ${turnoSeleccionado === 'maniana' ? 'active' : ''}`}
+                      onClick={() => setTurnoSeleccionado('maniana')}
+                    >
+                      <TurnoIcon type="sun" />
+                      <span className="turno-label">Mañana</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`turno-btn ${turnoSeleccionado === 'tarde' ? 'active' : ''}`}
+                      onClick={() => setTurnoSeleccionado('tarde')}
+                    >
+                      <TurnoIcon type="moon" />
+                      <span className="turno-label">Tarde</span>
+                    </button>
                   </div>
                 </div>
               </>
@@ -398,19 +393,15 @@ export function HorarioDialog({
             {turnoSeleccionado === 'ambos' && !horario && (
               <>
                 <div className="form-group">
-                  <label>☀️ Horario Mañana</label>
+                  <label className="label-with-icon"><Sun size={16} className="turno-icon-sun" /> Horario Mañana</label>
                   <div className="form-row">
-                    <input
-                      type="time"
+                    <TimeInput
                       name="horaInicioManiana"
-                      required
                       defaultValue={horarioMananaInicio}
                       disabled={isLoading}
                     />
-                    <input
-                      type="time"
+                    <TimeInput
                       name="horaFinManiana"
-                      required
                       defaultValue={horarioMananaFin}
                       disabled={isLoading}
                     />
@@ -418,19 +409,15 @@ export function HorarioDialog({
                 </div>
 
                 <div className="form-group">
-                  <label>🌙 Horario Tarde</label>
+                  <label className="label-with-icon"><Moon size={16} className="turno-icon-moon" /> Horario Tarde</label>
                   <div className="form-row">
-                    <input
-                      type="time"
+                    <TimeInput
                       name="horaInicioTarde"
-                      required
                       defaultValue={horarioTardeInicio}
                       disabled={isLoading}
                     />
-                    <input
-                      type="time"
+                    <TimeInput
                       name="horaFinTarde"
-                      required
                       defaultValue={horarioTardeFin}
                       disabled={isLoading}
                     />
@@ -443,10 +430,8 @@ export function HorarioDialog({
               <div className="form-row">
                 <div className="form-group">
                   <label>Desde</label>
-                  <input
-                    type="time"
+                  <TimeInput
                     name="horaInicio"
-                    required
                     value={horaInicio}
                     onChange={(e) => setHoraInicio(e.target.value)}
                     disabled={isLoading}
@@ -455,10 +440,8 @@ export function HorarioDialog({
 
                 <div className="form-group">
                   <label>Hasta</label>
-                  <input
-                    type="time"
+                  <TimeInput
                     name="horaFin"
-                    required
                     value={horaFin}
                     onChange={(e) => setHoraFin(e.target.value)}
                     disabled={isLoading}

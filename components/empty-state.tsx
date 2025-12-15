@@ -19,48 +19,17 @@ export function EmptyState({
   onAction
 }: EmptyStateProps) {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '400px',
-      padding: '2rem'
-    }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '1.5rem',
-        textAlign: 'center',
-        maxWidth: '360px'
-      }}>
-        <div style={{
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, rgba(147, 155, 245, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%)',
-          border: '2px solid rgba(147, 155, 245, 0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+    <div className="empty-state-wrapper">
+      <div className="empty-state-content">
+        <div className="empty-state-icon-circle">
           {icon}
         </div>
 
-        <div>
-          <h2 style={{
-            fontSize: '1.5rem',
-            fontWeight: '600',
-            color: 'rgba(255, 255, 255, 0.95)',
-            marginBottom: '0.5rem'
-          }}>
+        <div className="empty-state-text">
+          <h2 className="empty-state-title">
             {title}
           </h2>
-          <p style={{
-            color: 'rgba(255, 255, 255, 0.6)',
-            fontSize: '0.9375rem',
-            lineHeight: '1.5'
-          }}>
+          <p className="empty-state-description">
             {description}
           </p>
         </div>
@@ -69,19 +38,14 @@ export function EmptyState({
           actionHref ? (
             <Link
               href={actionHref}
-              className="btn-primary"
-              style={{
-                textDecoration: 'none',
-                marginTop: '0.5rem'
-              }}
+              className="btn-primary empty-state-action"
             >
               {actionLabel}
             </Link>
           ) : (
             <button
               onClick={onAction}
-              className="btn-primary"
-              style={{ marginTop: '0.5rem' }}
+              className="btn-primary empty-state-action"
             >
               {actionLabel}
             </button>

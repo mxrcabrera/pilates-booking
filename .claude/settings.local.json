@@ -34,7 +34,11 @@
       "Bash(npx prisma validate)",
       "Bash(del \"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\.env.local\")",
       "Bash(npx prisma db pull:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(del \"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\.next\\dev\\lock\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File fix-radius.ps1)",
+      "Bash(del \"c:\\Users\\cabre\\OneDrive\\Desktop\\repos\\pilates-booking\\fix-radius.ps1\")"
     ],
     "deny": [],
     "ask": []

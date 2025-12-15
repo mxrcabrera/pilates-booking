@@ -14,21 +14,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-
-type Clase = {
-  id: string
-  fecha: Date
-  horaInicio: string
-  diasSemana: number[]
-  estado: string
-  esClasePrueba: boolean
-  esRecurrente: boolean
-  frecuenciaSemanal: number | null
-  alumno: {
-    id: string
-    nombre: string
-  } | null
-}
+import type { Clase } from '@/lib/types'
+import { DIAS_SEMANA_COMPLETO } from '@/lib/constants'
 
 const ESTADO_LABELS: Record<string, string> = {
   reservada: 'Reservada',
@@ -37,15 +24,10 @@ const ESTADO_LABELS: Record<string, string> = {
   ausente: 'Ausente'
 }
 
-const DIAS_NOMBRES: Record<number, string> = {
-  0: 'Domingo',
-  1: 'Lunes',
-  2: 'Martes',
-  3: 'Miércoles',
-  4: 'Jueves',
-  5: 'Viernes',
-  6: 'Sábado'
-}
+const DIAS_NOMBRES: Record<number, string> = DIAS_SEMANA_COMPLETO.reduce((acc, dia, index) => {
+  acc[index] = dia
+  return acc
+}, {} as Record<number, string>)
 
 export function ClaseDetailDialog({
   isOpen,

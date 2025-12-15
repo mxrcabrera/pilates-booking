@@ -2,26 +2,19 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Clock, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react'
-
-type Clase = {
-  id: string
-  horaInicio: string
-  estado: string
-  esClasePrueba: boolean
-  alumno: {
-    nombre: string
-  } | null
-}
+import { Clock, ChevronDown, ChevronUp, ArrowRight, Users, DollarSign, AlertCircle } from 'lucide-react'
+import type { ClaseHoy } from '@/lib/types'
 
 type ClasesPorTurno = {
-  mañana: Clase[]
-  tarde: Clase[]
-  noche: Clase[]
+  mañana: ClaseHoy[]
+  tarde: ClaseHoy[]
+  noche: ClaseHoy[]
 }
 
 interface DashboardClientProps {
-  clasesHoy: Clase[]
+  clasesHoy: ClaseHoy[]
+  totalAlumnos: number
+  pagosVencidos: number
 }
 
 function getTurno(hora: number): 'mañana' | 'tarde' | 'noche' {
@@ -57,7 +50,7 @@ function getTimeStatus(minutosHasta: number): { text: string; isPast: boolean; i
   }
 }
 
-export function DashboardClient({ clasesHoy }: DashboardClientProps) {
+export function DashboardClient({ clasesHoy, totalAlumnos, pagosVencidos }: DashboardClientProps) {
   const [expandedTurnos, setExpandedTurnos] = useState<Set<string>>(new Set())
 
   // Agrupar por turno
@@ -197,6 +190,22 @@ export function DashboardClient({ clasesHoy }: DashboardClientProps) {
 
   return (
     <div className="dashboard-agenda-section">
+      {/* Stats Cards */}
+      <div className="dashboard-stats-grid">
+        <Link href="/alumnos" className="dashboard-stat-card">
+          <Users className="w-5 h-5" style={{ color: 'rgba(139, 92, 246, 0.9)' }} />
+          <div className="dashboard-stat-value">{totalAlumnos}</div>
+          <div className="dashboard-stat-label">Alumnos</div>
+        </Link>
+
+        <Link href="/pagos" className={`dashboard-stat-card ${pagosVencidos > 0 ? 'has-alert' : ''}`}>
+          <DollarSign className="w-5 h-5" style={{ color: pagosVencidos > 0 ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)' }} />
+          <div className="dashboard-stat-value">{pagosVencidos}</div>
+          <div className="dashboard-stat-label">Pagos vencidos</div>
+          {pagosVencidos > 0 && <AlertCircle className="dashboard-stat-alert" />}
+        </Link>
+      </div>
+
       {/* Next Up Card */}
       {proximaClase && (
         <div className="dashboard-next-card">

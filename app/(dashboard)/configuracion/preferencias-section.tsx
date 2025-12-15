@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { updatePreferencias } from './actions'
 import { PacksSection } from './packs-section'
+import { TimeInput } from '@/components/time-input'
 
 type Pack = {
   id: string
@@ -109,19 +110,15 @@ export function PreferenciasSection({
           <div className="form-group">
             <label>Horario de Mañana por Default</label>
             <div className="form-row">
-              <input
-                type="time"
+              <TimeInput
                 name="horarioMananaInicio"
                 defaultValue={horarioMananaInicio}
-                required
                 disabled={isLoading}
               />
-              <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>a</span>
-              <input
-                type="time"
+              <span className="time-separator">a</span>
+              <TimeInput
                 name="horarioMananaFin"
                 defaultValue={horarioMananaFin}
-                required
                 disabled={isLoading}
               />
             </div>
@@ -131,26 +128,20 @@ export function PreferenciasSection({
           <div className="form-group">
             <label>Horario de Tarde por Default</label>
             <div className="form-row">
-              <input
-                type="time"
+              <TimeInput
                 name="horarioTardeInicio"
                 defaultValue={horarioTardeInicio}
-                required
                 disabled={isLoading}
               />
-              <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>a</span>
-              <input
-                type="time"
+              <span className="time-separator">a</span>
+              <TimeInput
                 name="horarioTardeFin"
                 defaultValue={horarioTardeFin}
-                required
                 disabled={isLoading}
               />
             </div>
             <p className="form-hint">Horario por defecto para turnos de tarde</p>
           </div>
-
-          <div className="form-divider"></div>
 
           <div className="form-group">
             <label>Espacio Compartido</label>
@@ -167,24 +158,25 @@ export function PreferenciasSection({
             </p>
           </div>
 
+          {/* Google Calendar sync temporalmente deshabilitado
           <div className="form-divider"></div>
 
           <div className="form-group">
             <label>Sincronizar con Google Calendar</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="sync-checkbox-group">
               <input
                 type="checkbox"
                 name="syncGoogleCalendar"
                 defaultChecked={syncGoogleCalendar}
                 disabled={isLoading || !hasGoogleAccount}
-                style={{ width: 'auto', margin: 0 }}
+                className="sync-checkbox-input"
               />
-              <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+              <span className="sync-checkbox-label">
                 Agregar mis clases automáticamente a Google Calendar
               </span>
             </div>
             {!hasGoogleAccount && (
-              <p className="form-hint" style={{ color: 'rgba(255, 180, 100, 0.9)', marginTop: '0.5rem' }}>
+              <p className="form-hint sync-warning-hint">
                 Para usar esta función, primero debes iniciar sesión con Google. Cerrá sesión y volvé a iniciar con tu cuenta de Google.
               </p>
             )}
@@ -195,6 +187,7 @@ export function PreferenciasSection({
               </p>
             )}
           </div>
+          */}
 
           <div className="form-actions">
             <button type="submit" className="btn-primary" disabled={isLoading}>
@@ -203,13 +196,11 @@ export function PreferenciasSection({
           </div>
         </form>
 
-        <div className="form-divider" style={{ margin: '2rem 0' }}></div>
-
-        <div style={{ marginTop: '2rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'rgba(255, 255, 255, 0.95)', marginBottom: '1rem' }}>
+        <div className="subsection-header">
+          <h2 className="subsection-title">
             Packs y Precios
           </h2>
-          <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '1.5rem' }}>
+          <p className="subsection-description">
             Configurá tus packs de clases con precios personalizados
           </p>
           <PacksSection packs={packs} />

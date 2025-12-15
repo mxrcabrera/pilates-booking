@@ -11,10 +11,11 @@ const AccordionGroupContext = createContext<{
 
 interface AccordionGroupProps {
   children: ReactNode
+  defaultOpenId?: string
 }
 
-export function AccordionGroup({ children }: AccordionGroupProps) {
-  const [openId, setOpenId] = useState<string | null>(null)
+export function AccordionGroup({ children, defaultOpenId }: AccordionGroupProps) {
+  const [openId, setOpenId] = useState<string | null>(defaultOpenId || null)
 
   return (
     <AccordionGroupContext.Provider value={{ openId, setOpenId }}>

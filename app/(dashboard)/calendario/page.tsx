@@ -5,44 +5,7 @@ import { CalendarioClient } from './calendario-client'
 import { PreferencesRequired } from '@/components/preferences-required'
 import { PageLoading } from '@/components/page-loading'
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
-
-type ClaseAPI = {
-  id: string
-  fecha: string
-  horaInicio: string
-  horaRecurrente: string | null
-  estado: string
-  esClasePrueba: boolean
-  esRecurrente: boolean
-  frecuenciaSemanal: number | null
-  diasSemana: number[]
-  profesorId: string
-  alumnoId: string | null
-  alumno: { id: string; nombre: string } | null
-  profesor: { id: string; nombre: string }
-}
-
-type Clase = Omit<ClaseAPI, 'fecha'> & { fecha: Date }
-
-type Alumno = {
-  id: string
-  nombre: string
-}
-
-type CalendarioData = {
-  clases: Clase[]
-  alumnos: Alumno[]
-  currentUserId: string
-  horarioMananaInicio: string
-  horarioMananaFin: string
-  horarioTardeInicio: string
-  horarioTardeFin: string
-}
-
-// Para el cache guardamos las fechas como strings
-type CalendarioDataCached = Omit<CalendarioData, 'clases'> & {
-  clases: ClaseAPI[]
-}
+import type { Clase, ClaseAPI, CalendarioData, CalendarioDataCached } from '@/lib/types'
 
 function parseCalendarioData(cached: CalendarioDataCached): CalendarioData {
   return {

@@ -8,36 +8,11 @@ import { ClaseDetailDialog } from './clase-detail-dialog'
 import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
-
-type Clase = {
-  id: string
-  fecha: Date
-  horaInicio: string
-  horaRecurrente: string | null
-  estado: string
-  esClasePrueba: boolean
-  esRecurrente: boolean
-  frecuenciaSemanal: number | null
-  diasSemana: number[]
-  profesorId: string
-  alumno: {
-    id: string
-    nombre: string
-  } | null
-  profesor: {
-    id: string
-    nombre: string
-  }
-}
-
-type Alumno = {
-  id: string
-  nombre: string
-}
+import type { Clase, AlumnoSimple } from '@/lib/types'
 
 interface CalendarioClientProps {
   clasesIniciales: Clase[]
-  alumnos: Alumno[]
+  alumnos: AlumnoSimple[]
   currentUserId: string
   horarioMananaInicio: string
   horarioMananaFin: string
@@ -297,14 +272,14 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
             <h1>Calendario</h1>
             <p className="page-subtitle">Gestiona tus clases y horarios</p>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div className="calendario-header-actions">
             {((vista === 'dia' && clasesDelDia.length > 0) || (vista === 'semana' && clasesDeLaSemana.some(d => d.clases.length > 0))) && (
               <>
-                <Button className="btn-outline desktop-only" onClick={toggleSelectAll} style={{ fontSize: '0.875rem' }}>
+                <Button className="btn-outline desktop-only calendario-action-btn" onClick={toggleSelectAll}>
                   {selectedClases.size === (vista === 'dia' ? clasesDelDia : clasesDeLaSemana.flatMap(d => d.clases)).length && selectedClases.size > 0 ? 'Deseleccionar todos' : 'Seleccionar todos'}
                 </Button>
                 {selectedClases.size > 0 && (
-                  <Button className="btn-outline desktop-only" onClick={() => setBulkDeleteConfirm(true)} style={{ fontSize: '0.875rem', color: '#ff6b6b', borderColor: '#ff6b6b' }}>
+                  <Button className="btn-outline desktop-only calendario-action-btn calendario-delete-btn" onClick={() => setBulkDeleteConfirm(true)}>
                     <Trash2 className="w-4 h-4" />
                     Eliminar ({selectedClases.size})
                   </Button>
@@ -408,10 +383,10 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                           </div>
                           <div>
                             <span className={`status-badge ${clase.estado}`}>
-                              {clase.estado === 'reservada' && 'R'}
-                              {clase.estado === 'completada' && 'C'}
-                              {clase.estado === 'cancelada' && 'X'}
-                              {clase.estado === 'ausente' && 'A'}
+                              {clase.estado === 'reservada' && '•'}
+                              {clase.estado === 'completada' && '✓'}
+                              {clase.estado === 'cancelada' && '✕'}
+                              {clase.estado === 'ausente' && '!'}
                             </span>
                           </div>
                         </button>
@@ -464,10 +439,10 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                           </div>
                           <div>
                             <span className={`status-badge ${clase.estado}`}>
-                              {clase.estado === 'reservada' && 'R'}
-                              {clase.estado === 'completada' && 'C'}
-                              {clase.estado === 'cancelada' && 'X'}
-                              {clase.estado === 'ausente' && 'A'}
+                              {clase.estado === 'reservada' && '•'}
+                              {clase.estado === 'completada' && '✓'}
+                              {clase.estado === 'cancelada' && '✕'}
+                              {clase.estado === 'ausente' && '!'}
                             </span>
                           </div>
                         </button>
@@ -520,10 +495,10 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                           </div>
                           <div>
                             <span className={`status-badge ${clase.estado}`}>
-                              {clase.estado === 'reservada' && 'R'}
-                              {clase.estado === 'completada' && 'C'}
-                              {clase.estado === 'cancelada' && 'X'}
-                              {clase.estado === 'ausente' && 'A'}
+                              {clase.estado === 'reservada' && '•'}
+                              {clase.estado === 'completada' && '✓'}
+                              {clase.estado === 'cancelada' && '✕'}
+                              {clase.estado === 'ausente' && '!'}
                             </span>
                           </div>
                         </button>

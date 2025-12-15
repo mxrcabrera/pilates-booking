@@ -115,7 +115,11 @@ export async function POST(request: NextRequest) {
           select: {
             horasAnticipacionMinima: true,
             maxAlumnosPorClase: true,
-            syncGoogleCalendar: true
+            syncGoogleCalendar: true,
+            horarioMananaInicio: true,
+            horarioMananaFin: true,
+            horarioTardeInicio: true,
+            horarioTardeFin: true
           }
         })
 
@@ -133,7 +137,7 @@ export async function POST(request: NextRequest) {
         // Validar que la clase sea al menos X horas en el futuro
         const [hora, minuto] = horaInicio.split(':').map(Number)
         const fechaHoraClase = new Date(fecha)
-        fechaHoraClase.setUTCHours(hora - 3, minuto, 0, 0)
+        fechaHoraClase.setHours(hora, minuto, 0, 0)
 
         const ahora = new Date()
         const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
@@ -141,6 +145,20 @@ export async function POST(request: NextRequest) {
         if (fechaHoraClase < tiempoMinimoAnticipacion) {
           const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
           return NextResponse.json({ error: `Las clases deben reservarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
+        }
+
+        // Validar horario contra configuración del profesor
+        const horaNum = parseInt(horaInicio.split(':')[0])
+        const esManiana = horaNum < 12
+
+        const horarioInicio = esManiana ? user.horarioMananaInicio : user.horarioTardeInicio
+        const horarioFin = esManiana ? user.horarioMananaFin : user.horarioTardeFin
+
+        if (horaInicio < horarioInicio || horaInicio > horarioFin) {
+          const turno = esManiana ? 'mañana' : 'tarde'
+          return NextResponse.json({
+            error: `El horario de ${turno} configurado es de ${horarioInicio} a ${horarioFin}`
+          }, { status: 400 })
         }
 
         const diaSemana = fecha.getUTCDay()
@@ -269,7 +287,11 @@ export async function POST(request: NextRequest) {
           select: {
             horasAnticipacionMinima: true,
             maxAlumnosPorClase: true,
-            syncGoogleCalendar: true
+            syncGoogleCalendar: true,
+            horarioMananaInicio: true,
+            horarioMananaFin: true,
+            horarioTardeInicio: true,
+            horarioTardeFin: true
           }
         })
 
@@ -287,7 +309,7 @@ export async function POST(request: NextRequest) {
         // Validar que la clase sea al menos X horas en el futuro
         const [hora, minuto] = horaInicio.split(':').map(Number)
         const fechaHoraClase = new Date(fecha)
-        fechaHoraClase.setUTCHours(hora - 3, minuto, 0, 0)
+        fechaHoraClase.setHours(hora, minuto, 0, 0)
 
         const ahora = new Date()
         const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
@@ -295,6 +317,20 @@ export async function POST(request: NextRequest) {
         if (fechaHoraClase < tiempoMinimoAnticipacion) {
           const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
           return NextResponse.json({ error: `Las clases deben modificarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
+        }
+
+        // Validar horario contra configuración del profesor
+        const horaNum = parseInt(horaInicio.split(':')[0])
+        const esManiana = horaNum < 12
+
+        const horarioInicio = esManiana ? user.horarioMananaInicio : user.horarioTardeInicio
+        const horarioFin = esManiana ? user.horarioMananaFin : user.horarioTardeFin
+
+        if (horaInicio < horarioInicio || horaInicio > horarioFin) {
+          const turno = esManiana ? 'mañana' : 'tarde'
+          return NextResponse.json({
+            error: `El horario de ${turno} configurado es de ${horarioInicio} a ${horarioFin}`
+          }, { status: 400 })
         }
 
         const diaSemana = fecha.getUTCDay()

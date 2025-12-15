@@ -87,8 +87,6 @@ export function PacksTab({ packs, horasAnticipacionMinima }: PacksTabProps) {
           </form>
         </div>
 
-        <div className="form-divider" style={{ margin: '3rem 0' }}></div>
-
         {/* Packs y Precios */}
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'rgba(255, 255, 255, 0.95)', marginBottom: '0.5rem' }}>

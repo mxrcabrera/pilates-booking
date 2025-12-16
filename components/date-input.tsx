@@ -1,27 +1,31 @@
 'use client'
 
 import { useRef } from 'react'
-import { Clock } from 'lucide-react'
+import { Calendar } from 'lucide-react'
 
-interface TimeInputProps {
+interface DateInputProps {
   name: string
   value?: string
   defaultValue?: string
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
   disabled?: boolean
   required?: boolean
+  min?: string
+  max?: string
   className?: string
 }
 
-export function TimeInput({
+export function DateInput({
   name,
   value,
   defaultValue,
   onChange,
   disabled,
   required = true,
+  min,
+  max,
   className = ''
-}: TimeInputProps) {
+}: DateInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleIconClick = () => {
@@ -34,16 +38,18 @@ export function TimeInput({
     <div className="input-with-icon-wrapper">
       <input
         ref={inputRef}
-        type="time"
+        type="date"
         name={name}
         value={value}
         defaultValue={defaultValue}
         onChange={onChange}
         disabled={disabled}
         required={required}
-        className={`input-with-icon time-input ${className}`}
+        min={min}
+        max={max}
+        className={`input-with-icon date-input ${className}`}
       />
-      <Clock
+      <Calendar
         size={18}
         className="input-icon"
         onClick={handleIconClick}

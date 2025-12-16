@@ -178,8 +178,10 @@ export async function updatePreferencias(formData: FormData) {
   const maxAlumnosPorClase = parseInt(formData.get('maxAlumnosPorClase') as string)
   const horarioMananaInicio = formData.get('horarioMananaInicio') as string
   const horarioMananaFin = formData.get('horarioMananaFin') as string
+  const turnoMananaActivo = formData.get('turnoMananaActivo') === 'on'
   const horarioTardeInicio = formData.get('horarioTardeInicio') as string
   const horarioTardeFin = formData.get('horarioTardeFin') as string
+  const turnoTardeActivo = formData.get('turnoTardeActivo') === 'on'
   const espacioCompartidoId = formData.get('espacioCompartidoId') as string
   const syncGoogleCalendar = formData.get('syncGoogleCalendar') === 'on'
   const precioPorClaseStr = formData.get('precioPorClase') as string
@@ -194,8 +196,10 @@ export async function updatePreferencias(formData: FormData) {
       maxAlumnosPorClase,
       horarioMananaInicio,
       horarioMananaFin,
+      turnoMananaActivo,
       horarioTardeInicio,
       horarioTardeFin,
+      turnoTardeActivo,
       espacioCompartidoId: espacioNormalizado,
       syncGoogleCalendar,
       ...(precioPorClaseStr && { precioPorClase: parseFloat(precioPorClaseStr) || 0 })
@@ -216,7 +220,6 @@ export async function savePack(formData: FormData) {
   const nombre = formData.get('nombre') as string
   const clasesPorSemana = parseInt(formData.get('clasesPorSemana') as string)
   const precio = parseFloat(formData.get('precio') as string)
-  const estaActivo = formData.get('estaActivo') === 'on'
 
   if (id) {
     // Editar pack existente
@@ -225,8 +228,7 @@ export async function savePack(formData: FormData) {
       data: {
         nombre,
         clasesPorSemana,
-        precio,
-        estaActivo
+        precio
       }
     })
   } else {
@@ -236,8 +238,7 @@ export async function savePack(formData: FormData) {
         profesorId: userId,
         nombre,
         clasesPorSemana,
-        precio,
-        estaActivo: true
+        precio
       }
     })
   }
@@ -261,26 +262,6 @@ export async function deletePack(id: string) {
 
   await prisma.pack.delete({
     where: { id }
-  })
-
-  revalidatePath('/configuracion')
-  revalidatePath('/alumnos')
-  return { success: true }
-}
-
-export async function togglePack(id: string) {
-  const userId = await getCurrentUser()
-  if (!userId) throw new Error('No autorizado')
-
-  const pack = await prisma.pack.findUnique({
-    where: { id }
-  })
-
-  if (!pack) throw new Error('Pack no encontrado')
-
-  await prisma.pack.update({
-    where: { id },
-    data: { estaActivo: !pack.estaActivo }
   })
 
   revalidatePath('/configuracion')

@@ -12,12 +12,30 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
+    // Calcular inicio y fin del mes actual
+    const now = new Date()
+    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
+    const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+
     // Obtener alumnos, packs activos y precio por clase en paralelo
     const [alumnos, user] = await Promise.all([
       prisma.alumno.findMany({
         where: { profesorId: userId },
         include: {
-          _count: { select: { clases: true, pagos: true } }
+          _count: { select: { clases: true, pagos: true } },
+          clases: {
+            where: {
+              fecha: { gte: inicioMes, lte: finMes },
+              estado: { in: ['completada', 'reservada'] }
+            },
+            select: { id: true }
+          },
+          pagos: {
+            where: { estado: 'pendiente' },
+            orderBy: { fechaVencimiento: 'asc' },
+            take: 1,
+            select: { fechaVencimiento: true }
+          }
         },
         orderBy: { nombre: 'asc' }
       }),
@@ -37,6 +55,10 @@ export async function GET() {
       ...alumno,
       precio: alumno.precio.toString(),
       cumpleanos: alumno.cumpleanos ? alumno.cumpleanos.toISOString() : null,
+      proximoPagoVencimiento: alumno.pagos[0]?.fechaVencimiento?.toISOString() || null,
+      clasesEsteMes: alumno.clases.length,
+      clases: undefined,
+      pagos: undefined
     }))
 
     const packsSerializados = user?.packs.map(pack => ({

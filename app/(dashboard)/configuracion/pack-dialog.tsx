@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { SelectInput } from '@/components/select-input'
 import type { Pack } from '@/lib/types'
 
 export function PackDialog({
@@ -45,8 +46,7 @@ export function PackDialog({
         id: pack?.id,
         nombre: formData.get('nombre') as string,
         clasesPorSemana: parseInt(formData.get('clasesPorSemana') as string),
-        precio: parseFloat(formData.get('precio') as string),
-        estaActivo: pack ? formData.get('estaActivo') === 'on' : true
+        precio: parseFloat(formData.get('precio') as string)
       })
       showSuccess(pack ? 'Pack actualizado' : 'Pack creado')
       if (result.pack) {
@@ -88,10 +88,10 @@ export function PackDialog({
 
           <div className="form-group">
             <label>Clases por Semana</label>
-            <select
+            <SelectInput
               name="clasesPorSemana"
               required
-              defaultValue={pack?.clasesPorSemana}
+              defaultValue={pack?.clasesPorSemana?.toString()}
               disabled={isLoading}
             >
               <option value="">Seleccionar...</option>
@@ -100,7 +100,7 @@ export function PackDialog({
               <option value="3">3 clases por semana</option>
               <option value="4">4 clases por semana</option>
               <option value="5">5 clases por semana</option>
-            </select>
+            </SelectInput>
           </div>
 
           <div className="form-group">
@@ -116,20 +116,6 @@ export function PackDialog({
               disabled={isLoading}
             />
           </div>
-
-          {pack && (
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  name="estaActivo"
-                  defaultChecked={pack.estaActivo}
-                  disabled={isLoading}
-                />
-                <span>Pack activo</span>
-              </label>
-            </div>
-          )}
 
           <DialogFooter>
             <button

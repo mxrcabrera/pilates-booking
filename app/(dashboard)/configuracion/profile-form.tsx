@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { User } from 'lucide-react'
 import { updateProfile } from './actions'
 
 type Profesor = {

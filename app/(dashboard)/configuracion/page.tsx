@@ -1,34 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { ConfiguracionClient } from './configuracion-client'
 import { PageLoading } from '@/components/page-loading'
-import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
+import { usePageData } from '@/lib/use-page-data'
+import { CACHE_KEYS } from '@/lib/client-cache'
 import type { ConfigData } from '@/lib/types'
 
 export default function ConfiguracionPage() {
-  // Inicializar con datos cacheados si existen
-  const [data, setData] = useState<ConfigData | null>(() =>
-    getCachedData<ConfigData>(CACHE_KEYS.CONFIGURACION)
-  )
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Si ya tenemos datos cacheados, no hacer fetch
-    if (data) return
-
-    fetch('/api/configuracion')
-      .then(res => res.json())
-      .then(responseData => {
-        if (responseData.error) {
-          setError(responseData.error)
-        } else {
-          setCachedData(CACHE_KEYS.CONFIGURACION, responseData)
-          setData(responseData)
-        }
-      })
-      .catch(err => setError(err.message))
-  }, [data])
+  const { data, error, isLoading } = usePageData<ConfigData>({
+    cacheKey: CACHE_KEYS.CONFIGURACION,
+    apiUrl: '/api/configuracion'
+  })
 
   if (error) {
     return (
@@ -40,7 +22,7 @@ export default function ConfiguracionPage() {
     )
   }
 
-  if (!data) {
+  if (isLoading || !data) {
     return <PageLoading />
   }
 

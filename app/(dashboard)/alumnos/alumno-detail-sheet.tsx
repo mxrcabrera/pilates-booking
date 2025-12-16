@@ -1,22 +1,21 @@
 'use client'
 
-import { X, Mail, Phone, Calendar, Cake, FileText, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
+import { X, Edit2, UserX, UserCheck, Trash2 } from 'lucide-react'
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import type { Alumno } from '@/lib/types'
-import { PACK_LABELS } from '@/lib/constants'
+import type { Alumno, Pack } from '@/lib/types'
 
 export function AlumnoDetailSheet({
   isOpen,
   onClose,
   alumno,
-  onEdit
+  onEdit,
+  packs
 }: {
   isOpen: boolean
   onClose: () => void
   alumno: Alumno | null
   onEdit: () => void
+  packs: Pack[]
 }) {
   if (!isOpen || !alumno) return null
 
@@ -39,124 +38,87 @@ export function AlumnoDetailSheet({
     }
   }
 
+  // Buscar nombre del pack en la lista de packs
+  const pack = packs.find(p => p.id === alumno.packType)
+  const packLabel = pack?.nombre || (alumno.packType === 'por_clase' ? 'Por Clase' : alumno.packType)
+
+  // Calcular clases restantes
+  const tienePackConLimite = alumno.clasesPorMes && alumno.clasesPorMes > 0
+  const clasesRestantes = tienePackConLimite ? alumno.clasesPorMes! - alumno.clasesEsteMes : null
+  const sinClasesRestantes = clasesRestantes !== null && clasesRestantes <= 0
+
   return (
     <>
       <div className="sheet-overlay" onClick={onClose} />
       <div className="sheet-content">
         <div className="sheet-header">
-          <div className="sheet-handle" />
-          <button onClick={onClose} className="sheet-close">
-            <X size={24} />
+          <button onClick={onClose} className="close-btn sheet-close">
+            <X size={20} />
           </button>
         </div>
 
         <div className="sheet-body">
-          <div className="sheet-profile">
-            <div className="sheet-avatar">
-              {alumno.nombre.charAt(0).toUpperCase()}
-            </div>
+          {/* Header: nombre + estado */}
+          <div className="sheet-title-row">
             <h2>{alumno.nombre}</h2>
             <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
               {alumno.estaActivo ? 'Activa' : 'Inactiva'}
             </span>
           </div>
 
-          <div className="sheet-section">
-            <h3 className="sheet-section-title">Contacto</h3>
-            <div className="sheet-details">
-              <div className="sheet-detail-row">
-                <Mail size={18} />
-                <div>
-                  <p className="detail-label">Email</p>
-                  <p className="detail-value">{alumno.email}</p>
-                </div>
+          {/* Bloque de info agrupada */}
+          <div className="sheet-info-block">
+            <div className="sheet-pricing">
+              <span className="sheet-price">${Number(alumno.precio).toLocaleString('es-AR')}</span>
+              <span className="sheet-pack">{packLabel}</span>
+            </div>
+            {tienePackConLimite ? (
+              <div className={`sheet-clases-status ${sinClasesRestantes ? 'warning' : ''}`}>
+                <span className="clases-usadas">{alumno.clasesEsteMes}/{alumno.clasesPorMes} clases usadas</span>
+                {clasesRestantes !== null && clasesRestantes > 0 && (
+                  <span className="clases-restantes">{clasesRestantes} restantes</span>
+                )}
+                {sinClasesRestantes && (
+                  <span className="clases-excedidas">Sin clases disponibles</span>
+                )}
               </div>
-              <div className="sheet-detail-row">
-                <Phone size={18} />
-                <div>
-                  <p className="detail-label">Teléfono</p>
-                  <p className="detail-value">{alumno.telefono}</p>
-                </div>
+            ) : (
+              <div className="sheet-meta">
+                {alumno.clasesEsteMes} clases este mes
               </div>
-              {alumno.cumpleanos && (
-                <div className="sheet-detail-row">
-                  <Cake size={18} />
-                  <div>
-                    <p className="detail-label">Cumpleaños</p>
-                    <p className="detail-value">
-                      {format(new Date(alumno.cumpleanos), "d 'de' MMMM", { locale: es })}
-                    </p>
-                  </div>
-                </div>
-              )}
+            )}
+            <div className="sheet-divider" />
+            <div className="sheet-contact">
+              <a href={`mailto:${alumno.email}`} className="sheet-contact-item">
+                {alumno.email}
+              </a>
+              <a href={`tel:${alumno.telefono}`} className="sheet-contact-item">
+                {alumno.telefono}
+              </a>
             </div>
           </div>
 
-          <div className="sheet-section">
-            <h3 className="sheet-section-title">Plan</h3>
-            <div className="sheet-details">
-              <div className="sheet-detail-row">
-                <FileText size={18} />
-                <div>
-                  <p className="detail-label">Tipo de Pack</p>
-                  <p className="detail-value">{PACK_LABELS[alumno.packType]}</p>
-                </div>
-              </div>
-              {alumno.clasesPorMes && (
-                <div className="sheet-detail-row">
-                  <Calendar size={18} />
-                  <div>
-                    <p className="detail-label">Clases por mes</p>
-                    <p className="detail-value">{alumno.clasesPorMes} clases</p>
-                  </div>
-                </div>
-              )}
-              <div className="sheet-detail-row">
-                <span className="sheet-price-icon">$</span>
-                <div>
-                  <p className="detail-label">Precio</p>
-                  <p className="detail-value">${alumno.precio} ARS</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
+          {/* Patologías si hay */}
           {alumno.patologias && (
-            <div className="sheet-section">
-              <h3 className="sheet-section-title">Patologías / Observaciones</h3>
-              <div className="sheet-patologias">
-                <p>{alumno.patologias}</p>
-              </div>
-            </div>
+            <p className="sheet-notes">{alumno.patologias}</p>
           )}
 
-          <div className="sheet-section">
-            <h3 className="sheet-section-title">Estadísticas</h3>
-            <div className="sheet-stats">
-              <div className="sheet-stat">
-                <p className="stat-value">{alumno._count.clases}</p>
-                <p className="stat-label">Clases</p>
-              </div>
-              <div className="sheet-stat">
-                <p className="stat-value">{alumno._count.pagos}</p>
-                <p className="stat-label">Pagos</p>
-              </div>
-            </div>
-          </div>
-
+          {/* Acciones */}
           <div className="sheet-actions">
             <button onClick={onEdit} className="btn-primary sheet-action-btn">
-              <Edit2 size={20} />
+              <Edit2 size={18} />
               <span>Editar</span>
             </button>
-            <button onClick={handleToggleStatus} className="btn-outline sheet-action-btn">
-              {alumno.estaActivo ? <UserX size={20} /> : <UserCheck size={20} />}
-              <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
-            </button>
-            <button onClick={handleDelete} className="btn-ghost danger sheet-action-btn">
-              <Trash2 size={20} />
-              <span>Eliminar</span>
-            </button>
+            <div className="sheet-secondary-actions">
+              <button onClick={handleToggleStatus} className="sheet-link-btn">
+                {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
+                <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
+              </button>
+              <button onClick={handleDelete} className="sheet-link-btn danger">
+                <Trash2 size={16} />
+                <span>Eliminar</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

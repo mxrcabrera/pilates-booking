@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { CalendarioClient } from './calendario-client'
 import { PreferencesRequired } from '@/components/preferences-required'
 import { PageLoading } from '@/components/page-loading'
-import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
+import { usePageData } from '@/lib/use-page-data'
+import { CACHE_KEYS } from '@/lib/client-cache'
 import type { Clase, ClaseAPI, CalendarioData, CalendarioDataCached } from '@/lib/types'
 
 function parseCalendarioData(cached: CalendarioDataCached): CalendarioData {
@@ -18,36 +18,11 @@ function parseCalendarioData(cached: CalendarioDataCached): CalendarioData {
 }
 
 export default function CalendarioPage() {
-  const [data, setData] = useState<CalendarioData | null>(() => {
-    const cached = getCachedData<CalendarioDataCached>(CACHE_KEYS.CALENDARIO)
-    return cached ? parseCalendarioData(cached) : null
+  const { data, error, isLoading } = usePageData<CalendarioData>({
+    cacheKey: CACHE_KEYS.CALENDARIO,
+    apiUrl: '/api/clases',
+    transform: parseCalendarioData
   })
-  const [preferencesIncomplete, setPreferencesIncomplete] = useState<string[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (data) return
-
-    fetch('/api/clases')
-      .then(res => res.json())
-      .then(responseData => {
-        if (responseData.error) {
-          setError(responseData.error)
-        } else if (responseData.preferencesIncomplete) {
-          setPreferencesIncomplete(responseData.missingFields)
-        } else {
-          // Cache the raw API response (with string dates)
-          setCachedData(CACHE_KEYS.CALENDARIO, responseData)
-          // Parse dates for component use
-          const clasesConFechas: Clase[] = responseData.clases.map((c: ClaseAPI) => ({
-            ...c,
-            fecha: new Date(c.fecha)
-          }))
-          setData({ ...responseData, clases: clasesConFechas })
-        }
-      })
-      .catch(err => setError(err.message))
-  }, [data])
 
   if (error) {
     return (
@@ -59,11 +34,11 @@ export default function CalendarioPage() {
     )
   }
 
-  if (preferencesIncomplete) {
-    return <PreferencesRequired missingFields={preferencesIncomplete} />
+  if ((data as any)?.preferencesIncomplete) {
+    return <PreferencesRequired missingFields={(data as any).missingFields} />
   }
 
-  if (!data) {
+  if (isLoading || !data) {
     return <PageLoading />
   }
 

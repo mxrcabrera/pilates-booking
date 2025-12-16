@@ -67,7 +67,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <Icon size={20} className="toast-icon" />
               <span className="toast-message">{toast.message}</span>
               <button
-                className="toast-close"
+                className="close-btn close-btn-sm"
                 onClick={() => removeToast(toast.id)}
                 aria-label="Cerrar"
               >

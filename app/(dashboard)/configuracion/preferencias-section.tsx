@@ -4,14 +4,8 @@ import { useState } from 'react'
 import { updatePreferencias } from './actions'
 import { PacksSection } from './packs-section'
 import { TimeInput } from '@/components/time-input'
-
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-  estaActivo: boolean
-}
+import { SelectInput } from '@/components/select-input'
+import type { Pack } from '@/lib/types'
 
 type PreferenciasProps = {
   horasAnticipacionMinima: number
@@ -70,9 +64,9 @@ export function PreferenciasSection({
         <form onSubmit={handleSubmit} className="form-content">
           <div className="form-group">
             <label>Anticipación mínima para reservas</label>
-            <select
+            <SelectInput
               name="horasAnticipacionMinima"
-              defaultValue={horasAnticipacionMinima}
+              defaultValue={horasAnticipacionMinima.toString()}
               required
               disabled={isLoading}
             >
@@ -83,15 +77,15 @@ export function PreferenciasSection({
               <option value="6">6 horas</option>
               <option value="12">12 horas</option>
               <option value="24">24 horas</option>
-            </select>
+            </SelectInput>
             <p className="form-hint">Tiempo mínimo de anticipación que deben tener los alumnos para reservar clases</p>
           </div>
 
           <div className="form-group">
             <label>Máximo de alumnos por clase</label>
-            <select
+            <SelectInput
               name="maxAlumnosPorClase"
-              defaultValue={maxAlumnosPorClase}
+              defaultValue={maxAlumnosPorClase.toString()}
               required
               disabled={isLoading}
             >
@@ -103,7 +97,7 @@ export function PreferenciasSection({
               <option value="6">6 alumnos</option>
               <option value="8">8 alumnos</option>
               <option value="10">10 alumnos</option>
-            </select>
+            </SelectInput>
             <p className="form-hint">Cantidad máxima de alumnos que pueden reservar la misma clase</p>
           </div>
 

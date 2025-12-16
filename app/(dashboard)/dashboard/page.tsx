@@ -1,42 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Calendar, Users, DollarSign, Sparkles } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { DashboardClient } from './dashboard-client'
 import { PageLoading } from '@/components/page-loading'
-import { getCachedData, setCachedData } from '@/lib/client-cache'
 import { EmptyState } from '@/components/empty-state'
+import { usePageData } from '@/lib/use-page-data'
 import type { DashboardData } from '@/lib/types'
 
 const CACHE_KEY = 'dashboard-data'
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const [data, setData] = useState<DashboardData | null>(() =>
-    getCachedData<DashboardData>(CACHE_KEY)
-  )
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (data) return
-
-    fetch('/api/dashboard')
-      .then(res => res.json())
-      .then(responseData => {
-        if (responseData.error) {
-          setError(responseData.error)
-        } else if (responseData.redirect) {
-          router.push(responseData.redirect)
-        } else {
-          setCachedData(CACHE_KEY, responseData)
-          setData(responseData)
-        }
-      })
-      .catch(err => setError(err.message))
-  }, [data, router])
+  const { data, error, isLoading } = usePageData<DashboardData>({
+    cacheKey: CACHE_KEY,
+    apiUrl: '/api/dashboard'
+  })
 
   if (error) {
     return (
@@ -48,7 +27,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!data) {
+  if (isLoading || !data) {
     return <PageLoading />
   }
 

@@ -12,19 +12,14 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    // Verificar rol del usuario
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    })
-
-    if (user?.role === 'ALUMNO') {
-      return NextResponse.json({ redirect: '/alumno/dashboard' })
-    }
-
     const hoy = format(new Date(), 'yyyy-MM-dd')
 
-    const [totalAlumnos, clasesHoy, pagosVencidos] = await Promise.all([
+    // Una sola ronda de queries en paralelo (incluye verificación de rol)
+    const [user, totalAlumnos, clasesHoy, pagosVencidos] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true }
+      }),
       prisma.alumno.count({
         where: {
           profesorId: userId,
@@ -56,6 +51,10 @@ export async function GET() {
         }
       })
     ])
+
+    if (user?.role === 'ALUMNO') {
+      return NextResponse.json({ redirect: '/alumno/dashboard' })
+    }
 
     return NextResponse.json({
       totalAlumnos,

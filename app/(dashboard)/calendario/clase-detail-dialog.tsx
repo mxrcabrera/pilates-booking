@@ -15,14 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import type { Clase } from '@/lib/types'
-import { DIAS_SEMANA_COMPLETO } from '@/lib/constants'
-
-const ESTADO_LABELS: Record<string, string> = {
-  reservada: 'Reservada',
-  completada: 'Completada',
-  cancelada: 'Cancelada',
-  ausente: 'Ausente'
-}
+import { DIAS_SEMANA_COMPLETO, ESTADO_LABELS } from '@/lib/constants'
 
 const DIAS_NOMBRES: Record<number, string> = DIAS_SEMANA_COMPLETO.reduce((acc, dia, index) => {
   acc[index] = dia

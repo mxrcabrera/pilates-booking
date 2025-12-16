@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Lock } from 'lucide-react'
 import { changePassword } from './actions'
 
 export function PasswordForm() {

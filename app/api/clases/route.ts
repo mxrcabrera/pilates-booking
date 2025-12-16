@@ -148,8 +148,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Validar horario contra configuración del profesor
+        // Usar el inicio del horario de tarde para determinar si es mañana o tarde
+        const horaTardeInicio = parseInt(user.horarioTardeInicio.split(':')[0])
         const horaNum = parseInt(horaInicio.split(':')[0])
-        const esManiana = horaNum < 12
+        const esManiana = horaNum < horaTardeInicio
 
         const horarioInicio = esManiana ? user.horarioMananaInicio : user.horarioTardeInicio
         const horarioFin = esManiana ? user.horarioMananaFin : user.horarioTardeFin
@@ -165,7 +167,7 @@ export async function POST(request: NextRequest) {
 
         if (diaSemana === 0 || diaSemana === 6) {
           const horaNum = parseInt(horaInicio.split(':')[0])
-          const esManiana = horaNum < 12
+          const esManiana = horaNum < horaTardeInicio
 
           const horarioDisponible = await prisma.horarioDisponible.findFirst({
             where: {
@@ -320,8 +322,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Validar horario contra configuración del profesor
+        // Usar el inicio del horario de tarde para determinar si es mañana o tarde
+        const horaTardeInicio = parseInt(user.horarioTardeInicio.split(':')[0])
         const horaNum = parseInt(horaInicio.split(':')[0])
-        const esManiana = horaNum < 12
+        const esManiana = horaNum < horaTardeInicio
 
         const horarioInicio = esManiana ? user.horarioMananaInicio : user.horarioTardeInicio
         const horarioFin = esManiana ? user.horarioMananaFin : user.horarioTardeFin
@@ -337,7 +341,7 @@ export async function POST(request: NextRequest) {
 
         if (diaSemana === 0 || diaSemana === 6) {
           const horaNum = parseInt(horaInicio.split(':')[0])
-          const esManiana = horaNum < 12
+          const esManiana = horaNum < horaTardeInicio
 
           const horarioDisponible = await prisma.horarioDisponible.findFirst({
             where: {

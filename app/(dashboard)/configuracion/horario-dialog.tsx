@@ -6,6 +6,7 @@ import { ConfirmDialog } from './confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { Sun, Moon } from 'lucide-react'
 import { TimeInput } from '@/components/time-input'
+import { SelectInput } from '@/components/select-input'
 import {
   Dialog,
   DialogContent,
@@ -359,11 +360,11 @@ export function HorarioDialog({
               <>
                 <div className="form-group">
                   <label>Día</label>
-                  <select name="diaSemana" defaultValue={horario.diaSemana} disabled>
+                  <SelectInput name="diaSemana" defaultValue={horario.diaSemana.toString()} disabled>
                     {DIAS_INDIVIDUALES.map(dia => (
                       <option key={dia.value} value={dia.value}>{dia.label}</option>
                     ))}
-                  </select>
+                  </SelectInput>
                 </div>
 
                 <div className="form-group">

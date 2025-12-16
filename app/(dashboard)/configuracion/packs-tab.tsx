@@ -4,14 +4,8 @@ import { useState } from 'react'
 import { DollarSign } from 'lucide-react'
 import { PacksSection } from './packs-section'
 import { updatePreferencias } from './actions'
-
-type Pack = {
-  id: string
-  nombre: string
-  clasesPorSemana: number
-  precio: string
-  estaActivo: boolean
-}
+import { SelectInput } from '@/components/select-input'
+import type { Pack } from '@/lib/types'
 
 type PacksTabProps = {
   packs: Pack[]
@@ -61,9 +55,9 @@ export function PacksTab({ packs, horasAnticipacionMinima }: PacksTabProps) {
           <form onSubmit={handleSubmit} className="form-content">
             <div className="form-group">
               <label>Anticipación Mínima para Reservas</label>
-              <select
+              <SelectInput
                 name="horasAnticipacionMinima"
-                defaultValue={horasAnticipacionMinima}
+                defaultValue={horasAnticipacionMinima.toString()}
                 required
                 disabled={isLoading}
                 className="form-select"
@@ -75,7 +69,7 @@ export function PacksTab({ packs, horasAnticipacionMinima }: PacksTabProps) {
                 <option value="6">6 horas</option>
                 <option value="12">12 horas</option>
                 <option value="24">24 horas</option>
-              </select>
+              </SelectInput>
               <p className="form-hint">Tiempo mínimo de anticipación que deben tener los alumnos para reservar clases</p>
             </div>
 

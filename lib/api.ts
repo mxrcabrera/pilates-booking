@@ -52,17 +52,12 @@ export async function savePackAPI(data: {
   nombre: string
   clasesPorSemana: number
   precio: number
-  estaActivo?: boolean
 }) {
   return apiCall('savePack', data)
 }
 
 export async function deletePackAPI(id: string) {
   return apiCall('deletePack', { id })
-}
-
-export async function togglePackAPI(id: string) {
-  return apiCall('togglePack', { id })
 }
 
 // Profile

@@ -7,6 +7,7 @@ import { updatePreferencias } from './actions'
 import { useState, useMemo } from 'react'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { TimeInput } from '@/components/time-input'
+import { SelectInput } from '@/components/select-input'
 import type { Horario, Pack, ProfesorConfig } from '@/lib/types'
 
 interface ConfiguracionClientProps {
@@ -21,6 +22,8 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
   const [horarios, setHorarios] = useState<Horario[]>(initialHorarios)
   const [horarioDialogOpen, setHorarioDialogOpen] = useState(false)
   const [horarioToEdit, setHorarioToEdit] = useState<Horario | null>(null)
+  const [turnoMananaActivo, setTurnoMananaActivo] = useState(profesor.turnoMananaActivo)
+  const [turnoTardeActivo, setTurnoTardeActivo] = useState(profesor.turnoTardeActivo)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -208,66 +211,105 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
             <h2>Configuración de Clases</h2>
           </div>
 
-          <div className="config-grid-4">
+          <div className="config-grid-2">
             <div className="form-group">
-              <label>Capacidad</label>
-              <select
+              <label>Capacidad máxima por clase</label>
+              <SelectInput
                 name="maxAlumnosPorClase"
-                defaultValue={profesor.maxAlumnosPorClase}
+                defaultValue={profesor.maxAlumnosPorClase.toString()}
                 required
                 disabled={isLoading}
                 className="form-select"
               >
                 {[1,2,3,4,5,6,8,10].map(n => (
-                  <option key={n} value={n}>{n}</option>
+                  <option key={n} value={n}>{n} {n === 1 ? 'alumno' : 'alumnos'}</option>
                 ))}
-              </select>
+              </SelectInput>
             </div>
 
             <div className="form-group">
-              <label>Anticipación</label>
-              <select
+              <label>Anticipación mínima para reservar</label>
+              <SelectInput
                 name="horasAnticipacionMinima"
-                defaultValue={profesor.horasAnticipacionMinima}
+                defaultValue={profesor.horasAnticipacionMinima.toString()}
                 required
                 disabled={isLoading}
                 className="form-select"
               >
                 {[1,2,3,4,6,12,24].map(n => (
-                  <option key={n} value={n}>{n}h</option>
+                  <option key={n} value={n}>{n} {n === 1 ? 'hora' : 'horas'} antes</option>
                 ))}
-              </select>
+              </SelectInput>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label>Mañana</label>
-              <div className="time-range-mini">
-                <TimeInput
-                  name="horarioMananaInicio"
-                  defaultValue={profesor.horarioMananaInicio}
-                  disabled={isLoading}
-                />
-                <TimeInput
-                  name="horarioMananaFin"
-                  defaultValue={profesor.horarioMananaFin}
-                  disabled={isLoading}
-                />
+          {/* Turnos disponibles */}
+          <div className="turnos-section">
+            <h3 className="turnos-title">Turnos en los que das clases</h3>
+
+            <div className="turnos-grid">
+              {/* Turno Mañana */}
+              <div className={`turno-card ${turnoMananaActivo ? 'active' : ''}`}>
+                <div className="turno-header">
+                  <span className="turno-name">Mañana</span>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      name="turnoMananaActivo"
+                      checked={turnoMananaActivo}
+                      onChange={(e) => setTurnoMananaActivo(e.target.checked)}
+                      disabled={isLoading}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {turnoMananaActivo && (
+                  <div className="turno-horarios">
+                    <TimeInput
+                      name="horarioMananaInicio"
+                      defaultValue={profesor.horarioMananaInicio}
+                      disabled={isLoading}
+                    />
+                    <span className="horario-separator">a</span>
+                    <TimeInput
+                      name="horarioMananaFin"
+                      defaultValue={profesor.horarioMananaFin}
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div className="form-group">
-              <label>Tarde</label>
-              <div className="time-range-mini">
-                <TimeInput
-                  name="horarioTardeInicio"
-                  defaultValue={profesor.horarioTardeInicio}
-                  disabled={isLoading}
-                />
-                <TimeInput
-                  name="horarioTardeFin"
-                  defaultValue={profesor.horarioTardeFin}
-                  disabled={isLoading}
-                />
+              {/* Turno Tarde */}
+              <div className={`turno-card ${turnoTardeActivo ? 'active' : ''}`}>
+                <div className="turno-header">
+                  <span className="turno-name">Tarde</span>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      name="turnoTardeActivo"
+                      checked={turnoTardeActivo}
+                      onChange={(e) => setTurnoTardeActivo(e.target.checked)}
+                      disabled={isLoading}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {turnoTardeActivo && (
+                  <div className="turno-horarios">
+                    <TimeInput
+                      name="horarioTardeInicio"
+                      defaultValue={profesor.horarioTardeInicio}
+                      disabled={isLoading}
+                    />
+                    <span className="horario-separator">a</span>
+                    <TimeInput
+                      name="horarioTardeFin"
+                      defaultValue={profesor.horarioTardeFin}
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

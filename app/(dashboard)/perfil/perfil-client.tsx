@@ -5,15 +5,14 @@ import { AccordionGroup, Accordion } from '@/components/accordion'
 import { ProfileForm } from '../configuracion/profile-form'
 import { PasswordForm } from '../configuracion/password-form'
 
-type Profesor = {
-  id: string
+type ProfesorPerfil = {
   nombre: string
   email: string
   telefono: string | null
 }
 
 interface PerfilClientProps {
-  profesor: Profesor
+  profesor: ProfesorPerfil
 }
 
 export function PerfilClient({ profesor }: PerfilClientProps) {

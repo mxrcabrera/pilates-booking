@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Package, Plus, Trash2, Edit2 } from 'lucide-react'
+import { Plus, Trash2, Edit2 } from 'lucide-react'
 import { PackDialog } from './pack-dialog'
-import { deletePackAPI, togglePackAPI } from '@/lib/api'
+import { deletePackAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
@@ -15,7 +14,6 @@ type PacksSectionProps = {
 }
 
 export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
-  const router = useRouter()
   const { showSuccess, showError } = useToast()
   const [packs, setPacks] = useState(initialPacks)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -56,30 +54,17 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
     }
   }
 
-  const handleToggle = async (id: string) => {
-    // Actualización optimista
-    setPacks(prev => prev.map(p => p.id === id ? { ...p, estaActivo: !p.estaActivo } : p))
-    try {
-      await togglePackAPI(id)
-      invalidateCache(CACHE_KEYS.ALUMNOS) // Invalidar cache de alumnos
-      showSuccess('Estado actualizado')
-    } catch (err: any) {
-      // Revertir en caso de error
-      setPacks(prev => prev.map(p => p.id === id ? { ...p, estaActivo: !p.estaActivo } : p))
-      showError(err.message)
-    }
-  }
-
   return (
     <>
-      <button
-        onClick={handleNew}
-        className="btn-primary btn-sm"
-        style={{ marginBottom: '0.75rem' }}
-      >
-        <Plus size={16} />
-        <span>Nuevo Pack</span>
-      </button>
+      <div className="packs-header">
+        <button
+          onClick={handleNew}
+          className="btn-primary btn-sm"
+        >
+          <Plus size={16} />
+          <span>Nuevo Pack</span>
+        </button>
+      </div>
 
       {packs.length === 0 ? (
         <p className="form-hint" style={{ margin: 0 }}>No tenés packs configurados</p>
@@ -88,7 +73,7 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
           {packs.map(pack => (
             <div
               key={pack.id}
-              className={`pack-card ${!pack.estaActivo ? 'inactive' : ''}`}
+              className="pack-card"
             >
               <div className="pack-card-info">
                 <span className="pack-nombre">{pack.nombre}</span>
@@ -96,9 +81,6 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
                   {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''}/sem · ${parseFloat(pack.precio).toLocaleString('es-AR')}
                 </span>
               </div>
-              {!pack.estaActivo && (
-                <span className="pack-badge-inactive">Inactivo</span>
-              )}
               <div className="pack-card-actions">
                 <button
                   onClick={() => handleEdit(pack)}

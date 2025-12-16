@@ -16,6 +16,8 @@ export type Alumno = {
   precio: string
   estaActivo: boolean
   consentimientoTutor?: boolean
+  proximoPagoVencimiento: string | null
+  clasesEsteMes: number
   _count: {
     clases: number
     pagos: number
@@ -84,7 +86,6 @@ export type Pack = {
   nombre: string
   clasesPorSemana: number
   precio: string
-  estaActivo?: boolean
 }
 
 // ----- HORARIO -----
@@ -110,8 +111,10 @@ export type ProfesorConfig = {
   maxAlumnosPorClase: number
   horarioMananaInicio: string
   horarioMananaFin: string
+  turnoMananaActivo: boolean
   horarioTardeInicio: string
   horarioTardeFin: string
+  turnoTardeActivo: boolean
   espacioCompartidoId: string | null
   syncGoogleCalendar: boolean
   precioPorClase: string

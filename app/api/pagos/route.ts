@@ -2,11 +2,41 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const alumnoId = searchParams.get('alumnoId')
+
   try {
     const userId = await getCurrentUser()
     if (!userId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    // Si se pide pagos de un alumno específico
+    if (alumnoId) {
+      const alumno = await prisma.alumno.findFirst({
+        where: { id: alumnoId, profesorId: userId }
+      })
+
+      if (!alumno) {
+        return NextResponse.json({ error: 'Alumno no encontrado' }, { status: 404 })
+      }
+
+      const pagosRaw = await prisma.pago.findMany({
+        where: { alumnoId },
+        orderBy: { fechaVencimiento: 'desc' }
+      })
+
+      const pagos = pagosRaw.map(p => ({
+        id: p.id,
+        monto: p.monto.toString(),
+        fechaPago: p.fechaPago?.toISOString() || null,
+        fechaVencimiento: p.fechaVencimiento.toISOString(),
+        estado: p.estado,
+        mesCorrespondiente: p.mesCorrespondiente
+      }))
+
+      return NextResponse.json({ pagos })
     }
 
     // Obtener todos los pagos de los alumnos del profesor

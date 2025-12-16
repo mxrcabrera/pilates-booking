@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { DateInput } from '@/components/date-input'
 import type { Alumno, Pack } from '@/lib/types'
 
 export function AlumnoDialog({
@@ -237,13 +238,13 @@ export function AlumnoDialog({
 
           <div className="form-group">
             <label>Cumpleaños</label>
-            <input
-                type="date"
-                name="cumpleanos"
-                max={getMaxDate()}
-                defaultValue={formatDateForInput(alumno?.cumpleanos || null)}
-                onChange={handleCumpleanosChange}
-                disabled={isLoading}
+            <DateInput
+              name="cumpleanos"
+              max={getMaxDate()}
+              defaultValue={formatDateForInput(alumno?.cumpleanos || null)}
+              onChange={handleCumpleanosChange}
+              disabled={isLoading}
+              required={false}
             />
           </div>
 

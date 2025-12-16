@@ -12,6 +12,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { TimeInput } from '@/components/time-input'
+import { DateInput } from '@/components/date-input'
+import { SelectInput } from '@/components/select-input'
 import type { Clase, AlumnoSimple } from '@/lib/types'
 
 const DIAS_SEMANA = [
@@ -167,7 +169,7 @@ export function ClaseDialog({
           
           <div className="form-group">
             <label>Alumno</label>
-            <select
+            <SelectInput
               name="alumnoId"
               defaultValue={clase?.alumno?.id || ''}
               disabled={isLoading}
@@ -178,13 +180,12 @@ export function ClaseDialog({
                   {alumno.nombre}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </div>
 
           <div className="form-group">
             <label>Fecha</label>
-            <input
-              type="date"
+            <DateInput
               name="fecha"
               required
               defaultValue={defaultFecha}
@@ -204,7 +205,7 @@ export function ClaseDialog({
           {clase && (
             <div className="form-group">
               <label>Estado</label>
-              <select
+              <SelectInput
                 name="estado"
                 defaultValue={clase.estado}
                 disabled={isLoading}
@@ -213,7 +214,7 @@ export function ClaseDialog({
                 <option value="completada">Completada</option>
                 <option value="cancelada">Cancelada</option>
                 <option value="ausente">Ausente</option>
-              </select>
+              </SelectInput>
             </div>
           )}
 
@@ -263,10 +264,10 @@ export function ClaseDialog({
             <>
               <div className="form-group">
                 <label>¿Cuántas veces por semana?</label>
-                <select
+                <SelectInput
                   required
                   disabled={isLoading}
-                  value={frecuencia || ''}
+                  value={frecuencia?.toString() || ''}
                   onChange={(e) => {
                     const value = e.target.value ? parseInt(e.target.value) : null
                     setFrecuencia(value)
@@ -279,7 +280,7 @@ export function ClaseDialog({
                   <option value="3">3 veces por semana</option>
                   <option value="4">4 veces por semana</option>
                   <option value="5">5 veces por semana</option>
-                </select>
+                </SelectInput>
               </div>
 
               {frecuencia && (

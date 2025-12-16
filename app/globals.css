@@ -11,8 +11,8 @@
    ======================================== */
 @layer base {
   :root {
-    /* Fondo azul oscuro */
-    --background: 16 20 30;
+    /* Fondo azul oscuro unificado #141824 */
+    --background: 20 24 36;
     --foreground: 255 255 255;
     --card: 20 24 36;
     --card-foreground: 255 255 255;
@@ -205,6 +205,69 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
+/* ========================================
+   CLOSE BUTTON - Clase unificada (solo cruz)
+   ======================================== */
+.close-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.close-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.close-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Variante más pequeña para toasts */
+.close-btn-sm svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ========================================
+   SCROLLBAR - Estilo global moderno
+   ======================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 body {
   background: #141824;
   min-height: 100vh;
@@ -251,7 +314,7 @@ body::before {
    AUTH CONTAINER
    ======================================== */
 .auth-container {
-  background: #171320;
+  background: #141824;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -1056,14 +1119,11 @@ h4, h5, h6 {
    NAVBAR
    ======================================== */
 .dashboard-nav {
-  background: rgba(20, 24, 40, 0.75);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border-bottom: 1px solid rgba(120, 140, 220, 0.12);
+  background: linear-gradient(135deg, rgba(15, 18, 35, 0.99) 0%, rgba(22, 25, 48, 0.99) 100%);
+  border-bottom: 1px solid rgba(90, 100, 160, 0.12);
   position: sticky;
   top: 0;
   z-index: 50;
-  isolation: isolate;
 }
 
 .nav-container {
@@ -1762,6 +1822,36 @@ button span {
   }
 }
 
+/* Días para pago badge */
+.alumno-list-nombre {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dias-pago-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.dias-pago-badge.vencido,
+.dias-pago-badge.hoy {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.dias-pago-badge.proximo {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+
+.dias-pago-badge.tranquilo {
+  background: rgba(80, 120, 200, 0.15);
+  color: rgba(147, 197, 253, 0.8);
+}
+
 .alumno-details {
   display: flex;
   flex-direction: column;
@@ -1814,8 +1904,8 @@ button span {
 }
 
 .dropdown-menu button:hover {
-  background: rgba(80, 120, 200, var(--opacity-border-subtle));
-  color: rgba(255, 255, 255, var(--opacity-text-primary));
+  background: transparent;
+  color: rgba(255, 255, 255, 1);
 }
 
 .dropdown-menu button.danger:hover {
@@ -2034,19 +2124,18 @@ button span {
   right: auto;
   transform: translateX(-50%);
   width: calc(100% - 2rem);
-  max-width: 380px;
-  max-height: 80vh;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(40px);
+  max-width: 440px;
+  max-height: 85vh;
+  background: #141824 !important;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  border: 1.5px solid rgba(80, 120, 200, 0.15);
+  border: 1.5px solid rgba(80, 120, 200, 0.2);
   border-bottom: none;
   z-index: 101;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.25s ease;
   overflow: hidden;
-  box-shadow: 0 -4px 20px rgba(80, 120, 200, 0.12);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
 }
 
 @keyframes slideUp {
@@ -2058,201 +2147,197 @@ button span {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.5rem 1rem 0;
+  padding: 0.75rem 2rem 0;
   position: relative;
 }
 
-.sheet-handle {
-  width: 36px;
-  height: 4px;
-  background: rgba(80, 120, 200, 0.25);
-  border-radius: 2px;
-  margin-bottom: 0.5rem;
-}
-
+/* .sheet-close usa .close-btn - solo posicionamiento específico */
 .sheet-close {
   position: absolute;
-  top: 0.5rem;
-  right: 1rem;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(80, 120, 200, 0.08);
-  border: 2px solid rgba(80, 120, 200, 0.12);
-  color: rgba(30, 30, 45, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.sheet-close:hover {
-  background: rgba(80, 120, 200, 0.15);
-  color: rgba(30, 30, 45, 0.85);
+  top: 0.75rem;
+  right: 1.5rem;
 }
 
 .sheet-body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.5rem 2rem;
   padding-bottom: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.25rem;
 }
 
-.sheet-profile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.375rem;
-  padding-bottom: 0.875rem;
-  border-bottom: 1px solid rgba(80, 120, 200, var(--opacity-border-subtle));
-}
-
-.sheet-avatar {
-  display: none;
-}
-
-.sheet-profile h2 {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: rgba(30, 30, 45, 0.92);
-  margin: 0;
-}
-
-.sheet-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-}
-
-.sheet-section-title {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, var(--opacity-text-tertiary));
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0;
-}
-
-.sheet-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.sheet-detail-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.sheet-detail-row > svg {
-  flex-shrink: 0;
-  margin-top: 0.125rem;
-  width: 16px;
-  height: 16px;
-}
-
-.sheet-price-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+/* Título + badge */
+.sheet-title-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.9375rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.sheet-title-row h2 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+
+/* Info block: precio + meta + contacto agrupados */
+.sheet-info-block {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Precio + pack */
+.sheet-pricing {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.sheet-price {
+  font-size: 1.5rem;
   font-weight: 600;
-  margin-top: 0.125rem;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: -0.02em;
 }
 
-.sheet-detail-row > div {
-  flex: 1;
-  min-width: 0;
+.sheet-pack {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
 }
 
-.detail-label {
-  font-size: 0.6875rem;
-  color: rgba(255, 255, 255, var(--opacity-text-tertiary));
-  margin: 0 0 0.125rem 0;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+/* Meta: clases - inline con pricing */
+.sheet-meta {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+/* Estado de clases */
+.sheet-clases-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(110, 125, 245, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  margin: 0;
+}
+
+.sheet-clases-status .clases-usadas {
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
 }
 
-.detail-value {
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, var(--opacity-text-primary));
-  margin: 0;
-  word-break: break-word;
+.sheet-clases-status .clases-restantes {
+  color: rgba(130, 200, 130, 0.9);
+  font-weight: 500;
 }
 
-.sheet-patologias {
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, var(--opacity-bg-subtle));
-  border: 2px solid rgba(80, 120, 200, var(--opacity-border-subtle));
-  border-radius: var(--radius-md);
+.sheet-clases-status.warning {
+  background: rgba(245, 158, 80, 0.15);
 }
 
-.sheet-patologias p {
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.5;
-  margin: 0;
+.sheet-clases-status .clases-excedidas {
+  color: rgba(245, 158, 80, 1);
+  font-weight: 500;
 }
 
-.sheet-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.625rem;
-}
-
-.sheet-stat {
-  text-align: center;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, var(--opacity-bg-subtle));
-  border: 2px solid rgba(80, 120, 200, var(--opacity-border-subtle));
-  border-radius: var(--radius-md);
-}
-
-.sheet-stat .stat-value {
-  font-size: 1.5rem;
-  font-weight: 300;
-  color: rgba(255, 255, 255, var(--opacity-text-primary));
-  margin: 0 0 0.125rem 0;
-}
-
-.sheet-stat .stat-label {
-  font-size: 0.6875rem;
-  color: rgba(255, 255, 255, var(--opacity-text-tertiary));
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+/* Separador sutil */
+.sheet-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
   margin: 0;
 }
 
+/* Contacto clickeable */
+.sheet-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sheet-contact-item {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.sheet-contact-item:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Notas/patologías */
+.sheet-notes {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  margin: 0;
+  margin-top: 0.5rem;
+}
+
+/* Acciones */
 .sheet-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(80, 120, 200, var(--opacity-border-subtle));
+  align-items: center;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1.5rem;
 }
 
 .sheet-action-btn {
   width: 100%;
   justify-content: center;
   align-items: center !important;
-  padding: 0.75rem 1rem;
-  font-size: 0.9375rem;
+  padding: 0.875rem 1.25rem;
+  font-size: 1rem;
   display: flex !important;
-  gap: 0.5rem !important;
+  gap: 0.625rem !important;
 }
 
 .sheet-action-btn svg {
   flex-shrink: 0;
+}
+
+/* Acciones secundarias con iconos */
+.sheet-secondary-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.sheet-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  transition: color 0.15s;
+}
+
+.sheet-link-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sheet-link-btn.danger:hover {
+  color: rgba(255, 100, 100, 0.9);
 }
 
 /* ========================================
@@ -2323,7 +2408,7 @@ button span {
   border-radius: var(--radius-sm);
   font-size: 0.625rem;
   font-weight: 600;
-  color: #171320;
+  color: #141824;
   min-width: 1.25rem;
   text-align: center;
 }
@@ -2456,9 +2541,9 @@ button span {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  margin-bottom: 1.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .section-header h2 {
@@ -2589,40 +2674,35 @@ button span {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding-bottom: 1.25rem;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .form-group:last-child,
 .form-content > .form-group:last-of-type {
   margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
 }
 
 .form-group label {
   font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.8);
   letter-spacing: 0.01em;
 }
 
 @media (max-width: 768px) {
   .form-group {
     margin-bottom: 1rem;
-    padding-bottom: 1rem;
     gap: 0.5rem;
   }
 
   .form-group label {
     font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 500;
     text-transform: none;
     letter-spacing: 0.01em;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.8);
   }
 
   .section-content h3 {
@@ -2905,8 +2985,8 @@ button span {
 
 .config-grid-4 {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem 2rem;
   align-items: end;
 }
 
@@ -2914,30 +2994,397 @@ button span {
   margin-bottom: 0;
 }
 
+.config-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem 2rem;
+  margin-bottom: 2rem;
+}
+
+.config-grid-2 .form-group {
+  margin-bottom: 0;
+}
+
+/* Sección de turnos */
+.turnos-section {
+  margin-top: 1.5rem;
+}
+
+.turnos-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 0.875rem 0;
+}
+
+.turnos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.turno-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  transition: all 0.2s ease;
+  min-width: 0;
+}
+
+.turno-card.active {
+  background: rgba(110, 125, 245, 0.06);
+  border-color: rgba(110, 125, 245, 0.2);
+}
+
+.turno-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.turno-name {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  pointer-events: none;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.15);
+  transition: 0.2s ease;
+  border-radius: 10px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.7);
+  transition: left 0.2s ease, background-color 0.2s ease;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: rgba(110, 125, 245, 0.85);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  left: 19px;
+  background-color: white;
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Horarios dentro del turno */
+.turno-horarios {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.turno-horarios .input-with-icon-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.horario-separator {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .config-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .turnos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .turno-card {
+    padding: 0.75rem 0.875rem;
+  }
+
+  .turno-horarios {
+    gap: 0.375rem;
+  }
+
+  .turno-horarios .input-with-icon-wrapper {
+    flex: 1;
+  }
+
+  .turno-horarios .input-with-icon {
+    padding: 0.75rem 2.25rem 0.75rem 0.75rem;
+    font-size: 0.9375rem;
+    min-height: 42px;
+  }
+
+  .turno-horarios .input-icon {
+    right: 0.625rem;
+  }
+}
+
+/* Configuración de clases - diseño de filas minimalista */
+.section-header-minimal {
+  margin-bottom: 1rem;
+}
+
+.section-header-minimal h2 {
+  font-family: var(--font-serif), 'Cormorant Garamond', 'Georgia', serif;
+  font-size: 1.375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+
+.config-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.config-row:last-child {
+  border-bottom: none;
+}
+
+.config-row-label {
+  font-family: var(--font-body), Raleway, sans-serif;
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.config-select {
+  width: auto;
+  min-width: 140px;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-family: var(--font-body), Raleway, sans-serif;
+  font-size: 0.9375rem;
+  background: rgba(25, 30, 50, 0.4);
+  border: 1px solid rgba(100, 130, 200, 0.15);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.config-select:focus {
+  outline: none;
+  border-color: rgba(100, 130, 200, 0.35);
+}
+
+.config-time-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.config-time-range .time-input-wrapper {
+  width: auto;
+}
+
+.config-time-range .time-input-custom {
+  width: 90px;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.9375rem;
+  height: auto;
+  background: rgba(25, 30, 50, 0.4);
+  border: 1px solid rgba(100, 130, 200, 0.15);
+}
+
+.config-time-sep {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.875rem;
+}
+
+.config-row-vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.config-row-vertical .config-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.config-row-hint {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.config-input {
+  width: 100%;
+  max-width: 280px;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-body), Raleway, sans-serif;
+  font-size: 0.9375rem;
+  background: rgba(25, 30, 50, 0.4);
+  border: 1px solid rgba(100, 130, 200, 0.15);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.config-input:focus {
+  outline: none;
+  border-color: rgba(100, 130, 200, 0.35);
+}
+
+.config-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.config-price-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.config-price-symbol {
+  position: absolute;
+  left: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9375rem;
+  pointer-events: none;
+}
+
+.config-price-input input {
+  width: 120px;
+  padding: 0.5rem 0.75rem 0.5rem 1.5rem;
+  font-family: var(--font-body), Raleway, sans-serif;
+  font-size: 0.9375rem;
+  background: rgba(25, 30, 50, 0.4);
+  border: 1px solid rgba(100, 130, 200, 0.15);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.config-price-input input:focus {
+  outline: none;
+  border-color: rgba(100, 130, 200, 0.35);
+}
+
+.packs-section-inline {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+@media (max-width: 480px) {
+  .config-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem 0;
+  }
+
+  .config-select {
+    width: 100%;
+  }
+
+  .config-time-range {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .config-input {
+    max-width: none;
+  }
+}
+
 /* Select unificado para toda la app */
 .form-select,
 .form-select-sm {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.875rem;
   font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
-  font-size: 1rem !important;
-  background: rgba(25, 30, 50, 0.6);
-  border: 1px solid rgba(100, 130, 200, 0.20);
+  font-size: 0.9375rem !important;
+  background: rgba(25, 30, 50, 0.3);
+  border: 1px solid rgba(100, 130, 200, 0.12);
   border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.95);
-  height: 48px;
+  color: rgba(255, 255, 255, 0.9);
+  min-height: 44px;
   cursor: pointer;
 }
 
 .form-select:focus,
 .form-select-sm:focus {
   outline: none;
-  border-color: rgba(100, 130, 200, 0.4);
+  border-color: rgba(100, 130, 200, 0.3);
 }
 
 .time-range-mini {
   display: flex;
+  gap: 0.375rem;
+}
+
+/* Turno label con checkbox */
+.turno-label {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.turno-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: rgba(80, 120, 200, 0.8);
+  cursor: pointer;
+}
+
+.turno-label span {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .time-range-mini .time-input-wrapper {
@@ -2945,10 +3392,12 @@ button span {
 }
 
 .time-range-mini .time-input-custom {
-  padding: 0.75rem 2.25rem 0.75rem 0.75rem !important;
+  padding: 0.625rem 2rem 0.625rem 0.625rem !important;
   font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
-  font-size: 1rem !important;
-  height: 48px;
+  font-size: 0.9375rem !important;
+  height: 42px;
+  background: rgba(25, 30, 50, 0.3) !important;
+  border: 1px solid rgba(100, 130, 200, 0.12) !important;
 }
 
 .label-small {
@@ -3052,7 +3501,7 @@ button span {
 }
 
 .form-group select option {
-  background: rgba(30, 26, 43, 0.98) !important;
+  background: rgba(20, 24, 36, 0.98) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   padding: 0.75rem 1rem !important;
   font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -3745,7 +4194,7 @@ button span {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem 0.875rem;
-  background: linear-gradient(135deg, rgba(30, 26, 43, 0.6) 0%, rgba(30, 26, 43, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(20, 24, 36, 0.6) 0%, rgba(20, 24, 36, 0.3) 100%);
   border: 2px solid rgba(80, 120, 200, 0.25);
   border-radius: var(--radius-md);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -3945,6 +4394,8 @@ button span {
    PACKS
    ======================================== */
 .packs-header {
+  display: flex;
+  justify-content: flex-end;
   margin-bottom: 0.75rem;
 }
 
@@ -4104,7 +4555,7 @@ button span {
 
 .modal-content,
 .dialog-content {
-  background: rgba(255, 255, 255, 0.98);
+  background: #141824;
   backdrop-filter: blur(40px);
   border-radius: var(--radius-2xl);
   width: 100%;
@@ -4112,8 +4563,8 @@ button span {
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUpModal 0.3s ease;
-  border: 1.5px solid rgba(80, 120, 200, 0.15);
-  box-shadow: 0 8px 32px rgba(80, 120, 200, 0.15);
+  border: 1.5px solid rgba(80, 120, 200, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes slideUpModal {
@@ -4144,32 +4595,12 @@ button span {
 .dialog-header h2 {
   font-size: 1.25rem;
   font-weight: 500;
-  color: rgba(30, 30, 45, 0.92);
+  color: rgba(255, 255, 255, 0.95);
   margin: 0;
   line-height: 1.5;
 }
 
-.modal-close,
-.dialog-close {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: rgba(80, 120, 200, 0.08);
-  border: 2px solid rgba(80, 120, 200, 0.12);
-  color: rgba(30, 30, 45, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modal-close:hover,
-.dialog-close:hover {
-  background: rgba(80, 120, 200, 0.15);
-  border-color: rgba(80, 120, 200, 0.25);
-  color: rgba(30, 30, 45, 0.85);
-}
+/* .modal-close, .dialog-close usan .close-btn .close-btn-lg */
 
 .modal-body,
 .dialog-body {
@@ -4185,7 +4616,6 @@ button span {
   gap: 0.75rem;
   justify-content: flex-end;
   padding: 1.5rem 2rem;
-  border-top: 1px solid rgba(80, 120, 200, var(--opacity-border-subtle));
 }
 
 .rango-grid {
@@ -4450,7 +4880,7 @@ button span {
 }
 
 [data-slot="dialog-content"] {
-  background: rgba(20, 24, 36, 0.98) !important;
+  background: #141824 !important;
   border: 1.5px solid rgba(80, 120, 200, 0.2) !important;
   border-radius: var(--radius-xl) !important;
   padding: 0 !important;
@@ -4484,7 +4914,6 @@ button span {
 
 [data-slot="dialog-footer"] {
   padding: 1.5rem 2rem !important;
-  border-top: 1px solid rgba(80, 120, 200, var(--opacity-border-subtle)) !important;
   display: flex !important;
   gap: 0.75rem !important;
   justify-content: flex-end !important;
@@ -4492,33 +4921,7 @@ button span {
   flex-shrink: 0 !important;
 }
 
-[data-slot="dialog-close"] {
-  right: 2rem !important;
-  width: 40px !important;
-  height: 40px !important;
-  border-radius: 50% !important;
-  background: rgba(80, 120, 200, 0.08) !important;
-  border: 2px solid rgba(80, 120, 200, 0.15) !important;
-  color: rgba(255, 255, 255, 0.7) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  opacity: 1 !important;
-}
-
-[data-slot="dialog-close"] svg {
-  width: 20px !important;
-  height: 20px !important;
-}
-
-[data-slot="dialog-close"]:hover {
-  background: rgba(80, 120, 200, 0.15) !important;
-  border-color: rgba(80, 120, 200, 0.3) !important;
-  color: rgba(255, 255, 255, var(--opacity-text-primary)) !important;
-  opacity: 1 !important;
-}
+/* Radix Dialog close button - hereda de .close-btn */
 
 [data-slot="dialog-content"] .dialog-body {
   padding: var(--space-2xl) !important;
@@ -4530,7 +4933,102 @@ button span {
   min-height: 0;
 }
 
-/* Custom time input wrapper con ícono Lucide */
+/* ========================================
+   INPUTS CON ÍCONOS UNIFICADOS
+   Usados por: TimeInput, DateInput, SelectInput
+   ======================================== */
+.input-with-icon-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-with-icon {
+  width: 100%;
+  padding-right: 2.75rem !important;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  background: rgba(25, 30, 50, 0.6);
+  border: 1px solid rgba(100, 130, 200, 0.20);
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.9);
+  min-height: var(--height-input);
+  padding: 0.875rem 2.75rem 0.875rem 1rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input-with-icon:hover {
+  background: rgba(30, 35, 55, 0.7);
+  border-color: rgba(100, 130, 200, 0.35);
+}
+
+.input-with-icon:focus {
+  outline: none;
+  background: rgba(30, 35, 55, 0.7);
+  border-color: rgba(100, 130, 200, 0.40);
+  box-shadow: 0 0 0 3px rgba(80, 120, 200, 0.15);
+}
+
+.input-with-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(20, 25, 40, 0.4);
+}
+
+/* Ícono unificado - color azul claro */
+.input-icon {
+  position: absolute;
+  right: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(147, 197, 253, 0.6);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.input-with-icon-wrapper:hover .input-icon {
+  color: rgba(147, 197, 253, 1);
+}
+
+/* Select específico - ocultar flecha nativa */
+.input-with-icon.select-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+/* Time/Date inputs - ocultar ícono nativo pero mantener funcionalidad clickeable */
+.input-with-icon.time-input::-webkit-calendar-picker-indicator,
+.input-with-icon.date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2.5rem;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Fuente en elementos internos del time/date picker */
+.input-with-icon.time-input::-webkit-datetime-edit,
+.input-with-icon.time-input::-webkit-datetime-edit-fields-wrapper,
+.input-with-icon.time-input::-webkit-datetime-edit-text,
+.input-with-icon.time-input::-webkit-datetime-edit-hour-field,
+.input-with-icon.time-input::-webkit-datetime-edit-minute-field,
+.input-with-icon.time-input::-webkit-datetime-edit-ampm-field,
+.input-with-icon.date-input::-webkit-datetime-edit,
+.input-with-icon.date-input::-webkit-datetime-edit-fields-wrapper,
+.input-with-icon.date-input::-webkit-datetime-edit-text,
+.input-with-icon.date-input::-webkit-datetime-edit-day-field,
+.input-with-icon.date-input::-webkit-datetime-edit-month-field,
+.input-with-icon.date-input::-webkit-datetime-edit-year-field {
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Compatibilidad con clases antiguas (time-input-wrapper, time-input-custom) */
 .time-input-wrapper {
   position: relative;
   width: 100%;
@@ -4538,20 +5036,9 @@ button span {
 
 .time-input-custom {
   width: 100%;
-  padding-right: 2.5rem !important;
-  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  padding-right: 2.75rem !important;
+  font-family: inherit;
   font-variant-numeric: tabular-nums;
-}
-
-/* Forzar fuente en los elementos internos del time picker */
-.time-input-custom::-webkit-datetime-edit,
-.time-input-custom::-webkit-datetime-edit-fields-wrapper,
-.time-input-custom::-webkit-datetime-edit-text,
-.time-input-custom::-webkit-datetime-edit-hour-field,
-.time-input-custom::-webkit-datetime-edit-minute-field,
-.time-input-custom::-webkit-datetime-edit-second-field,
-.time-input-custom::-webkit-datetime-edit-ampm-field {
-  font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
 .time-input-custom::-webkit-calendar-picker-indicator {
@@ -4568,7 +5055,7 @@ button span {
   right: 0.875rem;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(147, 197, 253, 0.7);
+  color: rgba(147, 197, 253, 0.6);
   pointer-events: none;
 }
 
@@ -4816,8 +5303,9 @@ button span {
     right: auto;
     top: 50%;
     transform: translate(-50%, -50%);
-    max-width: 380px;
+    max-width: 440px;
     max-height: 85vh;
+    background: #141824 !important;
     border-radius: var(--radius-xl);
     border: 1.5px solid rgba(80, 120, 200, 0.2);
   }
@@ -4860,7 +5348,7 @@ button span {
   position: absolute;
   top: calc(100% + 0.375rem);
   right: 0;
-  background: #171320;
+  background: #141824;
   border: 1.5px solid rgba(80, 120, 200, 0.4);
   border-radius: var(--radius-md);
   padding: 0.5rem;
@@ -4891,7 +5379,7 @@ button span {
 
 .dropdown-menu button:hover,
 .dropdown-menu-fixed button:hover {
-  background: rgba(80, 120, 200, 0.2);
+  background: transparent;
   color: #ffffff;
 }
 
@@ -5680,14 +6168,27 @@ input[type="date"] {
   color-scheme: dark;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type="date"]:not(.date-input)::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
   opacity: 0.8;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+input[type="date"]:not(.date-input)::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
+}
+
+/* Ocultar ícono nativo en inputs con ícono custom */
+input[type="date"].date-input::-webkit-calendar-picker-indicator,
+input[type="time"].time-input::-webkit-calendar-picker-indicator {
+  opacity: 0 !important;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2.5rem;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
 }
 
 input[type="date"]::-webkit-datetime-edit {
@@ -5878,21 +6379,7 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   color: rgba(255, 255, 255, var(--opacity-text-primary));
 }
 
-.toast-close {
-  flex-shrink: 0;
-  padding: var(--space-xs);
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, var(--opacity-text-secondary));
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all 0.2s ease;
-}
-
-.toast-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, var(--opacity-text-primary));
-}
+/* .toast-close usa .close-btn .close-btn-sm */
 
 .toast-success {
   border-color: rgba(34, 197, 94, 0.3);

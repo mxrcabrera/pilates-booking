@@ -22,8 +22,10 @@ model User {
   maxAlumnosPorClase      Int                 @default(4) @map("max_alumnos_por_clase")
   horarioMananaInicio     String              @default("08:00") @map("horario_manana_inicio")
   horarioMananaFin        String              @default("14:00") @map("horario_manana_fin")
+  turnoMananaActivo       Boolean             @default(true) @map("turno_manana_activo")
   horarioTardeInicio      String              @default("17:00") @map("horario_tarde_inicio")
   horarioTardeFin         String              @default("22:00") @map("horario_tarde_fin")
+  turnoTardeActivo        Boolean             @default(true) @map("turno_tarde_activo")
   espacioCompartidoId     String?             @map("espacio_compartido_id")
   syncGoogleCalendar      Boolean             @default(false) @map("sync_google_calendar")
   googleCalendarId        String?             @map("google_calendar_id")
@@ -48,7 +50,6 @@ model Pack {
   nombre          String
   clasesPorSemana Int      @map("clases_por_semana")
   precio          Decimal  @db.Decimal(10, 2)
-  estaActivo      Boolean  @default(true) @map("esta_activo")
   createdAt       DateTime @default(now()) @map("created_at")
   profesor        User     @relation(fields: [profesorId], references: [id], onDelete: Cascade)
 

@@ -39,8 +39,10 @@ export async function GET() {
         maxAlumnosPorClase: user.maxAlumnosPorClase,
         horarioMananaInicio: user.horarioMananaInicio,
         horarioMananaFin: user.horarioMananaFin,
+        turnoMananaActivo: user.turnoMananaActivo,
         horarioTardeInicio: user.horarioTardeInicio,
         horarioTardeFin: user.horarioTardeFin,
+        turnoTardeActivo: user.turnoTardeActivo,
         espacioCompartidoId: user.espacioCompartidoId,
         syncGoogleCalendar: user.syncGoogleCalendar,
         precioPorClase: user.precioPorClase?.toString() || '0',
@@ -51,8 +53,7 @@ export async function GET() {
         id: pack.id,
         nombre: pack.nombre,
         clasesPorSemana: pack.clasesPorSemana,
-        precio: pack.precio.toString(),
-        estaActivo: pack.estaActivo
+        precio: pack.precio.toString()
       }))
     })
   } catch (error: any) {
@@ -218,17 +219,17 @@ export async function POST(request: NextRequest) {
       }
 
       case 'savePack': {
-        const { id, nombre, clasesPorSemana, precio, estaActivo } = data
+        const { id, nombre, clasesPorSemana, precio } = data
         let pack
 
         if (id) {
           pack = await prisma.pack.update({
             where: { id },
-            data: { nombre, clasesPorSemana, precio, estaActivo }
+            data: { nombre, clasesPorSemana, precio }
           })
         } else {
           pack = await prisma.pack.create({
-            data: { profesorId: userId, nombre, clasesPorSemana, precio, estaActivo: true }
+            data: { profesorId: userId, nombre, clasesPorSemana, precio }
           })
         }
         return NextResponse.json({ success: true, pack })
@@ -241,20 +242,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
         }
         await prisma.pack.delete({ where: { id } })
-        return NextResponse.json({ success: true })
-      }
-
-      case 'togglePack': {
-        const { id } = data
-        // Usar raw SQL para toggle en una sola query
-        const result = await prisma.$executeRaw`
-          UPDATE "Pack"
-          SET "estaActivo" = NOT "estaActivo"
-          WHERE id = ${id}
-        `
-        if (result === 0) {
-          return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
-        }
         return NextResponse.json({ success: true })
       }
 
@@ -302,8 +289,10 @@ export async function POST(request: NextRequest) {
           maxAlumnosPorClase,
           horarioMananaInicio,
           horarioMananaFin,
+          turnoMananaActivo,
           horarioTardeInicio,
           horarioTardeFin,
+          turnoTardeActivo,
           espacioCompartidoId,
           syncGoogleCalendar,
           precioPorClase
@@ -318,8 +307,10 @@ export async function POST(request: NextRequest) {
             maxAlumnosPorClase,
             horarioMananaInicio,
             horarioMananaFin,
+            turnoMananaActivo,
             horarioTardeInicio,
             horarioTardeFin,
+            turnoTardeActivo,
             espacioCompartidoId: espacioNormalizado,
             syncGoogleCalendar,
             ...(precioPorClase !== undefined && { precioPorClase: parseFloat(precioPorClase) || 0 })

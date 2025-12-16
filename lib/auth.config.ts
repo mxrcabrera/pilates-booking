@@ -57,37 +57,7 @@ export const authConfig: NextAuthConfig = {
       },
     }),
   ],
-  callbacks: {
-    async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub
-      }
-      if (token.role) {
-        (session.user as any).role = token.role
-      }
-      if (token.accessToken) {
-        (session as any).accessToken = token.accessToken
-      }
-      if (token.refreshToken) {
-        (session as any).refreshToken = token.refreshToken
-      }
-      return session
-    },
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.sub = user.id as string
-        token.role = (user as any).role || 'PROFESOR'
-
-        if (account?.access_token) {
-          token.accessToken = account.access_token
-        }
-        if (account?.refresh_token) {
-          token.refreshToken = account.refresh_token
-        }
-      }
-      return token
-    },
-  },
+  // Callbacks are defined in lib/auth.ts to avoid duplication
   pages: {
     signIn: '/login',
   },

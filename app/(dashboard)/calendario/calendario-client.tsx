@@ -9,6 +9,8 @@ import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import type { Clase, AlumnoSimple } from '@/lib/types'
+import { DIAS_SEMANA, DIAS_SEMANA_COMPLETO, MESES } from '@/lib/constants'
+import { getTurno, formatearHora, formatearFechaDia } from '@/lib/utils'
 
 interface CalendarioClientProps {
   clasesIniciales: Clase[]
@@ -22,25 +24,7 @@ interface CalendarioClientProps {
 
 type Vista = 'dia' | 'semana'
 
-const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-const DIAS_SEMANA_FULL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-
 const HORAS_DIA = Array.from({ length: 15 }, (_, i) => i + 7) // 7:00 a 21:00
-
-function getTurno(hora: number): 'mañana' | 'tarde' | 'noche' {
-  if (hora < 12) return 'mañana'
-  if (hora < 19) return 'tarde'
-  return 'noche'
-}
-
-function formatearHora(hora: string): string {
-  return hora.substring(0, 5) // "08:00:00" → "08:00"
-}
-
-function formatearFechaDia(fecha: Date): string {
-  return fecha.toISOString().split('T')[0]
-}
 
 export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin }: CalendarioClientProps) {
   const { showSuccess, showError } = useToast()
@@ -251,7 +235,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
   }
 
   const formatearFecha = (fecha: Date) => {
-    const dia = DIAS_SEMANA_FULL[fecha.getDay()]
+    const dia = DIAS_SEMANA_COMPLETO[fecha.getDay()]
     const num = fecha.getDate()
     const mes = MESES[fecha.getMonth()].substring(0, 3)
     return `${dia}, ${num} ${mes}`

@@ -191,6 +191,7 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
         }}
         alumno={selectedAlumno}
         onEdit={() => handleEdit(selectedAlumno!)}
+        packs={packs}
       />
 
       <ConfirmModal

@@ -25,8 +25,15 @@ export const ESTADOS_CLASE = {
   RESERVADA: 'reservada',
   COMPLETADA: 'completada',
   CANCELADA: 'cancelada',
-  NO_ASISTIO: 'no_asistio'
+  AUSENTE: 'ausente'
 } as const
+
+export const ESTADO_LABELS: Record<string, string> = {
+  reservada: 'Reservada',
+  completada: 'Completada',
+  cancelada: 'Cancelada',
+  ausente: 'Ausente'
+}
 
 export const ESTADOS_PAGO = {
   PENDIENTE: 'pendiente',

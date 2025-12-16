@@ -4,7 +4,6 @@ import { getCurrentUser } from '@/lib/auth-utils'
 import { addWeeks } from 'date-fns'
 import { auth } from '@/lib/auth'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
-import { checkPreferencesComplete } from '@/lib/preferences-guard'
 
 export const runtime = 'nodejs'
 
@@ -15,19 +14,11 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    // Check if preferences are complete
-    const preferencesCheck = await checkPreferencesComplete(userId)
-    if (!preferencesCheck.isComplete) {
-      return NextResponse.json({
-        preferencesIncomplete: true,
-        missingFields: preferencesCheck.missingFields
-      })
-    }
-
     const hoy = new Date()
     const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
     const finRango = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0)
 
+    // UNA SOLA query para obtener user + counts para preferences check
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -35,12 +26,33 @@ export async function GET() {
         horarioMananaInicio: true,
         horarioMananaFin: true,
         horarioTardeInicio: true,
-        horarioTardeFin: true
+        horarioTardeFin: true,
+        _count: {
+          select: {
+            horariosDisponibles: true,
+            packs: true,
+            alumnos: true
+          }
+        }
       }
     })
 
+    // Check preferences inline (sin query adicional)
+    const missingFields: string[] = []
+    if (!user || user._count.packs === 0) missingFields.push('Al menos un Pack')
+    if (!user || user._count.horariosDisponibles === 0) missingFields.push('Al menos un Horario')
+    if (!user || user._count.alumnos === 0) missingFields.push('Al menos un Alumno')
+
+    if (missingFields.length > 0) {
+      return NextResponse.json({
+        preferencesIncomplete: true,
+        missingFields
+      })
+    }
+
+    // Obtener profesorIds (query condicional solo si tiene espacio compartido)
     let profesorIds = [userId]
-    if (user?.espacioCompartidoId) {
+    if (user.espacioCompartidoId) {
       const usuariosEnEspacio = await prisma.user.findMany({
         where: { espacioCompartidoId: user.espacioCompartidoId },
         select: { id: true }
@@ -48,6 +60,7 @@ export async function GET() {
       profesorIds = usuariosEnEspacio.map(p => p.id)
     }
 
+    // Queries de datos en paralelo
     const [clases, alumnos] = await Promise.all([
       prisma.clase.findMany({
         where: {
@@ -87,10 +100,10 @@ export async function GET() {
       clases: clasesNormalizadas,
       alumnos,
       currentUserId: userId,
-      horarioMananaInicio: user?.horarioMananaInicio || '08:00',
-      horarioMananaFin: user?.horarioMananaFin || '14:00',
-      horarioTardeInicio: user?.horarioTardeInicio || '17:00',
-      horarioTardeFin: user?.horarioTardeFin || '22:00'
+      horarioMananaInicio: user.horarioMananaInicio || '08:00',
+      horarioMananaFin: user.horarioMananaFin || '14:00',
+      horarioTardeInicio: user.horarioTardeInicio || '17:00',
+      horarioTardeFin: user.horarioTardeFin || '22:00'
     })
   } catch (error: any) {
     console.error('Clases GET error:', error)

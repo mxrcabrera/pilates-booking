@@ -1,6 +1,6 @@
 'use client'
 
-import { MoreVertical, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
+import { MoreVertical, Edit2, Trash2, UserX, UserCheck, Eye } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
@@ -33,6 +33,29 @@ export function AlumnoCard({
     }
     return alumno.estaActivo ? 'Activa' : 'Inactiva'
   }
+
+  // Días para próximo pago
+  const getDiasPago = () => {
+    if (!alumno.estaActivo) return null
+    if (!alumno.proximoPagoVencimiento) return null
+
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    const vencimiento = new Date(alumno.proximoPagoVencimiento)
+    vencimiento.setHours(0, 0, 0, 0)
+    const dias = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (dias < 0) {
+      return { texto: `${Math.abs(dias)}d atraso`, clase: 'vencido' }
+    } else if (dias === 0) {
+      return { texto: 'Hoy', clase: 'hoy' }
+    } else if (dias <= 7) {
+      return { texto: `${dias}d`, clase: 'proximo' }
+    }
+    return { texto: `${dias}d`, clase: 'tranquilo' }
+  }
+
+  const diasPago = getDiasPago()
 
   // Listener global para cerrar menu
   useEffect(() => {
@@ -84,10 +107,14 @@ export function AlumnoCard({
         )}
         <div
           className={`alumno-list-item-final ${showMenu ? 'menu-active' : ''}`}
-          onClick={() => !showMenu && onView()}
         >
           <div className="alumno-list-top-row">
-            <h3>{alumno.nombre}</h3>
+            <div className="alumno-list-nombre">
+              <h3>{alumno.nombre}</h3>
+              {diasPago && (
+                <span className={`dias-pago-badge ${diasPago.clase}`}>{diasPago.texto}</span>
+              )}
+            </div>
             <div className="alumno-list-actions">
               <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
                 {getStatusText()}
@@ -107,6 +134,10 @@ export function AlumnoCard({
 
           {showMenu && (
             <div ref={dropdownRef} className="dropdown-menu-fixed">
+              <button onClick={() => { onView(); setShowMenu(false); }}>
+                <Eye size={16} />
+                <span>Ver detalle</span>
+              </button>
               <button onClick={() => { onEdit(); setShowMenu(false); }}>
                 <Edit2 size={16} />
                 <span>Editar</span>
@@ -153,6 +184,10 @@ export function AlumnoCard({
             </button>
             {showMenu && (
               <div ref={dropdownRef} className="dropdown-menu-fixed">
+                <button onClick={() => { onView(); setShowMenu(false); }}>
+                  <Eye size={16} />
+                  <span>Ver detalle</span>
+                </button>
                 <button onClick={() => { onEdit(); setShowMenu(false); }}>
                   <Edit2 size={16} />
                   <span>Editar</span>

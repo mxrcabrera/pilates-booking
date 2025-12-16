@@ -1,32 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { PagosClient } from './pagos-client'
 import { PageLoading } from '@/components/page-loading'
-import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/client-cache'
+import { usePageData } from '@/lib/use-page-data'
+import { CACHE_KEYS } from '@/lib/client-cache'
 import type { PagosData } from '@/lib/types'
 
 export default function PagosPage() {
-  const [data, setData] = useState<PagosData | null>(() =>
-    getCachedData<PagosData>(CACHE_KEYS.PAGOS)
-  )
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (data) return
-
-    fetch('/api/pagos')
-      .then(res => res.json())
-      .then(responseData => {
-        if (responseData.error) {
-          setError(responseData.error)
-        } else {
-          setCachedData(CACHE_KEYS.PAGOS, responseData)
-          setData(responseData)
-        }
-      })
-      .catch(err => setError(err.message))
-  }, [data])
+  const { data, error, isLoading } = usePageData<PagosData>({
+    cacheKey: CACHE_KEYS.PAGOS,
+    apiUrl: '/api/pagos'
+  })
 
   if (error) {
     return (
@@ -38,7 +22,7 @@ export default function PagosPage() {
     )
   }
 
-  if (!data) {
+  if (isLoading || !data) {
     return <PageLoading />
   }
 

@@ -5,15 +5,8 @@ import { Calendar } from 'lucide-react'
 import { HorariosSection } from './horarios-section'
 import { updatePreferencias } from './actions'
 import { TimeInput } from '@/components/time-input'
-
-type Horario = {
-  id: string
-  diaSemana: number
-  horaInicio: string
-  horaFin: string
-  esManiana: boolean
-  estaActivo: boolean
-}
+import { SelectInput } from '@/components/select-input'
+import type { Horario } from '@/lib/types'
 
 type ClasesSectionProps = {
   horarios: Horario[]
@@ -119,9 +112,9 @@ export function ClasesSection({
 
             <div className="form-group">
               <label>Capacidad Máxima por Clase</label>
-              <select
+              <SelectInput
                 name="maxAlumnosPorClase"
-                defaultValue={maxAlumnosPorClase}
+                defaultValue={maxAlumnosPorClase.toString()}
                 required
                 disabled={isLoading}
                 className="form-select"
@@ -134,7 +127,7 @@ export function ClasesSection({
                 <option value="6">6 alumnos</option>
                 <option value="8">8 alumnos</option>
                 <option value="10">10 alumnos</option>
-              </select>
+              </SelectInput>
               <p className="form-hint">Cantidad máxima de alumnos que pueden reservar la misma clase</p>
             </div>
 

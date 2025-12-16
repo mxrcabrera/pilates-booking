@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Clock, ChevronDown, ChevronUp, ArrowRight, Users, DollarSign, AlertCircle } from 'lucide-react'
 import type { ClaseHoy } from '@/lib/types'
+import { getTurno, formatearHora } from '@/lib/utils'
 
 type ClasesPorTurno = {
   mañana: ClaseHoy[]
@@ -15,16 +16,6 @@ interface DashboardClientProps {
   clasesHoy: ClaseHoy[]
   totalAlumnos: number
   pagosVencidos: number
-}
-
-function getTurno(hora: number): 'mañana' | 'tarde' | 'noche' {
-  if (hora < 12) return 'mañana'
-  if (hora < 19) return 'tarde'
-  return 'noche'
-}
-
-function formatearHora(hora: string): string {
-  return hora.substring(0, 5)
 }
 
 function getMinutosHasta(horaClase: string): number {

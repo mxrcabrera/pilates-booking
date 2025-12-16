@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { SelectInput } from '@/components/select-input'
 import type { Pago, AlumnoPago } from '@/lib/types'
 import { MESES } from '@/lib/constants'
 
@@ -99,7 +100,7 @@ export function PagoDialog({
         <form onSubmit={handleSubmit} className="dialog-body">
           <div className="form-group">
             <label>Alumno</label>
-            <select
+            <SelectInput
               name="alumnoId"
               required
               value={selectedAlumnoId}
@@ -112,26 +113,26 @@ export function PagoDialog({
                   {alumno.nombre}
                 </option>
               ))}
-            </select>
+            </SelectInput>
           </div>
 
           <div className="form-row">
             <div className="form-group">
               <label>Mes</label>
-              <select name="mes" required disabled={isLoading} defaultValue={currentMonth}>
+              <SelectInput name="mes" required disabled={isLoading} defaultValue={currentMonth.toString()}>
                 {MESES.map((mes, idx) => (
                   <option key={mes} value={idx}>{mes}</option>
                 ))}
-              </select>
+              </SelectInput>
             </div>
 
             <div className="form-group">
-              <label>Anio</label>
-              <select name="anio" required disabled={isLoading} defaultValue={currentYear}>
+              <label>Año</label>
+              <SelectInput name="anio" required disabled={isLoading} defaultValue={currentYear.toString()}>
                 <option value={currentYear - 1}>{currentYear - 1}</option>
                 <option value={currentYear}>{currentYear}</option>
                 <option value={currentYear + 1}>{currentYear + 1}</option>
-              </select>
+              </SelectInput>
             </div>
           </div>
 

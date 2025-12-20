@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const alumnoId = searchParams.get('alumnoId')
@@ -59,41 +61,72 @@ export async function GET(request: NextRequest) {
     })
 
     // Obtener clases completadas por alumno/mes para calcular progreso
+    // Optimizado: una sola query en lugar de N queries
     const clasesCompletadasMap = new Map<string, number>()
 
-    for (const pago of pagosRaw) {
-      if (pago.tipoPago === 'mensual' && pago.clasesEsperadas) {
-        // Parsear el mes del pago (formato "YYYY-MM" o "Mes YYYY")
+    // Recolectar todos los alumnoIds y rangos de fechas necesarios
+    const pagosMensuales = pagosRaw.filter(p => p.tipoPago === 'mensual' && p.clasesEsperadas)
+
+    if (pagosMensuales.length > 0) {
+      const alumnoIds = [...new Set(pagosMensuales.map(p => p.alumnoId))]
+
+      // Encontrar el rango de fechas más amplio
+      let minDate: Date | null = null
+      let maxDate: Date | null = null
+
+      const mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+      for (const pago of pagosMensuales) {
         let year: number, month: number
         const matchYYYYMM = pago.mesCorrespondiente.match(/^(\d{4})-(\d{2})$/)
         if (matchYYYYMM) {
           year = parseInt(matchYYYYMM[1])
           month = parseInt(matchYYYYMM[2])
         } else {
-          // Formato "Mes YYYY" - parsear
-          const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
           const parts = pago.mesCorrespondiente.toLowerCase().split(' ')
-          month = meses.indexOf(parts[0]) + 1
+          month = mesesNombres.indexOf(parts[0]) + 1
           year = parseInt(parts[1])
         }
 
         if (year && month) {
           const startDate = new Date(year, month - 1, 1)
-          const endDate = new Date(year, month, 0) // Último día del mes
+          const endDate = new Date(year, month, 0)
+          if (!minDate || startDate < minDate) minDate = startDate
+          if (!maxDate || endDate > maxDate) maxDate = endDate
+        }
+      }
 
-          const clasesCount = await prisma.clase.count({
-            where: {
-              alumnoId: pago.alumnoId,
-              fecha: {
-                gte: startDate,
-                lte: endDate
-              },
-              estado: 'completada'
+      if (minDate && maxDate) {
+        // Una sola query para todas las clases completadas
+        const clasesCompletadas = await prisma.clase.findMany({
+          where: {
+            alumnoId: { in: alumnoIds },
+            fecha: { gte: minDate, lte: maxDate },
+            estado: 'completada'
+          },
+          select: {
+            alumnoId: true,
+            fecha: true
+          }
+        })
+
+        // Agrupar por alumno y mes
+        for (const clase of clasesCompletadas) {
+          const year = clase.fecha.getFullYear()
+          const month = clase.fecha.getMonth() + 1
+          const mesKey1 = `${year}-${month.toString().padStart(2, '0')}`
+          const mesKey2 = `${mesesNombres[month - 1]} ${year}`
+
+          // Incrementar contadores para ambos formatos de mes
+          for (const pago of pagosMensuales) {
+            if (pago.alumnoId === clase.alumnoId) {
+              const key = `${pago.alumnoId}-${pago.mesCorrespondiente}`
+              if (pago.mesCorrespondiente === mesKey1 || pago.mesCorrespondiente.toLowerCase() === mesKey2) {
+                clasesCompletadasMap.set(key, (clasesCompletadasMap.get(key) || 0) + 1)
+              }
             }
-          })
-
-          clasesCompletadasMap.set(`${pago.alumnoId}-${pago.mesCorrespondiente}`, clasesCount)
+          }
         }
       }
     }

@@ -28,7 +28,7 @@ export const authConfig: NextAuthConfig = {
         }
 
         // Dynamic import to avoid Edge Runtime issues
-        const { prisma } = await import('./prisma')
+        const { prisma } = await import('../prisma')
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },

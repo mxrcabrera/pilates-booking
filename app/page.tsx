@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth-utils'
+import { getCurrentUser } from '@/lib/auth'
 
 export default async function Home() {
   const userId = await getCurrentUser()

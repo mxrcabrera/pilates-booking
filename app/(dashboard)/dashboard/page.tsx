@@ -5,7 +5,8 @@ import { es } from 'date-fns/locale'
 import { DashboardClient } from './dashboard-client'
 import { PageLoading } from '@/components/page-loading'
 import { EmptyState } from '@/components/empty-state'
-import { Sparkles, Calendar } from 'lucide-react'
+import { SetupWizard } from '@/components/setup-wizard'
+import { Calendar } from 'lucide-react'
 import { usePageData } from '@/lib/use-page-data'
 import type { DashboardData } from '@/lib/types'
 
@@ -31,28 +32,42 @@ export default function DashboardPage() {
     return <PageLoading />
   }
 
-  // Usuario nuevo sin datos
-  if (data.totalAlumnos === 0) {
+  // Verificar si el usuario necesita completar el setup
+  const needsSetup = data.setupStatus && (
+    !data.setupStatus.hasHorarios ||
+    !data.setupStatus.hasPacks ||
+    !data.setupStatus.hasAlumnos
+  )
+
+  // Usuario nuevo sin completar setup
+  if (needsSetup) {
     return (
       <div className="dashboard-container">
         <div className="dashboard-header">
           <div>
-            <h1>Bienvenido</h1>
+            <h1>Dashboard</h1>
             <p className="date-text">
               {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
             </p>
           </div>
         </div>
 
-        <div className="agenda-card">
-          <EmptyState
-            icon={<Sparkles size={36} style={{ color: 'rgba(147, 155, 245, 0.9)' }} />}
-            title="Empezá a usar tu estudio"
-            description="Configurá tus horarios, agregá alumnos y comenzá a gestionar tus clases"
-            actionLabel="Agregar primer alumno"
-            actionHref="/alumnos"
+        <SetupWizard
+          hasHorarios={data.setupStatus.hasHorarios}
+          hasPacks={data.setupStatus.hasPacks}
+          hasAlumnos={data.setupStatus.hasAlumnos}
+          userName={data.setupStatus.userName || undefined}
+        />
+
+        {data.clasesHoy.length > 0 && (
+          <DashboardClient
+            clasesHoy={data.clasesHoy}
+            totalAlumnos={data.totalAlumnos}
+            horarioTardeInicio={data.horarioTardeInicio}
+            maxAlumnosPorClase={data.maxAlumnosPorClase}
+            siguienteClase={data.siguienteClase}
           />
-        </div>
+        )}
       </div>
     )
   }

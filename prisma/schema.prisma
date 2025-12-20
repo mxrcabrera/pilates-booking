@@ -105,7 +105,8 @@ model Clase {
   esRecurrente      Boolean  @default(false) @map("es_recurrente")
   frecuenciaSemanal Int?     @map("frecuencia_semanal")
   diasSemana        Int[]    @map("dias_semana")
-  estado            String   @default("reservada")
+  estado            String   @default("reservada") // reservada, completada, cancelada
+  asistencia        String   @default("pendiente") // pendiente, presente, ausente
   esClasePrueba     Boolean  @default(false) @map("es_clase_prueba")
   googleEventId     String?  @map("google_event_id")
   createdAt         DateTime @default(now()) @map("created_at")
@@ -123,6 +124,8 @@ model Pago {
   fechaVencimiento   DateTime  @map("fecha_vencimiento") @db.Date
   estado             String    @default("pendiente")
   mesCorrespondiente String    @map("mes_correspondiente")
+  tipoPago           String    @default("mensual") @map("tipo_pago") // "mensual" (pack) o "clase"
+  clasesEsperadas    Int?      @map("clases_esperadas") // Clases que debe hacer en el mes (del pack)
   createdAt          DateTime  @default(now()) @map("created_at")
   alumno             Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
 

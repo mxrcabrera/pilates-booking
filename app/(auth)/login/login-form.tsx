@@ -4,11 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginWithGoogle } from './actions'
 
+type Rol = 'profesor' | 'alumno'
+
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignup, setIsSignup] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [rol, setRol] = useState<Rol>('profesor')
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -31,6 +34,7 @@ export function LoginForm() {
           email,
           password,
           nombre: isSignup ? nombre : undefined,
+          rol: isSignup ? rol : undefined,
           action: isSignup ? 'signup' : 'login',
         }),
       })
@@ -55,30 +59,66 @@ export function LoginForm() {
     <div className="login-card animate-fade-in-up">
       <div className="login-header">
         <h1>Pilates Booking</h1>
-        <p>Bienvenido de vuelta</p>
+        <p>{isSignup ? 'Crear una cuenta nueva' : 'Bienvenido de vuelta'}</p>
       </div>
-      
+
       {error && (
         <div className="error-banner">
           {error}
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit}>
         {isSignup && (
-          <div>
-            <label htmlFor="nombre">Nombre completo</label>
-            <input
-              id="nombre"
-              name="nombre"
-              type="text"
-              placeholder="María García"
-              required
-              disabled={isLoading}
-            />
-          </div>
+          <>
+            <div className="rol-selector">
+              <label className="rol-label">Soy...</label>
+              <div className="rol-options">
+                <button
+                  type="button"
+                  className={`rol-option ${rol === 'profesor' ? 'active' : ''}`}
+                  onClick={() => setRol('profesor')}
+                  disabled={isLoading}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <span>Profesor/a</span>
+                </button>
+                <button
+                  type="button"
+                  className={`rol-option disabled ${rol === 'alumno' ? 'active' : ''}`}
+                  onClick={() => {}}
+                  disabled={true}
+                  title="Próximamente disponible"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span>Alumno/a</span>
+                  <span className="coming-soon-badge">Próximamente</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="nombre">Nombre completo</label>
+              <input
+                id="nombre"
+                name="nombre"
+                type="text"
+                placeholder="María García"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </>
         )}
-        
+
         <div>
           <label htmlFor="email">Email</label>
           <input
@@ -125,7 +165,7 @@ export function LoginForm() {
           </div>
         </div>
 
-        <button type="submit" disabled={isLoading}>
+        <button type="submit" disabled={isLoading || (isSignup && rol === 'alumno')}>
           {isLoading ? 'Cargando...' : (isSignup ? 'Crear cuenta' : 'Ingresar')}
         </button>
 

@@ -5,6 +5,7 @@ import { HorarioDialog } from './horario-dialog'
 import { PacksSection } from './packs-section'
 import { updatePreferencias } from './actions'
 import { useState, useMemo } from 'react'
+import { Plus } from 'lucide-react'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { TimeInput } from '@/components/time-input'
 import { SelectInput } from '@/components/select-input'
@@ -316,14 +317,30 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         </div>
       </div>
 
-      {/* Sección 3: Precios y Paquetes */}
-      <div className="settings-section">
-        <div className="section-content">
-          <div className="section-header">
-            <h2>Precios y Paquetes</h2>
-          </div>
+    </form>
 
-          <div className="form-content compact-form">
+    {/* Sección 3: Paquetes - fuera del form para evitar submit accidental */}
+    <div className="settings-section" style={{ marginTop: '2rem' }}>
+      <div className="section-content">
+        <PacksSection
+          packs={packs}
+          renderButton={(onClick) => (
+            <div className="horarios-header">
+              <div>
+                <h2 className="horarios-header-title">Paquetes</h2>
+                <p className="horarios-header-subtitle">Configurá los packs de clases disponibles</p>
+              </div>
+              <button onClick={onClick} className="btn-primary btn-sm">
+                <Plus size={16} />
+                <span>Nuevo</span>
+              </button>
+            </div>
+          )}
+        />
+
+        {/* Clase suelta dentro de la sección de paquetes */}
+        <div className="clase-suelta-section">
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Clase suelta</label>
               <div className="price-input-wrapper">
@@ -340,15 +357,12 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
                 />
               </div>
             </div>
-
-            <div className="packs-inline">
-              <label>Paquetes</label>
-              <PacksSection packs={packs} />
-            </div>
-          </div>
+          </form>
         </div>
       </div>
+    </div>
 
+    <form onSubmit={handleSubmit}>
       {/* Sección 4: Avanzado */}
       <div className="settings-section">
         <div className="section-content">

@@ -46,11 +46,15 @@ export default function CalendarioPage() {
     <CalendarioClient
       clasesIniciales={data.clases}
       alumnos={data.alumnos}
+      packs={data.packs}
       currentUserId={data.currentUserId}
       horarioMananaInicio={data.horarioMananaInicio}
       horarioMananaFin={data.horarioMananaFin}
       horarioTardeInicio={data.horarioTardeInicio}
       horarioTardeFin={data.horarioTardeFin}
+      precioPorClase={data.precioPorClase}
+      maxAlumnosPorClase={data.maxAlumnosPorClase}
+      horasAnticipacionMinima={data.horasAnticipacionMinima}
     />
   )
 }

@@ -11,9 +11,10 @@ import type { Pack } from '@/lib/types'
 
 type PacksSectionProps = {
   packs: Pack[]
+  renderButton?: (onClick: () => void) => React.ReactNode
 }
 
-export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
+export function PacksSection({ packs: initialPacks, renderButton }: PacksSectionProps) {
   const { showSuccess, showError } = useToast()
   const [packs, setPacks] = useState(initialPacks)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -56,15 +57,19 @@ export function PacksSection({ packs: initialPacks }: PacksSectionProps) {
 
   return (
     <>
-      <div className="packs-header">
-        <button
-          onClick={handleNew}
-          className="btn-primary btn-sm"
-        >
-          <Plus size={16} />
-          <span>Nuevo Pack</span>
-        </button>
-      </div>
+      {renderButton ? (
+        renderButton(handleNew)
+      ) : (
+        <div className="packs-header">
+          <button
+            onClick={handleNew}
+            className="btn-primary btn-sm"
+          >
+            <Plus size={16} />
+            <span>Nuevo Pack</span>
+          </button>
+        </div>
+      )}
 
       {packs.length === 0 ? (
         <p className="form-hint" style={{ margin: 0 }}>No tenés packs configurados</p>

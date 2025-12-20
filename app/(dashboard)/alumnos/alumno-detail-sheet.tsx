@@ -3,6 +3,12 @@
 import { X, Edit2, UserX, UserCheck, Trash2 } from 'lucide-react'
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
 import type { Alumno, Pack } from '@/lib/types'
+import { PACK_LABELS } from '@/lib/constants'
+
+type PaymentStatus = {
+  texto: string
+  clase: 'al-dia' | 'por-vencer' | 'vencido'
+} | null
 
 export function AlumnoDetailSheet({
   isOpen,
@@ -38,87 +44,139 @@ export function AlumnoDetailSheet({
     }
   }
 
-  // Buscar nombre del pack en la lista de packs
-  const pack = packs.find(p => p.id === alumno.packType)
-  const packLabel = pack?.nombre || (alumno.packType === 'por_clase' ? 'Por Clase' : alumno.packType)
+  // Pack label
+  const getPackLabel = () => PACK_LABELS[alumno.packType] || alumno.packType
 
-  // Calcular clases restantes
-  const tienePackConLimite = alumno.clasesPorMes && alumno.clasesPorMes > 0
-  const clasesRestantes = tienePackConLimite ? alumno.clasesPorMes! - alumno.clasesEsteMes : null
-  const sinClasesRestantes = clasesRestantes !== null && clasesRestantes <= 0
+  // Status con género
+  const getStatusText = () => {
+    if (alumno.genero === 'M') {
+      return alumno.estaActivo ? 'Activo' : 'Inactivo'
+    }
+    return alumno.estaActivo ? 'Activa' : 'Inactiva'
+  }
+
+  // Estado de pago
+  const getPaymentStatus = (): PaymentStatus => {
+    if (!alumno.estaActivo) return null
+
+    if (!alumno.proximoPagoVencimiento) {
+      return { texto: 'Al día', clase: 'al-dia' }
+    }
+
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    const vencimiento = new Date(alumno.proximoPagoVencimiento)
+    vencimiento.setHours(0, 0, 0, 0)
+    const dias = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (dias < 0) {
+      const diasAtraso = Math.abs(dias)
+      if (diasAtraso > 60) return { texto: 'Al día', clase: 'al-dia' }
+      return { texto: 'Pago atrasado', clase: 'vencido' }
+    }
+
+    if (dias === 0) {
+      return { texto: 'Vence hoy', clase: 'vencido' }
+    }
+
+    if (dias <= 7) {
+      return { texto: `Vence en ${dias}d`, clase: 'por-vencer' }
+    }
+
+    return { texto: 'Al día', clase: 'al-dia' }
+  }
+
+  // Clases restantes
+  const getClasesRestantes = () => {
+    if (!alumno.clasesPorMes) return null
+    const usadas = alumno.clasesEsteMes || 0
+    const restantes = alumno.clasesPorMes - usadas
+    if (restantes <= 0) return 'Sin clases disponibles'
+    return `${restantes} clase${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}`
+  }
+
+  const paymentStatus = getPaymentStatus()
+  const clasesRestantes = getClasesRestantes()
 
   return (
     <>
       <div className="sheet-overlay" onClick={onClose} />
       <div className="sheet-content">
-        <div className="sheet-header">
-          <button onClick={onClose} className="close-btn sheet-close">
-            <X size={20} />
-          </button>
-        </div>
+        <button onClick={onClose} className="sheet-close-btn">
+          <X size={16} />
+        </button>
 
         <div className="sheet-body">
-          {/* Header: nombre + estado */}
-          <div className="sheet-title-row">
-            <h2>{alumno.nombre}</h2>
-            <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
-              {alumno.estaActivo ? 'Activa' : 'Inactiva'}
-            </span>
+          {/* Header: avatar + info en la misma fila */}
+          <div className="detail-header">
+            <div className="detail-header-top">
+              <div className="detail-card-avatar">
+                {alumno.nombre.charAt(0).toUpperCase()}
+              </div>
+              <div className="detail-header-info">
+                <div className="detail-name-row">
+                  <span className="detail-card-nombre">{alumno.nombre}</span>
+                  {paymentStatus && (
+                    <span className={`payment-badge ${paymentStatus.clase}`}>
+                      {paymentStatus.texto}
+                    </span>
+                  )}
+                  {!alumno.estaActivo && (
+                    <span className="alumno-status-badge">{getStatusText()}</span>
+                  )}
+                </div>
+                <span className="detail-card-pack">{getPackLabel()}</span>
+                {clasesRestantes && (
+                  <span className="detail-card-clases">{clasesRestantes}</span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Bloque de info agrupada */}
-          <div className="sheet-info-block">
-            <div className="sheet-pricing">
-              <span className="sheet-price">${Number(alumno.precio).toLocaleString('es-AR')}</span>
-              <span className="sheet-pack">{packLabel}</span>
+          {/* Info adicional */}
+          <div className="detail-info-section">
+            <div className="detail-info-row">
+              <span className="detail-info-label">Precio</span>
+              <span className="detail-info-value">${Number(alumno.precio).toLocaleString('es-AR')}</span>
             </div>
-            {tienePackConLimite ? (
-              <div className={`sheet-clases-status ${sinClasesRestantes ? 'warning' : ''}`}>
-                <span className="clases-usadas">{alumno.clasesEsteMes}/{alumno.clasesPorMes} clases usadas</span>
-                {clasesRestantes !== null && clasesRestantes > 0 && (
-                  <span className="clases-restantes">{clasesRestantes} restantes</span>
-                )}
-                {sinClasesRestantes && (
-                  <span className="clases-excedidas">Sin clases disponibles</span>
-                )}
-              </div>
-            ) : (
-              <div className="sheet-meta">
-                {alumno.clasesEsteMes} clases este mes
+            <div className="detail-info-row">
+              <span className="detail-info-label">Email</span>
+              <a href={`mailto:${alumno.email}`} className="detail-info-link">{alumno.email}</a>
+            </div>
+            <div className="detail-info-row">
+              <span className="detail-info-label">Teléfono</span>
+              <a href={`tel:${alumno.telefono}`} className="detail-info-link">{alumno.telefono}</a>
+            </div>
+            {alumno.clasesPorMes && (
+              <div className="detail-info-row">
+                <span className="detail-info-label">Clases este mes</span>
+                <span className="detail-info-value">{alumno.clasesEsteMes} / {alumno.clasesPorMes}</span>
               </div>
             )}
-            <div className="sheet-divider" />
-            <div className="sheet-contact">
-              <a href={`mailto:${alumno.email}`} className="sheet-contact-item">
-                {alumno.email}
-              </a>
-              <a href={`tel:${alumno.telefono}`} className="sheet-contact-item">
-                {alumno.telefono}
-              </a>
-            </div>
           </div>
 
           {/* Patologías si hay */}
           {alumno.patologias && (
-            <p className="sheet-notes">{alumno.patologias}</p>
+            <div className="detail-notes-section">
+              <span className="detail-notes-label">Patologías / Notas</span>
+              <p className="detail-notes-text">{alumno.patologias}</p>
+            </div>
           )}
 
           {/* Acciones */}
-          <div className="sheet-actions">
-            <button onClick={onEdit} className="btn-primary sheet-action-btn">
-              <Edit2 size={18} />
+          <div className="detail-secondary-actions">
+            <button onClick={onEdit} className="detail-action-btn">
+              <Edit2 size={16} />
               <span>Editar</span>
             </button>
-            <div className="sheet-secondary-actions">
-              <button onClick={handleToggleStatus} className="sheet-link-btn">
-                {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
-                <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
-              </button>
-              <button onClick={handleDelete} className="sheet-link-btn danger">
-                <Trash2 size={16} />
-                <span>Eliminar</span>
-              </button>
-            </div>
+            <button onClick={handleToggleStatus} className="detail-action-btn">
+              {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
+              <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
+            </button>
+            <button onClick={handleDelete} className="detail-action-btn danger">
+              <Trash2 size={16} />
+              <span>Eliminar</span>
+            </button>
           </div>
         </div>
       </div>

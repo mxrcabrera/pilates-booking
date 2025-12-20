@@ -1,21 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Clock, ChevronDown, ChevronUp, ArrowRight, Users, DollarSign, AlertCircle } from 'lucide-react'
-import type { ClaseHoy } from '@/lib/types'
-import { getTurno, formatearHora } from '@/lib/utils'
-
-type ClasesPorTurno = {
-  mañana: ClaseHoy[]
-  tarde: ClaseHoy[]
-  noche: ClaseHoy[]
-}
+import { RotateCcw, Users, Calendar, ChevronRight } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
+import { changeAsistenciaAPI } from '@/lib/api'
+import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
+import type { ClaseHoy, SiguienteClase } from '@/lib/types'
+import { formatearHora } from '@/lib/utils'
 
 interface DashboardClientProps {
   clasesHoy: ClaseHoy[]
   totalAlumnos: number
-  pagosVencidos: number
+  horarioTardeInicio: string
+  maxAlumnosPorClase: number
+  siguienteClase: SiguienteClase | null
 }
 
 function getMinutosHasta(horaClase: string): number {
@@ -23,244 +22,338 @@ function getMinutosHasta(horaClase: string): number {
   const [horas, minutos] = horaClase.split(':').map(Number)
   const claseTime = new Date()
   claseTime.setHours(horas, minutos, 0, 0)
-
   const diffMs = claseTime.getTime() - ahora.getTime()
   return Math.floor(diffMs / 60000)
 }
 
-function getTimeStatus(minutosHasta: number): { text: string; isPast: boolean; isNow: boolean } {
+function getTimeStatus(minutosHasta: number): { isPast: boolean; isNow: boolean; isSoon: boolean } {
   if (minutosHasta < -60) {
-    return { text: 'Finalizada', isPast: true, isNow: false }
+    return { isPast: true, isNow: false, isSoon: false }
   } else if (minutosHasta < 0) {
-    return { text: 'En curso', isPast: false, isNow: true }
-  } else if (minutosHasta < 60) {
-    return { text: `Comienza en ${minutosHasta} min`, isPast: false, isNow: false }
-  } else {
-    const horas = Math.floor(minutosHasta / 60)
-    return { text: `En ${horas}h ${minutosHasta % 60}min`, isPast: false, isNow: false }
+    return { isPast: false, isNow: true, isSoon: false }
+  } else if (minutosHasta <= 30) {
+    return { isPast: false, isNow: false, isSoon: true }
   }
+  return { isPast: false, isNow: false, isSoon: false }
 }
 
-export function DashboardClient({ clasesHoy, totalAlumnos, pagosVencidos }: DashboardClientProps) {
-  const [expandedTurnos, setExpandedTurnos] = useState<Set<string>>(new Set())
+export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, maxAlumnosPorClase, siguienteClase }: DashboardClientProps) {
+  const { showSuccess, showError } = useToast()
+  const [clases, setClases] = useState(clasesHoy)
+  const [loadingId, setLoadingId] = useState<string | null>(null)
 
-  // Agrupar por turno
-  const clasesPorTurno: ClasesPorTurno = {
-    mañana: [],
-    tarde: [],
-    noche: []
-  }
+  // Determinar si una hora es de mañana o tarde
+  const horaTardeNum = parseInt(horarioTardeInicio.split(':')[0])
 
-  clasesHoy.forEach(clase => {
-    const hora = parseInt(clase.horaInicio.split(':')[0])
-    const turno = getTurno(hora)
-    clasesPorTurno[turno].push(clase)
-  })
+  // Calcular ocupación por turno
+  const ocupacionTurnos = useMemo(() => {
+    const manana = { alumnos: 0, capacidad: 0 }
+    const tarde = { alumnos: 0, capacidad: 0 }
 
-  // Ordenar por hora
-  Object.values(clasesPorTurno).forEach(grupo => {
-    grupo.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
-  })
-
-  // Encontrar próxima clase
-  const ahora = new Date()
-  const horaActual = ahora.getHours()
-  const minutoActual = ahora.getMinutes()
-  const tiempoActual = horaActual * 60 + minutoActual
-
-  const proximaClase = clasesHoy
-    .filter(clase => {
-      const [h, m] = clase.horaInicio.split(':').map(Number)
-      const tiempoClase = h * 60 + m
-      return tiempoClase >= tiempoActual - 60 // Incluir clases que empezaron hace menos de 1h
-    })
-    .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))[0]
-
-  const toggleTurno = (turno: string) => {
-    const newExpanded = new Set(expandedTurnos)
-    if (newExpanded.has(turno)) {
-      newExpanded.delete(turno)
-    } else {
-      newExpanded.add(turno)
+    // Agrupar clases por hora única para contar horarios
+    const horasUnicas = new Set<string>()
+    for (const clase of clases) {
+      horasUnicas.add(clase.horaInicio.slice(0, 5))
     }
-    setExpandedTurnos(newExpanded)
+
+    // Por cada hora, sumar capacidad y alumnos
+    for (const hora of horasUnicas) {
+      const horaNum = parseInt(hora.split(':')[0])
+      const esTarde = horaNum >= horaTardeNum
+      const clasesEnHora = clases.filter(c => c.horaInicio.slice(0, 5) === hora)
+      const alumnosEnHora = clasesEnHora.filter(c => c.alumno !== null).length
+
+      if (esTarde) {
+        tarde.capacidad += maxAlumnosPorClase
+        tarde.alumnos += alumnosEnHora
+      } else {
+        manana.capacidad += maxAlumnosPorClase
+        manana.alumnos += alumnosEnHora
+      }
+    }
+
+    return { manana, tarde }
+  }, [clases, horaTardeNum, maxAlumnosPorClase])
+
+  // Agrupar clases por hora, ordenando pendientes primero
+  const horasAgrupadas = useMemo(() => {
+    const grupos = new Map<string, ClaseHoy[]>()
+
+    const sorted = [...clases].sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
+
+    for (const clase of sorted) {
+      const hora = clase.horaInicio.slice(0, 5) // "09:00"
+      if (!grupos.has(hora)) {
+        grupos.set(hora, [])
+      }
+      grupos.get(hora)!.push(clase)
+    }
+
+    // Ordenar dentro de cada grupo: pendientes primero, marcados después
+    return Array.from(grupos.entries()).map(([hora, clasesGrupo]) => ({
+      hora,
+      clases: clasesGrupo.sort((a, b) => {
+        const aFinalizada = a.asistencia === 'presente' || a.asistencia === 'ausente' || a.estado === 'cancelada'
+        const bFinalizada = b.asistencia === 'presente' || b.asistencia === 'ausente' || b.estado === 'cancelada'
+        if (aFinalizada && !bFinalizada) return 1  // a va después
+        if (!aFinalizada && bFinalizada) return -1 // a va antes
+        return 0
+      })
+    }))
+  }, [clases])
+
+  // Encontrar el grupo actual/próximo
+  const currentGroupIndex = useMemo(() => {
+    for (let i = 0; i < horasAgrupadas.length; i++) {
+      const minutosHasta = getMinutosHasta(horasAgrupadas[i].hora)
+      if (minutosHasta >= -60) {
+        return i
+      }
+    }
+    return horasAgrupadas.length - 1
+  }, [horasAgrupadas])
+
+  async function handleMarcarAsistencia(claseId: string, nuevaAsistencia: 'presente' | 'ausente' | 'pendiente') {
+    setLoadingId(claseId)
+
+    // Guardar asistencia anterior para revert
+    const claseAnterior = clases.find(c => c.id === claseId)
+    const asistenciaAnterior = claseAnterior?.asistencia || 'pendiente'
+
+    // Optimistic update
+    setClases(prev => prev.map(c =>
+      c.id === claseId ? { ...c, asistencia: nuevaAsistencia } : c
+    ))
+
+    try {
+      await changeAsistenciaAPI(claseId, nuevaAsistencia)
+      const mensajes = {
+        presente: 'Presente',
+        ausente: 'Ausente',
+        pendiente: 'Desmarcado'
+      }
+      showSuccess(mensajes[nuevaAsistencia])
+      invalidateCache(CACHE_KEYS.DASHBOARD)
+      invalidateCache(CACHE_KEYS.CALENDARIO)
+    } catch (err: any) {
+      // Revert on error
+      setClases(prev => prev.map(c =>
+        c.id === claseId ? { ...c, asistencia: asistenciaAnterior } : c
+      ))
+      showError(err.message || 'Error al actualizar')
+    } finally {
+      setLoadingId(null)
+    }
   }
 
-  const getTurnoEmoji = (turno: string) => {
-    if (turno === 'mañana') return '☀️'
-    if (turno === 'tarde') return '☀️'
-    return '🌙'
-  }
+  // Contar stats (basado en asistencia, no en estado)
+  const presentes = clases.filter(c => c.asistencia === 'presente').length
+  const pendientes = clases.filter(c => c.asistencia === 'pendiente' && c.estado !== 'cancelada').length
+  const ausentes = clases.filter(c => c.asistencia === 'ausente').length
 
-  const getTurnoLabel = (turno: string) => {
-    if (turno === 'mañana') return 'Mañana'
-    if (turno === 'tarde') return 'Tarde'
-    return 'Noche'
-  }
-
-  const renderTurnoSection = (turno: 'mañana' | 'tarde' | 'noche') => {
-    const clases = clasesPorTurno[turno]
-    if (clases.length === 0) return null
-
-    const isExpanded = expandedTurnos.has(turno)
-    const visibleClases = isExpanded ? clases : clases.slice(0, 2)
-    const hasMore = clases.length > 2
+  // Función para renderizar cada clase
+  function renderClaseItem(clase: ClaseHoy, isPastGroup: boolean) {
+    const isLoading = loadingId === clase.id
+    const esPresente = clase.asistencia === 'presente'
+    const esAusente = clase.asistencia === 'ausente'
+    const esCancelada = clase.estado === 'cancelada'
+    const yaMarcada = esPresente || esAusente || esCancelada
 
     return (
-      <div key={turno} className="dashboard-turno-section">
-        <div className="dashboard-turno-header">
-          <div className="dashboard-turno-title">
-            <span className="dashboard-turno-emoji">{getTurnoEmoji(turno)}</span>
-            <h3 className="dashboard-turno-name">
-              {getTurnoLabel(turno)} ({clases.length})
-            </h3>
-          </div>
-          {hasMore && (
-            <button
-              onClick={() => toggleTurno(turno)}
-              className="dashboard-turno-toggle"
-            >
-              {isExpanded ? (
-                <>
-                  <span>Ver menos</span>
-                  <ChevronUp className="w-4 h-4" />
-                </>
-              ) : (
-                <>
-                  <span>+{clases.length - 2} más</span>
-                  <ChevronDown className="w-4 h-4" />
-                </>
-              )}
-            </button>
+      <div key={clase.id} className={`dash-clase-item ${clase.asistencia}`}>
+        <div className="dash-clase-info">
+          <span className="dash-clase-nombre">
+            {clase.alumno?.nombre || 'Disponible'}
+          </span>
+          {clase.esClasePrueba && (
+            <span className="dash-clase-tag prueba">Prueba</span>
           )}
         </div>
-
-        <div className="dashboard-clases-compact">
-          {visibleClases.map(clase => {
-            const minutosHasta = getMinutosHasta(clase.horaInicio)
-            const isProxima = proximaClase?.id === clase.id
-            const timeStatus = getTimeStatus(minutosHasta)
-
-            return (
-              <div
-                key={clase.id}
-                className={`dashboard-clase-compact ${isProxima ? 'is-next' : ''} ${timeStatus.isPast ? 'is-past' : ''}`}
+        <div className="dash-clase-actions">
+          {clase.alumno && !yaMarcada && (
+            <>
+              <button
+                className="dash-action-btn confirm"
+                onClick={() => handleMarcarAsistencia(clase.id, 'presente')}
+                disabled={isLoading}
               >
-                <div className="dashboard-clase-compact-time">
-                  {formatearHora(clase.horaInicio)}
-                </div>
-                <div className="dashboard-clase-compact-info">
-                  <div className="dashboard-clase-compact-name">
-                    {clase.alumno?.nombre || 'Disponible'}
-                  </div>
-                  {isProxima && !timeStatus.isPast && (
-                    <div className="dashboard-clase-compact-badge">
-                      {timeStatus.text}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <span className={`status-badge ${clase.estado}`}>
-                    {clase.estado === 'reservada' && 'R'}
-                    {clase.estado === 'completada' && 'C'}
-                    {clase.estado === 'cancelada' && 'X'}
-                    {clase.estado === 'ausente' && 'A'}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
+                Presente
+              </button>
+              <button
+                className="dash-action-btn absent"
+                onClick={() => handleMarcarAsistencia(clase.id, 'ausente')}
+                disabled={isLoading}
+              >
+                Ausente
+              </button>
+            </>
+          )}
+          {esPresente && (
+            <button
+              className="dash-status-btn done"
+              onClick={() => handleMarcarAsistencia(clase.id, 'pendiente')}
+              disabled={isLoading}
+              title="Desmarcar"
+            >
+              <span>Presente</span>
+              <RotateCcw size={14} />
+            </button>
+          )}
+          {esAusente && (
+            <button
+              className="dash-status-btn absent"
+              onClick={() => handleMarcarAsistencia(clase.id, 'pendiente')}
+              disabled={isLoading}
+              title="Desmarcar"
+            >
+              <span>Ausente</span>
+              <RotateCcw size={14} />
+            </button>
+          )}
+          {esCancelada && (
+            <span className="dash-status-label cancelled">Cancelada</span>
+          )}
         </div>
       </div>
     )
   }
 
-  if (clasesHoy.length === 0) {
-    return null
-  }
+  // Calcular porcentajes de ocupación
+  const porcentajeManana = ocupacionTurnos.manana.capacidad > 0
+    ? Math.round((ocupacionTurnos.manana.alumnos / ocupacionTurnos.manana.capacidad) * 100)
+    : 0
+  const porcentajeTarde = ocupacionTurnos.tarde.capacidad > 0
+    ? Math.round((ocupacionTurnos.tarde.alumnos / ocupacionTurnos.tarde.capacidad) * 100)
+    : 0
 
   return (
-    <div className="dashboard-agenda-section">
-      {/* Stats Cards */}
-      <div className="dashboard-stats-grid">
-        <Link href="/alumnos" className="dashboard-stat-card">
-          <Users className="w-5 h-5" style={{ color: 'rgba(139, 92, 246, 0.9)' }} />
-          <div className="dashboard-stat-value">{totalAlumnos}</div>
-          <div className="dashboard-stat-label">Alumnos</div>
-        </Link>
-
-        <Link href="/pagos" className={`dashboard-stat-card ${pagosVencidos > 0 ? 'has-alert' : ''}`}>
-          <DollarSign className="w-5 h-5" style={{ color: pagosVencidos > 0 ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)' }} />
-          <div className="dashboard-stat-value">{pagosVencidos}</div>
-          <div className="dashboard-stat-label">Pagos vencidos</div>
-          {pagosVencidos > 0 && <AlertCircle className="dashboard-stat-alert" />}
-        </Link>
-      </div>
-
-      {/* Next Up Card */}
-      {proximaClase && (
-        <div className="dashboard-next-card">
-          <div className="dashboard-next-header">
-            <Clock className="w-5 h-5" />
-            <span className="dashboard-next-label">
-              {getTimeStatus(getMinutosHasta(proximaClase.horaInicio)).isNow ? 'EN CURSO' : 'PRÓXIMA CLASE'}
-            </span>
-          </div>
-
-          <div className="dashboard-next-time">
-            {formatearHora(proximaClase.horaInicio)}
-          </div>
-
-          <div className="dashboard-next-alumno">
-            {proximaClase.alumno?.nombre || 'Disponible'}
-          </div>
-
-          {proximaClase.esClasePrueba && (
-            <div className="dashboard-next-badge-prueba">
-              Clase de prueba
+    <div className="dash-content">
+      {/* Tarjetas de ocupación por turno */}
+      <div className="dash-resumen">
+        {ocupacionTurnos.manana.capacidad > 0 && (
+          <div className="dash-turno-card manana">
+            <div className="dash-turno-header">
+              <span className="dash-turno-label">Mañana</span>
+              <span className="dash-turno-ocupacion">
+                {ocupacionTurnos.manana.alumnos}/{ocupacionTurnos.manana.capacidad}
+              </span>
             </div>
-          )}
-
-          <div className="dashboard-next-countdown">
-            {getTimeStatus(getMinutosHasta(proximaClase.horaInicio)).text}
-          </div>
-        </div>
-      )}
-
-      {/* Resumen Pills */}
-      <div className="dashboard-turnos-pills">
-        {clasesPorTurno.mañana.length > 0 && (
-          <div className="dashboard-turno-pill">
-            <span className="dashboard-pill-emoji">☀️</span>
-            <span className="dashboard-pill-count">{clasesPorTurno.mañana.length}</span>
+            <div className="dash-turno-bar">
+              <div
+                className="dash-turno-bar-fill"
+                style={{ width: `${porcentajeManana}%` }}
+              />
+            </div>
           </div>
         )}
-        {clasesPorTurno.tarde.length > 0 && (
-          <div className="dashboard-turno-pill">
-            <span className="dashboard-pill-emoji">☀️</span>
-            <span className="dashboard-pill-count">{clasesPorTurno.tarde.length}</span>
-          </div>
-        )}
-        {clasesPorTurno.noche.length > 0 && (
-          <div className="dashboard-turno-pill">
-            <span className="dashboard-pill-emoji">🌙</span>
-            <span className="dashboard-pill-count">{clasesPorTurno.noche.length}</span>
+        {ocupacionTurnos.tarde.capacidad > 0 && (
+          <div className="dash-turno-card tarde">
+            <div className="dash-turno-header">
+              <span className="dash-turno-label">Tarde</span>
+              <span className="dash-turno-ocupacion">
+                {ocupacionTurnos.tarde.alumnos}/{ocupacionTurnos.tarde.capacidad}
+              </span>
+            </div>
+            <div className="dash-turno-bar">
+              <div
+                className="dash-turno-bar-fill"
+                style={{ width: `${porcentajeTarde}%` }}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Turnos Sections */}
-      <div className="dashboard-turnos-list">
-        {renderTurnoSection('mañana')}
-        {renderTurnoSection('tarde')}
-        {renderTurnoSection('noche')}
+      {/* Stats inline */}
+      <div className="dash-stats-inline">
+        <span className="dash-stat-pill">
+          <strong>{clases.length}</strong> clases
+        </span>
+        <span className="dash-stat-pill success">
+          <strong>{presentes}</strong> presentes
+        </span>
+        {pendientes > 0 && (
+          <span className="dash-stat-pill">
+            <strong>{pendientes}</strong> pendientes
+          </span>
+        )}
+        {ausentes > 0 && (
+          <span className="dash-stat-pill warning">
+            <strong>{ausentes}</strong> ausentes
+          </span>
+        )}
       </div>
 
-      {/* Ver día completo */}
-      <Link href="/calendario" className="dashboard-view-all">
-        <span>Ver día completo</span>
-        <ArrowRight className="w-4 h-4" />
-      </Link>
+      {/* Clase actual/próxima */}
+      {horasAgrupadas.length > 0 && currentGroupIndex < horasAgrupadas.length && (() => {
+        const grupo = horasAgrupadas[currentGroupIndex]
+        const minutosHasta = getMinutosHasta(grupo.hora)
+        const { isNow, isSoon } = getTimeStatus(minutosHasta)
+
+        return (
+          <div className={`dash-hora-group current ${isNow ? 'now' : ''} ${isSoon ? 'soon' : ''}`}>
+            <div className="dash-hora-header">
+              <span className="dash-hora-time">{formatearHora(grupo.hora)}</span>
+              {isNow && <span className="dash-hora-badge now">En curso</span>}
+              {isSoon && !isNow && <span className="dash-hora-badge soon">Próxima</span>}
+            </div>
+            <div className="dash-hora-clases">
+              {grupo.clases.map(clase => renderClaseItem(clase, false))}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Siguiente clase (hoy o mañana) */}
+      {(() => {
+        // Buscar siguiente clase de hoy (después de la actual)
+        const nextGroupIndex = currentGroupIndex + 1
+        const hayMasHoy = nextGroupIndex < horasAgrupadas.length
+
+        if (hayMasHoy) {
+          const grupo = horasAgrupadas[nextGroupIndex]
+          const cantAlumnos = grupo.clases.filter(c => c.alumno !== null).length
+          return (
+            <>
+              <div className="dash-section-header">Siguiente</div>
+              <div className="dash-siguiente-card">
+                <div className="dash-siguiente-info">
+                  <span className="dash-siguiente-hora">{formatearHora(grupo.hora)}</span>
+                  <span className="dash-siguiente-alumnos">{cantAlumnos} {cantAlumnos === 1 ? 'alumno' : 'alumnos'}</span>
+                </div>
+              </div>
+            </>
+          )
+        } else if (siguienteClase) {
+          return (
+            <>
+              <div className="dash-section-header">Siguiente</div>
+              <div className="dash-siguiente-card tomorrow">
+                <div className="dash-siguiente-info">
+                  <span className="dash-siguiente-hora">{formatearHora(siguienteClase.hora)}</span>
+                  <span className="dash-siguiente-alumnos">{siguienteClase.cantAlumnos} {siguienteClase.cantAlumnos === 1 ? 'alumno' : 'alumnos'}</span>
+                  <span className="dash-siguiente-dia">Mañana</span>
+                </div>
+              </div>
+            </>
+          )
+        }
+        return null
+      })()}
+
+      {/* Quick Links */}
+      <div className="dash-quick-links">
+        <Link href="/alumnos" className="dash-quick-link">
+          <Users size={18} />
+          <span>{totalAlumnos} alumnos</span>
+          <ChevronRight size={16} />
+        </Link>
+        <Link href="/calendario" className="dash-quick-link">
+          <Calendar size={18} />
+          <span>Ver calendario completo</span>
+          <ChevronRight size={16} />
+        </Link>
+      </div>
     </div>
   )
 }

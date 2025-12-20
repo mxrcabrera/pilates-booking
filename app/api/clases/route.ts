@@ -27,6 +27,9 @@ export async function GET() {
         horarioMananaFin: true,
         horarioTardeInicio: true,
         horarioTardeFin: true,
+        precioPorClase: true,
+        maxAlumnosPorClase: true,
+        horasAnticipacionMinima: true,
         _count: {
           select: {
             horariosDisponibles: true,
@@ -38,10 +41,14 @@ export async function GET() {
     })
 
     // Check preferences inline (sin query adicional)
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+    }
+
     const missingFields: string[] = []
-    if (!user || user._count.packs === 0) missingFields.push('Al menos un Pack')
-    if (!user || user._count.horariosDisponibles === 0) missingFields.push('Al menos un Horario')
-    if (!user || user._count.alumnos === 0) missingFields.push('Al menos un Alumno')
+    if (user._count.packs === 0) missingFields.push('Al menos un Pack')
+    if (user._count.horariosDisponibles === 0) missingFields.push('Al menos un Horario')
+    if (user._count.alumnos === 0) missingFields.push('Al menos un Alumno')
 
     if (missingFields.length > 0) {
       return NextResponse.json({
@@ -61,7 +68,7 @@ export async function GET() {
     }
 
     // Queries de datos en paralelo
-    const [clases, alumnos] = await Promise.all([
+    const [clases, alumnos, packs] = await Promise.all([
       prisma.clase.findMany({
         where: {
           profesorId: { in: profesorIds },
@@ -73,13 +80,20 @@ export async function GET() {
           horaInicio: true,
           horaRecurrente: true,
           estado: true,
+          asistencia: true,
           esClasePrueba: true,
           esRecurrente: true,
           frecuenciaSemanal: true,
           diasSemana: true,
           profesorId: true,
           alumnoId: true,
-          alumno: { select: { id: true, nombre: true } },
+          alumno: {
+            select: {
+              id: true,
+              nombre: true,
+              clasesPorMes: true
+            }
+          },
           profesor: { select: { id: true, nombre: true } }
         },
         orderBy: { horaInicio: 'asc' }
@@ -88,22 +102,45 @@ export async function GET() {
         where: { profesorId: userId, estaActivo: true },
         select: { id: true, nombre: true },
         orderBy: { nombre: 'asc' }
+      }),
+      prisma.pack.findMany({
+        where: { profesorId: userId },
+        select: { id: true, nombre: true, clasesPorSemana: true, precio: true },
+        orderBy: { clasesPorSemana: 'asc' }
       })
     ])
 
+    // Calcular clases usadas este mes por alumno
+    const now = new Date()
+    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
+    const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+
+    const clasesUsadasPorAlumno: Record<string, number> = {}
+    clases.forEach(clase => {
+      if (clase.alumnoId && clase.fecha >= inicioMes && clase.fecha <= finMes &&
+          (clase.estado === 'completada' || clase.estado === 'reservada')) {
+        clasesUsadasPorAlumno[clase.alumnoId] = (clasesUsadasPorAlumno[clase.alumnoId] || 0) + 1
+      }
+    })
+
     const clasesNormalizadas = clases.map(clase => ({
       ...clase,
-      fecha: new Date(clase.fecha.getTime() + clase.fecha.getTimezoneOffset() * 60000).toISOString()
+      fecha: clase.fecha.toISOString(),
+      clasesUsadasEsteMes: clase.alumnoId ? clasesUsadasPorAlumno[clase.alumnoId] || 0 : 0
     }))
 
     return NextResponse.json({
       clases: clasesNormalizadas,
       alumnos,
+      packs,
       currentUserId: userId,
       horarioMananaInicio: user.horarioMananaInicio || '08:00',
       horarioMananaFin: user.horarioMananaFin || '14:00',
       horarioTardeInicio: user.horarioTardeInicio || '17:00',
-      horarioTardeFin: user.horarioTardeFin || '22:00'
+      horarioTardeFin: user.horarioTardeFin || '22:00',
+      precioPorClase: user.precioPorClase?.toString() || '0',
+      maxAlumnosPorClase: user.maxAlumnosPorClase || 3,
+      horasAnticipacionMinima: user.horasAnticipacionMinima || 1
     })
   } catch (error: any) {
     console.error('Clases GET error:', error)
@@ -140,12 +177,15 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
         }
 
-        const { alumnoId, horaInicio, horaRecurrente: horaRecurrenteInput, esClasePrueba, esRecurrente, frecuenciaSemanal: frecuenciaSemanalStr, diasSemana: diasSemanaStr, fecha: fechaStr } = data
+        const { alumnoIds, horaInicio, horaRecurrente: horaRecurrenteInput, esClasePrueba, esRecurrente, frecuenciaSemanal: frecuenciaSemanalStr, diasSemana: diasSemanaStr, fecha: fechaStr } = data
         const horaRecurrente = horaRecurrenteInput || horaInicio
         const frecuenciaSemanal = esRecurrente ? parseInt(frecuenciaSemanalStr) : null
         const diasSemana = diasSemanaStr ? (typeof diasSemanaStr === 'string' ? JSON.parse(diasSemanaStr) : diasSemanaStr) : []
 
-        const fecha = new Date(fechaStr + 'T12:00:00.000Z')
+        // Asegurar que alumnoIds es un array
+        const alumnosArray: string[] = Array.isArray(alumnoIds) ? alumnoIds : []
+
+        const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
         // Validar que la clase sea al menos X horas en el futuro
         const [hora, minuto] = horaInicio.split(':').map(Number)
@@ -204,7 +244,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Validar cantidad de clases en el mismo horario (una sola query)
+        // Validar cantidad de clases en el mismo horario
         const clasesEnMismoHorario = await prisma.clase.count({
           where: {
             profesorId: userId,
@@ -214,86 +254,96 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        if (clasesEnMismoHorario >= user.maxAlumnosPorClase) {
-          return NextResponse.json({ error: `Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos` }, { status: 400 })
+        const espaciosDisponibles = user.maxAlumnosPorClase - clasesEnMismoHorario
+        if (alumnosArray.length > espaciosDisponibles) {
+          return NextResponse.json({
+            error: espaciosDisponibles === 0
+              ? `Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`
+              : `Solo hay ${espaciosDisponibles} lugar(es) disponible(s) en este horario`
+          }, { status: 400 })
         }
 
-        const claseCreada = await prisma.clase.create({
-          data: {
-            profesorId: userId,
-            alumnoId: alumnoId || null,
-            fecha,
-            horaInicio,
-            horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
-            esClasePrueba,
-            esRecurrente,
-            frecuenciaSemanal,
-            diasSemana,
-            estado: 'reservada'
-          },
-          include: {
-            alumno: { select: { id: true, nombre: true } },
-            profesor: { select: { id: true, nombre: true } }
-          }
-        })
-
-        // Sincronizar con Google Calendar en background (fire-and-forget)
-        if (user.syncGoogleCalendar) {
-          auth().then(session => {
-            if (session && (session as any).accessToken) {
-              createCalendarEvent(
-                claseCreada.id,
-                (session as any).accessToken,
-                (session as any).refreshToken
-              ).then(eventId => {
-                prisma.clase.update({
-                  where: { id: claseCreada.id },
-                  data: { googleEventId: eventId }
-                }).catch(err => console.error('Error guardando eventId:', err))
-              }).catch(err => console.error('Error creando evento en Google Calendar:', err))
+        // Crear una clase por cada alumno seleccionado
+        const clasesCreadas = []
+        for (const alumnoId of alumnosArray) {
+          const claseCreada = await prisma.clase.create({
+            data: {
+              profesorId: userId,
+              alumnoId: alumnoId || null,
+              fecha,
+              horaInicio,
+              horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
+              esClasePrueba,
+              esRecurrente,
+              frecuenciaSemanal,
+              diasSemana,
+              estado: 'reservada'
+            },
+            include: {
+              alumno: { select: { id: true, nombre: true } },
+              profesor: { select: { id: true, nombre: true } }
             }
-          }).catch(err => console.error('Error obteniendo sesión:', err))
-        }
+          })
+          clasesCreadas.push(claseCreada)
 
-        // Crear clases recurrentes
-        if (esRecurrente && diasSemana.length > 0) {
-          const clasesACrear: any[] = []
-          const diaInicialSeleccionado = fecha.getUTCDay()
+          // Sincronizar con Google Calendar en background (fire-and-forget)
+          if (user.syncGoogleCalendar) {
+            auth().then(session => {
+              if (session && (session as any).accessToken) {
+                createCalendarEvent(
+                  claseCreada.id,
+                  (session as any).accessToken,
+                  (session as any).refreshToken
+                ).then(eventId => {
+                  prisma.clase.update({
+                    where: { id: claseCreada.id },
+                    data: { googleEventId: eventId }
+                  }).catch(err => console.error('Error guardando eventId:', err))
+                }).catch(err => console.error('Error creando evento en Google Calendar:', err))
+              }
+            }).catch(err => console.error('Error obteniendo sesión:', err))
+          }
 
-          for (const diaSeleccionado of diasSemana) {
-            let diasHastaProximoDia = diaSeleccionado - diaInicialSeleccionado
-            if (diasHastaProximoDia <= 0) diasHastaProximoDia += 7
+          // Crear clases recurrentes para este alumno
+          if (esRecurrente && diasSemana.length > 0) {
+            const clasesACrear: any[] = []
+            const diaInicialSeleccionado = fecha.getUTCDay()
 
-            const primeraOcurrencia = new Date(fecha)
-            primeraOcurrencia.setUTCDate(fecha.getUTCDate() + diasHastaProximoDia)
+            for (const diaSeleccionado of diasSemana) {
+              let diasHastaProximoDia = diaSeleccionado - diaInicialSeleccionado
+              if (diasHastaProximoDia <= 0) diasHastaProximoDia += 7
 
-            for (let i = 0; i < 8; i++) {
-              const fechaClase = addWeeks(primeraOcurrencia, i)
+              const primeraOcurrencia = new Date(fecha)
+              primeraOcurrencia.setUTCDate(fecha.getUTCDate() + diasHastaProximoDia)
 
-              clasesACrear.push({
-                profesorId: userId,
-                alumnoId: alumnoId || null,
-                fecha: fechaClase,
-                horaInicio: horaRecurrente,
-                horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
-                esClasePrueba,
-                esRecurrente: true,
-                frecuenciaSemanal,
-                diasSemana,
-                estado: 'reservada'
+              for (let i = 0; i < 8; i++) {
+                const fechaClase = addWeeks(primeraOcurrencia, i)
+
+                clasesACrear.push({
+                  profesorId: userId,
+                  alumnoId: alumnoId || null,
+                  fecha: fechaClase,
+                  horaInicio: horaRecurrente,
+                  horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
+                  esClasePrueba,
+                  esRecurrente: true,
+                  frecuenciaSemanal,
+                  diasSemana,
+                  estado: 'reservada'
+                })
+              }
+            }
+
+            if (clasesACrear.length > 0) {
+              await prisma.clase.createMany({
+                data: clasesACrear,
+                skipDuplicates: true
               })
             }
           }
-
-          if (clasesACrear.length > 0) {
-            await prisma.clase.createMany({
-              data: clasesACrear,
-              skipDuplicates: true
-            })
-          }
         }
 
-        return NextResponse.json({ success: true, clase: claseCreada })
+        return NextResponse.json({ success: true, clases: clasesCreadas })
       }
 
       case 'update': {
@@ -319,7 +369,7 @@ export async function POST(request: NextRequest) {
         const frecuenciaSemanal = esRecurrente ? parseInt(frecuenciaSemanalStr) : null
         const diasSemana = diasSemanaStr ? (typeof diasSemanaStr === 'string' ? JSON.parse(diasSemanaStr) : diasSemanaStr) : []
 
-        const fecha = new Date(fechaStr + 'T12:00:00.000Z')
+        const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
         // Validar que la clase sea al menos X horas en el futuro
         const [hora, minuto] = horaInicio.split(':').map(Number)
@@ -483,6 +533,23 @@ export async function POST(request: NextRequest) {
         await prisma.clase.update({
           where: { id },
           data: { estado }
+        })
+
+        return NextResponse.json({ success: true })
+      }
+
+      case 'changeAsistencia': {
+        const { id, asistencia } = data
+
+        // Cuando marcamos asistencia, también completamos la clase
+        const nuevoEstado = asistencia === 'pendiente' ? 'reservada' : 'completada'
+
+        await prisma.clase.update({
+          where: { id },
+          data: {
+            asistencia,
+            estado: nuevoEstado
+          }
         })
 
         return NextResponse.json({ success: true })

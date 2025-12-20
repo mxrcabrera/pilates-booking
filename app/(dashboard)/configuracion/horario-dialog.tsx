@@ -290,7 +290,16 @@ export function HorarioDialog({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="modal-mobile">
           <DialogHeader>
-            <DialogTitle>{horario ? 'Editar Horario' : 'Nuevo Horario'}</DialogTitle>
+            <DialogTitle>
+              {horario ? (
+                <span className="dialog-title-with-badge">
+                  Editar Horario
+                  <span className="dialog-title-badge">
+                    {DIAS_INDIVIDUALES.find(d => d.value === horario.diaSemana)?.label}
+                  </span>
+                </span>
+              ) : 'Nuevo Horario'}
+            </DialogTitle>
           </DialogHeader>
 
           {error && (
@@ -358,15 +367,6 @@ export function HorarioDialog({
 
             {horario && (
               <>
-                <div className="form-group">
-                  <label>Día</label>
-                  <SelectInput name="diaSemana" defaultValue={horario.diaSemana.toString()} disabled>
-                    {DIAS_INDIVIDUALES.map(dia => (
-                      <option key={dia.value} value={dia.value}>{dia.label}</option>
-                    ))}
-                  </SelectInput>
-                </div>
-
                 <div className="form-group">
                   <label>Turno</label>
                   <div className="turno-grid">

@@ -147,7 +147,7 @@ export async function deleteAlumnoAPI(id: string) {
 
 // Clases
 export async function createClaseAPI(data: {
-  alumnoId?: string
+  alumnoIds: string[]
   horaInicio: string
   horaRecurrente?: string
   esClasePrueba: boolean
@@ -180,6 +180,10 @@ export async function deleteClaseAPI(id: string) {
 
 export async function changeClaseStatusAPI(id: string, estado: string) {
   return apiCallTo('/api/clases', 'changeStatus', { id, estado })
+}
+
+export async function changeAsistenciaAPI(id: string, asistencia: string) {
+  return apiCallTo('/api/clases', 'changeAsistencia', { id, asistencia })
 }
 
 // Pagos

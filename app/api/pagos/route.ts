@@ -58,11 +58,52 @@ export async function GET(request: NextRequest) {
       orderBy: { fechaVencimiento: 'desc' }
     })
 
+    // Obtener clases completadas por alumno/mes para calcular progreso
+    const clasesCompletadasMap = new Map<string, number>()
+
+    for (const pago of pagosRaw) {
+      if (pago.tipoPago === 'mensual' && pago.clasesEsperadas) {
+        // Parsear el mes del pago (formato "YYYY-MM" o "Mes YYYY")
+        let year: number, month: number
+        const matchYYYYMM = pago.mesCorrespondiente.match(/^(\d{4})-(\d{2})$/)
+        if (matchYYYYMM) {
+          year = parseInt(matchYYYYMM[1])
+          month = parseInt(matchYYYYMM[2])
+        } else {
+          // Formato "Mes YYYY" - parsear
+          const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+          const parts = pago.mesCorrespondiente.toLowerCase().split(' ')
+          month = meses.indexOf(parts[0]) + 1
+          year = parseInt(parts[1])
+        }
+
+        if (year && month) {
+          const startDate = new Date(year, month - 1, 1)
+          const endDate = new Date(year, month, 0) // Último día del mes
+
+          const clasesCount = await prisma.clase.count({
+            where: {
+              alumnoId: pago.alumnoId,
+              fecha: {
+                gte: startDate,
+                lte: endDate
+              },
+              estado: 'completada'
+            }
+          })
+
+          clasesCompletadasMap.set(`${pago.alumnoId}-${pago.mesCorrespondiente}`, clasesCount)
+        }
+      }
+    }
+
     const pagos = pagosRaw.map(p => ({
       ...p,
       monto: p.monto.toString(),
       fechaPago: p.fechaPago?.toISOString() || null,
-      fechaVencimiento: p.fechaVencimiento.toISOString()
+      fechaVencimiento: p.fechaVencimiento.toISOString(),
+      clasesCompletadas: clasesCompletadasMap.get(`${p.alumnoId}-${p.mesCorrespondiente}`) || 0
     }))
 
     // Obtener alumnos activos para el formulario
@@ -106,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'create': {
-        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente } = data
+        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas } = data
 
         // Verificar que el alumno pertenece al profesor
         const alumno = await prisma.alumno.findFirst({
@@ -117,13 +158,22 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Alumno no encontrado' }, { status: 404 })
         }
 
+        // Si no se especifica tipoPago, determinar basado en packType del alumno
+        const finalTipoPago = tipoPago || (alumno.packType === 'clase' ? 'clase' : 'mensual')
+        // Si es mensual y no se pasan clasesEsperadas, usar clasesPorMes del alumno
+        const finalClasesEsperadas = finalTipoPago === 'mensual'
+          ? (clasesEsperadas || alumno.clasesPorMes)
+          : null
+
         const pago = await prisma.pago.create({
           data: {
             alumnoId,
             monto,
             fechaVencimiento: new Date(fechaVencimiento),
             mesCorrespondiente,
-            estado: 'pendiente'
+            estado: 'pendiente',
+            tipoPago: finalTipoPago,
+            clasesEsperadas: finalClasesEsperadas
           },
           include: {
             alumno: {
@@ -136,7 +186,15 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        return NextResponse.json({ pago })
+        return NextResponse.json({
+          pago: {
+            ...pago,
+            monto: pago.monto.toString(),
+            fechaPago: null,
+            fechaVencimiento: pago.fechaVencimiento.toISOString(),
+            clasesCompletadas: 0
+          }
+        })
       }
 
       case 'marcarPagado': {

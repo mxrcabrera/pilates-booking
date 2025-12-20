@@ -1,17 +1,23 @@
 'use client'
 
-import { MoreVertical, Edit2, Trash2, UserX, UserCheck, Eye } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { Edit2, Trash2 } from 'lucide-react'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
+
+type PaymentStatus = {
+  texto: string
+  clase: 'al-dia' | 'por-vencer' | 'vencido'
+} | null
 
 export function AlumnoCard({
   alumno,
   onEdit,
   onView,
   onDelete,
-  onToggleStatus,
-  viewMode = 'list'
+  viewMode = 'list',
+  selectionMode = false,
+  isSelected = false,
+  onToggleSelection
 }: {
   alumno: Alumno
   onEdit: () => void
@@ -19,11 +25,10 @@ export function AlumnoCard({
   onDelete: () => void
   onToggleStatus: () => void
   viewMode?: 'list' | 'grid'
+  selectionMode?: boolean
+  isSelected?: boolean
+  onToggleSelection?: () => void
 }) {
-  const [showMenu, setShowMenu] = useState(false)
-  const menuButtonRef = useRef<HTMLButtonElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
   const getPackLabel = () => PACK_LABELS[alumno.packType] || alumno.packType
 
   // Status con género
@@ -34,10 +39,14 @@ export function AlumnoCard({
     return alumno.estaActivo ? 'Activa' : 'Inactiva'
   }
 
-  // Días para próximo pago
-  const getDiasPago = () => {
+  // Estado de pago - más descriptivo
+  const getPaymentStatus = (): PaymentStatus => {
     if (!alumno.estaActivo) return null
-    if (!alumno.proximoPagoVencimiento) return null
+
+    // Si no hay próximo pago pendiente = está al día
+    if (!alumno.proximoPagoVencimiento) {
+      return { texto: 'Al día', clase: 'al-dia' }
+    }
 
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
@@ -45,177 +54,156 @@ export function AlumnoCard({
     vencimiento.setHours(0, 0, 0, 0)
     const dias = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
 
+    // Vencido (pasó la fecha)
     if (dias < 0) {
-      return { texto: `${Math.abs(dias)}d atraso`, clase: 'vencido' }
-    } else if (dias === 0) {
-      return { texto: 'Hoy', clase: 'hoy' }
-    } else if (dias <= 7) {
-      return { texto: `${dias}d`, clase: 'proximo' }
-    }
-    return { texto: `${dias}d`, clase: 'tranquilo' }
-  }
-
-  const diasPago = getDiasPago()
-
-  // Listener global para cerrar menu
-  useEffect(() => {
-    if (!showMenu) return
-
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node
-
-      if (
-        menuButtonRef.current && !menuButtonRef.current.contains(target) &&
-        dropdownRef.current && !dropdownRef.current.contains(target)
-      ) {
-        setShowMenu(false)
-      }
+      const diasAtraso = Math.abs(dias)
+      // Más de 60 días = datos incorrectos, mostrar al día
+      if (diasAtraso > 60) return { texto: 'Al día', clase: 'al-dia' }
+      return { texto: 'Pago atrasado', clase: 'vencido' }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showMenu])
-
-  // Cerrar con ESC
-  useEffect(() => {
-    if (!showMenu) return
-
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowMenu(false)
+    // Vence hoy
+    if (dias === 0) {
+      return { texto: 'Vence hoy', clase: 'vencido' }
     }
 
-    document.addEventListener('keydown', handleEsc)
-    return () => document.removeEventListener('keydown', handleEsc)
-  }, [showMenu])
+    // Por vencer (próximos 7 días)
+    if (dias <= 7) {
+      return { texto: `Vence en ${dias}d`, clase: 'por-vencer' }
+    }
 
-  const handleToggleStatus = () => {
-    setShowMenu(false)
-    onToggleStatus()
+    // Falta más de 7 días = al día
+    return { texto: 'Al día', clase: 'al-dia' }
   }
 
-  const handleDelete = () => {
-    setShowMenu(false)
-    onDelete()
+  // Clases restantes del mes
+  const getClasesRestantes = () => {
+    if (!alumno.clasesPorMes) return null
+    const usadas = alumno.clasesEsteMes || 0
+    const restantes = alumno.clasesPorMes - usadas
+    if (restantes <= 0) return null
+    return `${restantes} clase${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}`
   }
+
+  const paymentStatus = getPaymentStatus()
+  const clasesRestantes = getClasesRestantes()
 
   // Vista LISTA
   if (viewMode === 'list') {
     return (
-      <>
-        {showMenu && (
-          <div className="dropdown-overlay" onClick={() => setShowMenu(false)} />
+      <div
+        className={`alumno-row ${!alumno.estaActivo ? 'inactive' : ''} ${isSelected ? 'selected' : ''}`}
+        onClick={selectionMode ? onToggleSelection : onView}
+      >
+        {selectionMode && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggleSelection}
+            className="compact-checkbox"
+            onClick={(e) => e.stopPropagation()}
+          />
         )}
-        <div
-          className={`alumno-list-item-final ${showMenu ? 'menu-active' : ''}`}
-        >
-          <div className="alumno-list-top-row">
-            <div className="alumno-list-nombre">
-              <h3>{alumno.nombre}</h3>
-              {diasPago && (
-                <span className={`dias-pago-badge ${diasPago.clase}`}>{diasPago.texto}</span>
-              )}
-            </div>
-            <div className="alumno-list-actions">
-              <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
-                {getStatusText()}
-              </span>
-              <button
-                ref={menuButtonRef}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowMenu(!showMenu)
-                }}
-                className="menu-btn-top"
-              >
-                <MoreVertical size={18} />
-              </button>
-            </div>
+        <div className="alumno-row-info">
+          <div className="alumno-row-main">
+            <span className="alumno-row-nombre">{alumno.nombre}</span>
+            {!alumno.estaActivo && (
+              <span className="alumno-status-badge">{getStatusText()}</span>
+            )}
           </div>
-
-          {showMenu && (
-            <div ref={dropdownRef} className="dropdown-menu-fixed">
-              <button onClick={() => { onView(); setShowMenu(false); }}>
-                <Eye size={16} />
-                <span>Ver detalle</span>
+          <div className="alumno-row-details">
+            <span className="alumno-row-pack">{getPackLabel()}</span>
+            {clasesRestantes && (
+              <span className="alumno-row-clases">{clasesRestantes}</span>
+            )}
+          </div>
+        </div>
+        <div className="alumno-row-right">
+          {paymentStatus && (
+            <span className={`payment-badge ${paymentStatus.clase}`}>
+              {paymentStatus.texto}
+            </span>
+          )}
+          {!selectionMode && (
+            <div className="alumno-row-actions">
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                className="btn-icon-sm"
+                title="Editar"
+              >
+                <Edit2 size={14} />
               </button>
-              <button onClick={() => { onEdit(); setShowMenu(false); }}>
-                <Edit2 size={16} />
-                <span>Editar</span>
-              </button>
-              <button onClick={handleToggleStatus}>
-                {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
-                <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
-              </button>
-              <button onClick={handleDelete} className="danger">
-                <Trash2 size={16} />
-                <span>Eliminar</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="btn-icon-sm danger"
+                title="Eliminar"
+              >
+                <Trash2 size={14} />
               </button>
             </div>
           )}
         </div>
-      </>
+      </div>
     )
   }
 
   // Vista GRID
   return (
-    <>
-      {showMenu && (
-        <div className="dropdown-overlay" onClick={() => setShowMenu(false)} />
+    <div
+      className={`alumno-card-grid ${!alumno.estaActivo ? 'inactive' : ''} ${isSelected ? 'selected' : ''}`}
+      onClick={selectionMode ? onToggleSelection : onView}
+    >
+      {selectionMode && (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelection}
+          className="compact-checkbox alumno-card-checkbox"
+          onClick={(e) => e.stopPropagation()}
+        />
       )}
-      <div className={`alumno-card ${showMenu ? 'menu-active' : ''}`}>
-        <div className="alumno-header">
-          <div className="alumno-avatar">
-            {alumno.nombre.charAt(0).toUpperCase()}
-          </div>
-          <div className="alumno-info">
-            <h3>{alumno.nombre}</h3>
-            <span className={`status-badge ${alumno.estaActivo ? 'active' : 'inactive'}`}>
-              {getStatusText()}
-            </span>
-          </div>
-          <div className="alumno-menu">
+
+      <div className="alumno-card-top">
+        <div className="alumno-card-avatar">
+          {alumno.nombre.charAt(0).toUpperCase()}
+        </div>
+        {!selectionMode && (
+          <div className="alumno-card-actions">
             <button
-              ref={menuButtonRef}
-              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-              className="btn-icon-xs"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="btn-icon-sm"
+              title="Editar"
             >
-              <MoreVertical size={16} />
+              <Edit2 size={14} />
             </button>
-            {showMenu && (
-              <div ref={dropdownRef} className="dropdown-menu-fixed">
-                <button onClick={() => { onView(); setShowMenu(false); }}>
-                  <Eye size={16} />
-                  <span>Ver detalle</span>
-                </button>
-                <button onClick={() => { onEdit(); setShowMenu(false); }}>
-                  <Edit2 size={16} />
-                  <span>Editar</span>
-                </button>
-                <button onClick={handleToggleStatus}>
-                  {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
-                  <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
-                </button>
-                <button onClick={handleDelete} className="danger">
-                  <Trash2 size={16} />
-                  <span>Eliminar</span>
-                </button>
-              </div>
-            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="btn-icon-sm danger"
+              title="Eliminar"
+            >
+              <Trash2 size={14} />
+            </button>
           </div>
-        </div>
-        <div className="alumno-details">
-          <div className="detail-row">
-            <span>{alumno.email}</span>
-          </div>
-          <div className="detail-row">
-            <span>{alumno.telefono}</span>
-          </div>
-          <div className="pack-info">
-            <span className="pack-badge">{getPackLabel()}</span>
-          </div>
-        </div>
+        )}
       </div>
-    </>
+
+      <div className="alumno-card-body">
+        <span className="alumno-card-nombre">{alumno.nombre}</span>
+        <span className="alumno-card-pack">{getPackLabel()}</span>
+        {clasesRestantes && (
+          <span className="alumno-card-clases">{clasesRestantes}</span>
+        )}
+      </div>
+
+      <div className="alumno-card-footer">
+        {paymentStatus ? (
+          <span className={`payment-badge ${paymentStatus.clase}`}>
+            {paymentStatus.texto}
+          </span>
+        ) : (
+          <span className="alumno-status-badge">{getStatusText()}</span>
+        )}
+      </div>
+    </div>
   )
 }

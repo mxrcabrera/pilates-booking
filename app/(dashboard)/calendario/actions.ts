@@ -34,7 +34,7 @@ export async function createClase(formData: FormData) {
   const diasSemana = diasSemanaStr ? JSON.parse(diasSemanaStr) : []
 
   const fechaStr = formData.get('fecha') as string
-  const fecha = new Date(fechaStr + 'T12:00:00.000Z')
+  const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
   // Validar que la clase sea al menos X horas en el futuro (según configuración)
   const [hora, minuto] = horaInicio.split(':').map(Number)
@@ -237,7 +237,7 @@ export async function updateClase(formData: FormData) {
   const diasSemana = diasSemanaStr ? JSON.parse(diasSemanaStr) : []
 
   const fechaStr = formData.get('fecha') as string
-  const fecha = new Date(fechaStr + 'T12:00:00.000Z')
+  const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
   // Validar que la clase sea al menos X horas en el futuro (según configuración)
   const [hora, minuto] = horaInicio.split(':').map(Number)

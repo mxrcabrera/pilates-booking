@@ -1,36 +1,40 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react'
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2 } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, Trash2, Sun, Moon, Sunset, Pencil, X, CheckSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
 import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
-import type { Clase, AlumnoSimple } from '@/lib/types'
+import type { Clase, AlumnoSimple, Pack } from '@/lib/types'
 import { DIAS_SEMANA, DIAS_SEMANA_COMPLETO, MESES } from '@/lib/constants'
 import { getTurno, formatearHora, formatearFechaDia } from '@/lib/utils'
 
 interface CalendarioClientProps {
   clasesIniciales: Clase[]
   alumnos: AlumnoSimple[]
+  packs: Pack[]
   currentUserId: string
   horarioMananaInicio: string
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
+  precioPorClase: string
+  maxAlumnosPorClase: number
+  horasAnticipacionMinima: number
 }
 
 type Vista = 'dia' | 'semana'
 
-const HORAS_DIA = Array.from({ length: 15 }, (_, i) => i + 7) // 7:00 a 21:00
+const HORAS_DIA = Array.from({ length: 16 }, (_, i) => i + 7) // 7:00 a 22:00
 
-export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin }: CalendarioClientProps) {
+export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin, precioPorClase, maxAlumnosPorClase, horasAnticipacionMinima }: CalendarioClientProps) {
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
-  const [vista, setVista] = useState<Vista>('dia')
+  const [vista, setVista] = useState<Vista>('semana')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -38,6 +42,8 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
   const [selectedClases, setSelectedClases] = useState<Set<string>>(new Set())
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [turnosExpandidos, setTurnosExpandidos] = useState<Set<string>>(new Set())
 
   // Sincronizar estado local cuando cambian las props (después del refresh)
   useEffect(() => {
@@ -92,36 +98,88 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
 
     return diasSemana.map(fecha => {
       const fechaStr = formatearFechaDia(fecha)
+      const clasesDelDia = clases.filter(clase => formatearFechaDia(clase.fecha) === fechaStr)
       return {
         fecha,
-        clases: clases.filter(clase => formatearFechaDia(clase.fecha) === fechaStr)
+        clases: clasesDelDia
       }
     })
   }, [clases, fechaActual])
 
-  // Agrupar clases por turno
+  // Agrupar clases por turno y luego por hora
   const clasesPorTurno = useMemo(() => {
-    const grupos = {
-      mañana: [] as Clase[],
-      tarde: [] as Clase[],
-      noche: [] as Clase[]
+    type ClasesPorHora = { hora: string; clases: Clase[] }
+    const grupos: { mañana: ClasesPorHora[]; tarde: ClasesPorHora[]; noche: ClasesPorHora[] } = {
+      mañana: [],
+      tarde: [],
+      noche: []
+    }
+
+    // Primero agrupamos por turno
+    const turnoClases: { mañana: Clase[]; tarde: Clase[]; noche: Clase[] } = {
+      mañana: [],
+      tarde: [],
+      noche: []
     }
 
     clasesDelDia.forEach(clase => {
       const hora = parseInt(clase.horaInicio.split(':')[0])
       const turno = getTurno(hora)
-      grupos[turno].push(clase)
+      turnoClases[turno].push(clase)
     })
 
-    // Ordenar por hora dentro de cada turno
-    Object.values(grupos).forEach(grupo => {
-      grupo.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
+    // Ahora agrupamos por hora dentro de cada turno
+    Object.entries(turnoClases).forEach(([turno, clases]) => {
+      const porHora = new Map<string, Clase[]>()
+      clases.forEach(clase => {
+        const existing = porHora.get(clase.horaInicio) || []
+        existing.push(clase)
+        porHora.set(clase.horaInicio, existing)
+      })
+
+      // Convertir a array ordenado por hora
+      const horasOrdenadas = Array.from(porHora.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([hora, clases]) => ({ hora, clases }))
+
+      grupos[turno as keyof typeof grupos] = horasOrdenadas
     })
 
     return grupos
   }, [clasesDelDia])
 
-  const handleClaseClick = (clase: Clase) => {
+  // Helper para obtener resumen de alumnos en un turno (para vista previa)
+  const obtenerResumenTurno = (turno: { hora: string; clases: Clase[] }[]) => {
+    const nombres = turno.flatMap(({ clases }) =>
+      clases.map(c => c.alumno?.nombre?.split(' ')[0] || 'Sin alumno')
+    )
+    return nombres
+  }
+
+  // Helper para contar total de clases en un turno
+  const contarClasesTurno = (turno: { hora: string; clases: Clase[] }[]) =>
+    turno.reduce((acc, h) => acc + h.clases.length, 0)
+
+  // Toggle turno expandido/colapsado
+  const toggleTurno = (turno: string) => {
+    setTurnosExpandidos(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(turno)) {
+        newSet.delete(turno)
+      } else {
+        newSet.add(turno)
+      }
+      return newSet
+    })
+  }
+
+  const handleClaseClick = (clase: Clase, e?: React.MouseEvent) => {
+    // Ctrl+Click o Cmd+Click para seleccionar
+    if (e && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      toggleSelection(clase.id)
+      return
+    }
     setClaseSeleccionada(clase)
     setDetailDialogOpen(true)
   }
@@ -132,21 +190,26 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
   }
 
   // Handler para actualizar estado local cuando se crea/edita una clase
-  const handleClaseSuccess = (data: { clase?: any; isNew: boolean }) => {
-    if (!data.clase) return
+  const handleClaseSuccess = (data: { clase?: any; clases?: any[]; isNew: boolean }) => {
+    if (data.clases && data.clases.length > 0) {
+      // Múltiples clases creadas
+      const clasesConFecha = data.clases.map(c => ({
+        ...c,
+        fecha: new Date(c.fecha)
+      }))
+      setClases(prev => [...prev, ...clasesConFecha])
+    } else if (data.clase) {
+      // Una sola clase creada o actualizada
+      const claseConFecha = {
+        ...data.clase,
+        fecha: new Date(data.clase.fecha)
+      }
 
-    // Convertir fecha de string a Date si viene como string
-    const claseConFecha = {
-      ...data.clase,
-      fecha: new Date(data.clase.fecha)
-    }
-
-    if (data.isNew) {
-      // Agregar nueva clase al estado local
-      setClases(prev => [...prev, claseConFecha])
-    } else {
-      // Actualizar clase existente
-      setClases(prev => prev.map(c => c.id === claseConFecha.id ? claseConFecha : c))
+      if (data.isNew) {
+        setClases(prev => [...prev, claseConFecha])
+      } else {
+        setClases(prev => prev.map(c => c.id === claseConFecha.id ? claseConFecha : c))
+      }
     }
   }
 
@@ -177,8 +240,12 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
   }
 
   const toggleSelectAll = () => {
-    const clasesVisibles = vista === 'dia' ? clasesDelDia : clasesDeLaSemana.flatMap(d => d.clases)
-    if (selectedClases.size === clasesVisibles.length) {
+    // Seleccionar solo las clases visibles en la vista actual
+    const clasesVisibles = vista === 'dia'
+      ? clasesDelDia
+      : clasesDeLaSemana.flatMap(d => d.clases)
+    console.log('toggleSelectAll:', { vista, clasesVisibles: clasesVisibles.length, clasesDeLaSemana: clasesDeLaSemana.map(d => d.clases.length) })
+    if (selectedClases.size === clasesVisibles.length && selectedClases.size > 0) {
       setSelectedClases(new Set())
     } else {
       setSelectedClases(new Set(clasesVisibles.map(c => c.id)))
@@ -256,22 +323,21 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
             <h1>Calendario</h1>
             <p className="page-subtitle">Gestiona tus clases y horarios</p>
           </div>
-          <div className="calendario-header-actions">
-            {((vista === 'dia' && clasesDelDia.length > 0) || (vista === 'semana' && clasesDeLaSemana.some(d => d.clases.length > 0))) && (
-              <>
-                <Button className="btn-outline desktop-only calendario-action-btn" onClick={toggleSelectAll}>
-                  {selectedClases.size === (vista === 'dia' ? clasesDelDia : clasesDeLaSemana.flatMap(d => d.clases)).length && selectedClases.size > 0 ? 'Deseleccionar todos' : 'Seleccionar todos'}
-                </Button>
-                {selectedClases.size > 0 && (
-                  <Button className="btn-outline desktop-only calendario-action-btn calendario-delete-btn" onClick={() => setBulkDeleteConfirm(true)}>
-                    <Trash2 className="w-4 h-4" />
-                    Eliminar ({selectedClases.size})
-                  </Button>
-                )}
-              </>
+          <div className="page-header-actions desktop-only">
+            {clases.length > 0 && (
+              <Button
+                className={`btn-outline ${selectionMode ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectionMode(!selectionMode)
+                  if (selectionMode) setSelectedClases(new Set())
+                }}
+              >
+                <CheckSquare className="w-4 h-4" />
+                {selectionMode ? 'Cancelar' : 'Seleccionar'}
+              </Button>
             )}
             <Button
-              className="btn-primary desktop-only"
+              className="btn-primary"
               onClick={() => setDialogOpen(true)}
               disabled={alumnos.length === 0}
               title={alumnos.length === 0 ? 'Primero debes agregar alumnos' : ''}
@@ -314,6 +380,22 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
               </button>
             </div>
 
+            {/* Botón seleccionar mobile */}
+            {clasesDelDia.length > 0 && (
+              <div className="mobile-selection-bar">
+                <button
+                  className={`mobile-selection-btn ${selectionMode ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectionMode(!selectionMode)
+                    if (selectionMode) setSelectedClases(new Set())
+                  }}
+                >
+                  <CheckSquare size={16} />
+                  {selectionMode ? 'Cancelar' : 'Seleccionar'}
+                </button>
+              </div>
+            )}
+
             {/* Clases del día */}
             {clasesDelDia.length === 0 ? (
               <div className="empty-state-small">
@@ -322,172 +404,169 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                 <p className="text-sm text-white/40 mt-1">para este día</p>
               </div>
             ) : (
-              <div className="calendar-turnos-container">
+              <div className={`calendar-turnos-container ${selectionMode ? 'selection-mode' : ''}`}>
                 {/* Mañana */}
                 {clasesPorTurno.mañana.length > 0 && (
-                  <div>
-                    <div className="turno-section-header">
-                      <h3 className="turno-section-title">
-                        Mañana ({clasesPorTurno.mañana.length})
-                      </h3>
-                    </div>
-                    <div className="turno-clases-list">
-                      {clasesPorTurno.mañana.map(clase => (
-                        <button
-                          key={clase.id}
-                          onClick={() => handleClaseClick(clase)}
-                          className={`clase-item-mobile ${clase.profesorId !== currentUserId ? 'clase-compartida' : ''} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedClases.has(clase.id)}
-                            onChange={(e) => toggleSelection(clase.id, e)}
-                            className="calendario-checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <div className="clase-time-mobile">
-                            <div className="clase-time-text">
-                              {formatearHora(clase.horaInicio)}
+                  <div className={`turno-accordion ${turnosExpandidos.has('mañana') ? 'expanded' : ''}`}>
+                    <button
+                      type="button"
+                      className="turno-accordion-header"
+                      onClick={() => toggleTurno('mañana')}
+                    >
+                      <div className="turno-accordion-left">
+                        <div className="turno-accordion-info">
+                          <Sun size={14} className="turno-icon-sun" />
+                          <span className="turno-accordion-label">Mañana</span>
+                          <span className="turno-accordion-count">{contarClasesTurno(clasesPorTurno.mañana)}</span>
+                        </div>
+                        {!turnosExpandidos.has('mañana') && (
+                          <div className="turno-preview">
+                            {obtenerResumenTurno(clasesPorTurno.mañana).slice(0, 3).join(', ')}
+                            {obtenerResumenTurno(clasesPorTurno.mañana).length > 3 && ` +${obtenerResumenTurno(clasesPorTurno.mañana).length - 3}`}
+                          </div>
+                        )}
+                      </div>
+                      <ChevronDown className={`turno-accordion-icon ${turnosExpandidos.has('mañana') ? 'expanded' : ''}`} />
+                    </button>
+                    {turnosExpandidos.has('mañana') && (
+                      <div className="turno-accordion-content">
+                        {clasesPorTurno.mañana.map(({ hora, clases: clasesHora }) => (
+                          <div key={hora} className="horario-group-compact">
+                            <span className="hora-compact">{formatearHora(hora)}</span>
+                            <div className="clases-list-compact">
+                              {clasesHora.map(clase => (
+                                <button
+                                  key={clase.id}
+                                  onClick={() => handleClaseClick(clase)}
+                                  className={`clase-item-compact ${clase.estado} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
+                                >
+                                  {selectionMode && (
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedClases.has(clase.id)}
+                                      onChange={(e) => toggleSelection(clase.id, e)}
+                                      className="compact-checkbox"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  )}
+                                  <span className="nombre-compact">{clase.alumno?.nombre || 'Disponible'}</span>
+                                </button>
+                              ))}
                             </div>
                           </div>
-                          <div className="clase-info-mobile">
-                            <div className="clase-alumno-name">
-                              {clase.profesorId !== currentUserId && (
-                                <span className="profesor-badge">
-                                  {clase.profesor.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                </span>
-                              )}
-                              {clase.alumno?.nombre || 'Disponible'}
-                            </div>
-                            {clase.esClasePrueba && (
-                              <div className="clase-prueba-label">
-                                Clase de prueba
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <span className={`status-badge ${clase.estado}`}>
-                              {clase.estado === 'reservada' && '•'}
-                              {clase.estado === 'completada' && '✓'}
-                              {clase.estado === 'cancelada' && '✕'}
-                              {clase.estado === 'ausente' && '!'}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Tarde */}
                 {clasesPorTurno.tarde.length > 0 && (
-                  <div>
-                    <div className="turno-section-header">
-                      <h3 className="turno-section-title">
-                        Tarde ({clasesPorTurno.tarde.length})
-                      </h3>
-                    </div>
-                    <div className="turno-clases-list">
-                      {clasesPorTurno.tarde.map(clase => (
-                        <button
-                          key={clase.id}
-                          onClick={() => handleClaseClick(clase)}
-                          className={`clase-item-mobile ${clase.profesorId !== currentUserId ? 'clase-compartida' : ''} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedClases.has(clase.id)}
-                            onChange={(e) => toggleSelection(clase.id, e)}
-                            className="calendario-checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <div className="clase-time-mobile">
-                            <div className="clase-time-text">
-                              {formatearHora(clase.horaInicio)}
+                  <div className={`turno-accordion ${turnosExpandidos.has('tarde') ? 'expanded' : ''}`}>
+                    <button
+                      type="button"
+                      className="turno-accordion-header"
+                      onClick={() => toggleTurno('tarde')}
+                    >
+                      <div className="turno-accordion-left">
+                        <div className="turno-accordion-info">
+                          <Sunset size={14} className="turno-icon-sunset" />
+                          <span className="turno-accordion-label">Tarde</span>
+                          <span className="turno-accordion-count">{contarClasesTurno(clasesPorTurno.tarde)}</span>
+                        </div>
+                        {!turnosExpandidos.has('tarde') && (
+                          <div className="turno-preview">
+                            {obtenerResumenTurno(clasesPorTurno.tarde).slice(0, 3).join(', ')}
+                            {obtenerResumenTurno(clasesPorTurno.tarde).length > 3 && ` +${obtenerResumenTurno(clasesPorTurno.tarde).length - 3}`}
+                          </div>
+                        )}
+                      </div>
+                      <ChevronDown className={`turno-accordion-icon ${turnosExpandidos.has('tarde') ? 'expanded' : ''}`} />
+                    </button>
+                    {turnosExpandidos.has('tarde') && (
+                      <div className="turno-accordion-content">
+                        {clasesPorTurno.tarde.map(({ hora, clases: clasesHora }) => (
+                          <div key={hora} className="horario-group-compact">
+                            <span className="hora-compact">{formatearHora(hora)}</span>
+                            <div className="clases-list-compact">
+                              {clasesHora.map(clase => (
+                                <button
+                                  key={clase.id}
+                                  onClick={() => handleClaseClick(clase)}
+                                  className={`clase-item-compact ${clase.estado} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
+                                >
+                                  {selectionMode && (
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedClases.has(clase.id)}
+                                      onChange={(e) => toggleSelection(clase.id, e)}
+                                      className="compact-checkbox"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  )}
+                                  <span className="nombre-compact">{clase.alumno?.nombre || 'Disponible'}</span>
+                                </button>
+                              ))}
                             </div>
                           </div>
-                          <div className="clase-info-mobile">
-                            <div className="clase-alumno-name">
-                              {clase.profesorId !== currentUserId && (
-                                <span className="profesor-badge">
-                                  {clase.profesor.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                </span>
-                              )}
-                              {clase.alumno?.nombre || 'Disponible'}
-                            </div>
-                            {clase.esClasePrueba && (
-                              <div className="clase-prueba-label">
-                                Clase de prueba
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <span className={`status-badge ${clase.estado}`}>
-                              {clase.estado === 'reservada' && '•'}
-                              {clase.estado === 'completada' && '✓'}
-                              {clase.estado === 'cancelada' && '✕'}
-                              {clase.estado === 'ausente' && '!'}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Noche */}
                 {clasesPorTurno.noche.length > 0 && (
-                  <div>
-                    <div className="turno-section-header">
-                      <h3 className="turno-section-title">
-                        Noche ({clasesPorTurno.noche.length})
-                      </h3>
-                    </div>
-                    <div className="turno-clases-list">
-                      {clasesPorTurno.noche.map(clase => (
-                        <button
-                          key={clase.id}
-                          onClick={() => handleClaseClick(clase)}
-                          className={`clase-item-mobile ${clase.profesorId !== currentUserId ? 'clase-compartida' : ''} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedClases.has(clase.id)}
-                            onChange={(e) => toggleSelection(clase.id, e)}
-                            className="calendario-checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <div className="clase-time-mobile">
-                            <div className="clase-time-text">
-                              {formatearHora(clase.horaInicio)}
+                  <div className={`turno-accordion ${turnosExpandidos.has('noche') ? 'expanded' : ''}`}>
+                    <button
+                      type="button"
+                      className="turno-accordion-header"
+                      onClick={() => toggleTurno('noche')}
+                    >
+                      <div className="turno-accordion-left">
+                        <div className="turno-accordion-info">
+                          <Moon size={14} className="turno-icon-moon" />
+                          <span className="turno-accordion-label">Noche</span>
+                          <span className="turno-accordion-count">{contarClasesTurno(clasesPorTurno.noche)}</span>
+                        </div>
+                        {!turnosExpandidos.has('noche') && (
+                          <div className="turno-preview">
+                            {obtenerResumenTurno(clasesPorTurno.noche).slice(0, 3).join(', ')}
+                            {obtenerResumenTurno(clasesPorTurno.noche).length > 3 && ` +${obtenerResumenTurno(clasesPorTurno.noche).length - 3}`}
+                          </div>
+                        )}
+                      </div>
+                      <ChevronDown className={`turno-accordion-icon ${turnosExpandidos.has('noche') ? 'expanded' : ''}`} />
+                    </button>
+                    {turnosExpandidos.has('noche') && (
+                      <div className="turno-accordion-content">
+                        {clasesPorTurno.noche.map(({ hora, clases: clasesHora }) => (
+                          <div key={hora} className="horario-group-compact">
+                            <span className="hora-compact">{formatearHora(hora)}</span>
+                            <div className="clases-list-compact">
+                              {clasesHora.map(clase => (
+                                <button
+                                  key={clase.id}
+                                  onClick={() => handleClaseClick(clase)}
+                                  className={`clase-item-compact ${clase.estado} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
+                                >
+                                  {selectionMode && (
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedClases.has(clase.id)}
+                                      onChange={(e) => toggleSelection(clase.id, e)}
+                                      className="compact-checkbox"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  )}
+                                  <span className="nombre-compact">{clase.alumno?.nombre || 'Disponible'}</span>
+                                </button>
+                              ))}
                             </div>
                           </div>
-                          <div className="clase-info-mobile">
-                            <div className="clase-alumno-name">
-                              {clase.profesorId !== currentUserId && (
-                                <span className="profesor-badge">
-                                  {clase.profesor.nombre.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                </span>
-                              )}
-                              {clase.alumno?.nombre || 'Disponible'}
-                            </div>
-                            {clase.esClasePrueba && (
-                              <div className="clase-prueba-label">
-                                Clase de prueba
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <span className={`status-badge ${clase.estado}`}>
-                              {clase.estado === 'reservada' && '•'}
-                              {clase.estado === 'completada' && '✓'}
-                              {clase.estado === 'cancelada' && '✕'}
-                              {clase.estado === 'ausente' && '!'}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -562,7 +641,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                 </div>
 
                 {/* Grid de horarios */}
-                <div className="calendar-week-body-grid">
+                <div className={`calendar-week-body-grid ${selectionMode ? 'selection-mode' : ''}`}>
                   {HORAS_DIA.map(hora => (
                     <React.Fragment key={`hora-${hora}`}>
                       {/* Columna de hora */}
@@ -584,32 +663,44 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
                             key={`${idx}-${hora}`}
                             className="calendar-hour-cell"
                           >
-                            {clasesEnEstaHora.map(clase => (
-                              <button
-                                key={clase.id}
-                                onClick={() => handleClaseClick(clase)}
-                                className={`clase-item-week ${clase.estado} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedClases.has(clase.id)}
-                                  onChange={(e) => toggleSelection(clase.id, e)}
-                                  className="calendario-checkbox"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <div className="clase-week-time">
-                                  {formatearHora(clase.horaInicio)}
+                            {clasesEnEstaHora.length > 0 && (() => {
+                              const todasCanceladas = clasesEnEstaHora.every(c => c.estado === 'cancelada' || !c.alumno)
+
+                              return (
+                                <div className="clase-group-week">
+                                  {todasCanceladas ? (
+                                    <span className="clase-badge vacia">Sin clase</span>
+                                  ) : (
+                                    <div className="clase-badges">
+                                      {clasesEnEstaHora.map((clase) => (
+                                        <label
+                                          key={clase.id}
+                                          className={`clase-badge ${clase.estado} ${selectedClases.has(clase.id) ? 'selected' : ''}`}
+                                          onClick={(e) => {
+                                            if (!selectionMode) {
+                                              e.preventDefault()
+                                              setClaseSeleccionada(clase)
+                                              setDetailDialogOpen(true)
+                                            }
+                                          }}
+                                          title={clase.alumno?.nombre || 'Disponible'}
+                                        >
+                                          {selectionMode && (
+                                            <input
+                                              type="checkbox"
+                                              checked={selectedClases.has(clase.id)}
+                                              onChange={() => toggleSelection(clase.id)}
+                                              className="badge-checkbox"
+                                            />
+                                          )}
+                                          {clase.alumno?.nombre?.split(' ')[0] || 'Disp.'}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="clase-week-alumno">
-                                  {clase.alumno?.nombre || 'Disponible'}
-                                </div>
-                                {clase.esClasePrueba && (
-                                  <div className="clase-week-prueba">
-                                    Prueba
-                                  </div>
-                                )}
-                              </button>
-                            ))}
+                              )
+                            })()}
                           </div>
                         )
                       })}
@@ -629,10 +720,13 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
         clase={null}
         fecha={fechaActual}
         alumnos={alumnos}
+        packs={packs}
+        precioPorClase={precioPorClase}
         horarioMananaInicio={horarioMananaInicio}
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}
         horarioTardeFin={horarioTardeFin}
+        maxAlumnosPorClase={maxAlumnosPorClase}
         onSuccess={handleClaseSuccess}
       />
 
@@ -642,10 +736,13 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
         clase={claseSeleccionada}
         fecha={null}
         alumnos={alumnos}
+        packs={packs}
+        precioPorClase={precioPorClase}
         horarioMananaInicio={horarioMananaInicio}
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}
         horarioTardeFin={horarioTardeFin}
+        maxAlumnosPorClase={maxAlumnosPorClase}
         onSuccess={handleClaseSuccess}
       />
 
@@ -657,6 +754,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
           onEdit={handleEdit}
           onDelete={handleDeleteClase}
           onStatusChange={handleStatusChange}
+          horasAnticipacionMinima={horasAnticipacionMinima}
         />
       )}
 
@@ -670,6 +768,45 @@ export function CalendarioClient({ clasesIniciales, alumnos, currentUserId, hora
         variant="danger"
         isLoading={isDeleting}
       />
+
+      {/* Floating action bar - solo cuando hay seleccionadas */}
+      {selectionMode && selectedClases.size > 0 && (
+        <div className="floating-action-bar">
+          <div className="floating-action-bar-content">
+            <button className="fab-close" onClick={() => {
+              setSelectedClases(new Set())
+              setSelectionMode(false)
+            }}>
+              <X size={18} />
+            </button>
+            <span className="fab-count">{selectedClases.size} seleccionada{selectedClases.size > 1 ? 's' : ''}</span>
+
+            <div className="fab-actions">
+              {selectedClases.size === 1 && (
+                <button
+                  className="fab-btn"
+                  onClick={() => {
+                    const claseId = Array.from(selectedClases)[0]
+                    const clase = clases.find(c => c.id === claseId)
+                    if (clase) {
+                      setClaseSeleccionada(clase)
+                      setDetailDialogOpen(true)
+                      setSelectedClases(new Set())
+                      setSelectionMode(false)
+                    }
+                  }}
+                  title="Editar"
+                >
+                  <Pencil size={18} />
+                </button>
+              )}
+              <button className="fab-btn danger" onClick={() => setBulkDeleteConfirm(true)} title="Eliminar">
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

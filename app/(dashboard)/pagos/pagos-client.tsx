@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Check, Clock, Trash2 } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, Check, Clock, Trash2, DollarSign, Search, X, ChevronDown } from 'lucide-react'
 import { PagoDialog } from './pago-dialog'
 import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { marcarPagadoAPI, marcarPendienteAPI, deletePagoAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import type { Pago, AlumnoPago } from '@/lib/types'
@@ -20,21 +21,153 @@ export function PagosClient({
   const { showSuccess, showError } = useToast()
   const [pagos, setPagos] = useState(initialPagos)
   const [filter, setFilter] = useState<FilterType>('todos')
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [mesFilter, setMesFilter] = useState<string>('todos')
+  const [search, setSearch] = useState('')
 
-  const filteredPagos = pagos.filter(pago => {
-    if (filter === 'pendientes') return pago.estado === 'pendiente'
-    if (filter === 'pagados') return pago.estado === 'pagado'
-    return true
+  // Obtener meses únicos de los pagos
+  const mesesDisponibles = useMemo(() => {
+    const meses = new Set<string>()
+    pagos.forEach(p => meses.add(p.mesCorrespondiente))
+    return Array.from(meses).sort().reverse()
+  }, [pagos])
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; pago: Pago | null }>({
+    isOpen: false,
+    pago: null
   })
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(10)
+
+  // Modo selección
+  const [selectedPagos, setSelectedPagos] = useState<Set<string>>(new Set())
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+
+  const selectionMode = selectedPagos.size > 0
+
+  function formatMes(mesStr: string) {
+    if (/^[A-Za-záéíóú]+ \d{4}$/i.test(mesStr)) {
+      return mesStr.charAt(0).toUpperCase() + mesStr.slice(1)
+    }
+    const match = mesStr.match(/^(\d{4})-(\d{2})$/)
+    if (match) {
+      const [, year, month] = match
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+      return `${meses[parseInt(month) - 1]} ${year}`
+    }
+    return mesStr
+  }
+
+  function diasDiferencia(fecha: string) {
+    const target = new Date(fecha)
+    target.setHours(0, 0, 0, 0)
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    const diff = Math.floor((target.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+    return diff
+  }
+
+  function getEstadoTexto(pago: Pago) {
+    if (pago.estado === 'pagado' && pago.fechaPago) {
+      const dias = diasDiferencia(pago.fechaPago)
+      if (dias === 0) return 'Pagado hoy'
+      if (dias === -1) return 'Pagado ayer'
+      const fecha = new Date(pago.fechaPago)
+      return `Pagado el ${fecha.getDate()}/${fecha.getMonth() + 1}`
+    }
+
+    const dias = diasDiferencia(pago.fechaVencimiento)
+    if (dias < 0) {
+      const diasVencido = Math.abs(dias)
+      if (diasVencido === 1) return 'Venció ayer'
+      return `Venció hace ${diasVencido} días`
+    }
+    if (dias === 0) return 'Vence hoy'
+    if (dias === 1) return 'Vence mañana'
+    if (dias <= 7) return `Vence en ${dias} días`
+    const fecha = new Date(pago.fechaVencimiento)
+    return `Vence el ${fecha.getDate()}/${fecha.getMonth() + 1}`
+  }
+
+  function getProgresoTexto(pago: Pago) {
+    if (pago.tipoPago !== 'mensual' || !pago.clasesEsperadas) return null
+    const completadas = pago.clasesCompletadas || 0
+    const esperadas = pago.clasesEsperadas
+    const restantes = esperadas - completadas
+    if (restantes <= 0) return `${completadas}/${esperadas} clases ✓`
+    return `${completadas}/${esperadas} clases`
+  }
+
+  function isVencido(pago: Pago) {
+    if (pago.estado === 'pagado') return false
+    return diasDiferencia(pago.fechaVencimiento) < 0
+  }
+
+  function isProximoVencer(pago: Pago) {
+    if (pago.estado === 'pagado') return false
+    const dias = diasDiferencia(pago.fechaVencimiento)
+    return dias >= 0 && dias <= 3
+  }
+
+  const processedPagos = useMemo(() => {
+    let result = [...pagos]
+
+    // Filtro por mes
+    if (mesFilter !== 'todos') {
+      result = result.filter(p => p.mesCorrespondiente === mesFilter)
+    }
+
+    if (filter === 'pendientes') {
+      result = result.filter(p => p.estado === 'pendiente')
+    } else if (filter === 'pagados') {
+      result = result.filter(p => p.estado === 'pagado')
+    }
+
+    if (search.trim()) {
+      const searchLower = search.toLowerCase().trim()
+      result = result.filter(p =>
+        p.alumno.nombre.toLowerCase().includes(searchLower)
+      )
+    }
+
+    result.sort((a, b) => {
+      if (a.estado === 'pagado' && b.estado !== 'pagado') return 1
+      if (a.estado !== 'pagado' && b.estado === 'pagado') return -1
+
+      if (a.estado === 'pendiente' && b.estado === 'pendiente') {
+        return new Date(a.fechaVencimiento).getTime() - new Date(b.fechaVencimiento).getTime()
+      }
+
+      if (a.estado === 'pagado' && b.estado === 'pagado' && a.fechaPago && b.fechaPago) {
+        return new Date(b.fechaPago).getTime() - new Date(a.fechaPago).getTime()
+      }
+
+      return 0
+    })
+
+    return result
+  }, [pagos, filter, mesFilter, search])
+
+  const visiblePagos = processedPagos.slice(0, visibleCount)
+  const hasMore = processedPagos.length > visibleCount
+  const remaining = processedPagos.length - visibleCount
+
+  const filterKey = `${filter}-${search}`
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey)
+  if (filterKey !== lastFilterKey) {
+    setVisibleCount(10)
+    setLastFilterKey(filterKey)
+  }
 
   const pendientes = pagos.filter(p => p.estado === 'pendiente').length
-  const pagados = pagos.filter(p => p.estado === 'pagado').length
+  const pagadosCount = pagos.filter(p => p.estado === 'pagado').length
+  const totalPendiente = pagos
+    .filter(p => p.estado === 'pendiente')
+    .reduce((sum, p) => sum + parseFloat(p.monto), 0)
 
   async function handleToggleEstado(pago: Pago) {
     const nuevoEstado = pago.estado === 'pendiente' ? 'pagado' : 'pendiente'
 
-    // Optimistic update
     setPagos(prev => prev.map(p =>
       p.id === pago.id
         ? { ...p, estado: nuevoEstado, fechaPago: nuevoEstado === 'pagado' ? new Date().toISOString() : null }
@@ -51,26 +184,28 @@ export function PagosClient({
       }
       invalidateCache(CACHE_KEYS.PAGOS)
     } catch (err: any) {
-      // Revert
       setPagos(prev => prev.map(p => p.id === pago.id ? pago : p))
       showError(err.message || 'Error al actualizar pago')
     }
   }
 
-  async function handleDelete(pago: Pago) {
-    if (!confirm('Eliminar este pago?')) return
+  async function handleConfirmDelete() {
+    if (!deleteConfirm.pago) return
+    const pago = deleteConfirm.pago
+    setIsDeleting(true)
 
-    // Optimistic update
     setPagos(prev => prev.filter(p => p.id !== pago.id))
+    setDeleteConfirm({ isOpen: false, pago: null })
 
     try {
       await deletePagoAPI(pago.id)
       showSuccess('Pago eliminado')
       invalidateCache(CACHE_KEYS.PAGOS)
     } catch (err: any) {
-      // Revert
       setPagos(prev => [...prev, pago])
       showError(err.message || 'Error al eliminar pago')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -79,31 +214,75 @@ export function PagosClient({
     invalidateCache(CACHE_KEYS.PAGOS)
   }
 
-  function formatDate(dateStr: string) {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+  function formatMonto(monto: string | number) {
+    const num = typeof monto === 'string' ? parseFloat(monto) : monto
+    return num.toLocaleString('es-AR')
   }
 
-  function formatMonto(monto: string) {
-    return `$${parseFloat(monto).toLocaleString('es-AR')}`
+  // Funciones de selección bulk
+  const toggleSelection = (id: string) => {
+    setSelectedPagos(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
   }
 
-  function isVencido(pago: Pago) {
-    if (pago.estado === 'pagado') return false
-    const vencimiento = new Date(pago.fechaVencimiento)
-    const hoy = new Date()
-    hoy.setHours(0, 0, 0, 0)
-    return vencimiento < hoy
+  const handleBulkDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const idsToDelete = Array.from(selectedPagos)
+      await Promise.all(idsToDelete.map(id => deletePagoAPI(id)))
+      setPagos(prev => prev.filter(p => !selectedPagos.has(p.id)))
+      showSuccess(`${idsToDelete.length} pago(s) eliminado(s)`)
+      setBulkDeleteConfirm(false)
+      setSelectedPagos(new Set())
+      invalidateCache(CACHE_KEYS.PAGOS)
+    } catch (err: any) {
+      showError(err.message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleBulkMarcarPagado = async () => {
+    const idsToMark = Array.from(selectedPagos)
+    // Optimistic update
+    setPagos(prev => prev.map(p =>
+      selectedPagos.has(p.id) ? { ...p, estado: 'pagado' as const, fechaPago: new Date().toISOString() } : p
+    ))
+    try {
+      await Promise.all(idsToMark.map(id => {
+        const pago = pagos.find(p => p.id === id)
+        if (pago && pago.estado === 'pendiente') {
+          return marcarPagadoAPI(id)
+        }
+        return Promise.resolve()
+      }))
+      showSuccess(`${idsToMark.length} pago(s) marcado(s) como pagado`)
+      setSelectedPagos(new Set())
+      invalidateCache(CACHE_KEYS.PAGOS)
+    } catch (err: any) {
+      showError(err.message)
+    }
   }
 
   return (
     <div className="page-container">
+      {/* Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Pagos</h1>
-          <p className="page-subtitle">
-            {pendientes} pendiente{pendientes !== 1 ? 's' : ''} - {pagados} pagado{pagados !== 1 ? 's' : ''}
-          </p>
+          {totalPendiente > 0 && (
+            <p className="page-subtitle pagos-total-pendiente">
+              <DollarSign size={14} />
+              {formatMonto(totalPendiente)} pendiente
+            </p>
+          )}
         </div>
         <button className="btn-primary" onClick={() => setDialogOpen(true)}>
           <Plus size={18} />
@@ -111,89 +290,162 @@ export function PagosClient({
         </button>
       </div>
 
-      <div className="filter-tabs pagos-filter-tabs">
+      {/* Buscador y filtro de mes */}
+      <div className="pagos-toolbar">
+        <div className="pagos-search">
+          <Search size={16} className="pagos-search-icon" />
+          <input
+            type="text"
+            placeholder="Buscar alumno..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pagos-search-input"
+          />
+        </div>
+        <div className="mes-filter">
+          <select
+            value={mesFilter}
+            onChange={(e) => setMesFilter(e.target.value)}
+            className="mes-filter-select"
+          >
+            <option value="todos">Todos los meses</option>
+            {mesesDisponibles.map(mes => (
+              <option key={mes} value={mes}>{formatMes(mes)}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="mes-filter-icon" />
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="segmented-control pagos-segmented">
         <button
-          className={`filter-tab ${filter === 'todos' ? 'active' : ''}`}
+          className={`segmented-option ${filter === 'todos' ? 'active' : ''}`}
           onClick={() => setFilter('todos')}
         >
-          Todos ({pagos.length})
+          Todos
+          <span className="segmented-count">{pagos.length}</span>
         </button>
         <button
-          className={`filter-tab ${filter === 'pendientes' ? 'active' : ''}`}
+          className={`segmented-option ${filter === 'pendientes' ? 'active' : ''}`}
           onClick={() => setFilter('pendientes')}
         >
-          Pendientes ({pendientes})
+          Pendientes
+          {pendientes > 0 && <span className="segmented-count warning">{pendientes}</span>}
         </button>
         <button
-          className={`filter-tab ${filter === 'pagados' ? 'active' : ''}`}
+          className={`segmented-option ${filter === 'pagados' ? 'active' : ''}`}
           onClick={() => setFilter('pagados')}
         >
-          Pagados ({pagados})
+          Pagados
+          {pagadosCount > 0 && <span className="segmented-count success">{pagadosCount}</span>}
         </button>
       </div>
 
-      {filteredPagos.length === 0 ? (
-        <div className="content-card pagos-empty-state">
+      {/* Lista */}
+      {processedPagos.length === 0 ? (
+        <div className="pagos-empty">
+          <div className="pagos-empty-icon">
+            {search ? <Search size={32} /> : filter === 'pendientes' ? <Check size={32} /> : <DollarSign size={32} />}
+          </div>
           <p className="pagos-empty-text">
-            {filter === 'todos'
-              ? 'No hay pagos registrados'
-              : filter === 'pendientes'
-                ? 'No hay pagos pendientes'
-                : 'No hay pagos completados'}
+            {search
+              ? 'No se encontraron pagos'
+              : filter === 'todos'
+                ? 'No hay pagos registrados'
+                : filter === 'pendientes'
+                  ? 'No hay pagos pendientes'
+                  : 'No hay pagos completados'}
           </p>
+          {filter === 'todos' && !search && (
+            <button className="btn-ghost btn-sm" onClick={() => setDialogOpen(true)}>
+              <Plus size={16} />
+              Registrar primer pago
+            </button>
+          )}
         </div>
       ) : (
-        <div className="pagos-list">
-          {filteredPagos.map(pago => (
-            <div
-              key={pago.id}
-              className={`pago-card ${pago.estado === 'pagado' ? 'pagado' : ''} ${isVencido(pago) ? 'vencido' : ''}`}
-            >
-              <div className="pago-main">
-                <div className="pago-info">
-                  <p className="pago-alumno">{pago.alumno.nombre}</p>
-                  <p className="pago-mes">{pago.mesCorrespondiente}</p>
-                </div>
-                <div className="pago-monto">
-                  {formatMonto(pago.monto)}
-                </div>
-              </div>
+        <>
+          <div className="pagos-list">
+            {visiblePagos.map(pago => {
+              const vencido = isVencido(pago)
+              const proximo = isProximoVencer(pago)
+              const esPagado = pago.estado === 'pagado'
+              const estadoTexto = getEstadoTexto(pago)
+              const progresoTexto = getProgresoTexto(pago)
+              const clasesCompletas = pago.clasesEsperadas && pago.clasesCompletadas >= pago.clasesEsperadas
+              const isSelected = selectedPagos.has(pago.id)
 
-              <div className="pago-footer">
-                <div className="pago-fecha">
-                  {pago.estado === 'pagado' && pago.fechaPago ? (
-                    <span className="fecha-pagado">
-                      <Check size={14} />
-                      Pagado {formatDate(pago.fechaPago)}
-                    </span>
-                  ) : (
-                    <span className={`fecha-vencimiento ${isVencido(pago) ? 'vencido' : ''}`}>
-                      <Clock size={14} />
-                      Vence {formatDate(pago.fechaVencimiento)}
-                    </span>
+              return (
+                <div
+                  key={pago.id}
+                  className={`pago-row ${esPagado ? 'pagado' : ''} ${vencido ? 'vencido' : ''} ${proximo ? 'proximo' : ''} ${isSelected ? 'selected' : ''}`}
+                  onClick={selectionMode ? () => toggleSelection(pago.id) : undefined}
+                >
+                  {/* Checkbox en modo selección */}
+                  {selectionMode && (
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelection(pago.id)}
+                      className="compact-checkbox"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+
+                  {/* Nombre y progreso */}
+                  <div className="pago-info">
+                    <span className="pago-nombre">{pago.alumno.nombre}</span>
+                    {progresoTexto && (
+                      <span className={`pago-mes ${clasesCompletas ? 'completo' : ''}`}>
+                        {progresoTexto}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Estado descriptivo */}
+                  <div className={`pago-estado ${esPagado ? 'pagado' : vencido ? 'vencido' : proximo ? 'proximo' : ''}`}>
+                    {estadoTexto}
+                  </div>
+
+                  {/* Monto */}
+                  <div className="pago-monto">
+                    ${formatMonto(pago.monto)}
+                  </div>
+
+                  {/* Acciones - ocultas en modo selección */}
+                  {!selectionMode && (
+                    <div className="pago-actions">
+                      <button
+                        className={`pago-btn ${esPagado ? 'undo' : 'confirm'}`}
+                        onClick={() => handleToggleEstado(pago)}
+                        title={esPagado ? 'Marcar pendiente' : 'Marcar pagado'}
+                      >
+                        {esPagado ? <Clock size={16} /> : <Check size={16} />}
+                      </button>
+                      <button
+                        className="pago-btn delete"
+                        onClick={() => setDeleteConfirm({ isOpen: true, pago })}
+                        title="Eliminar"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   )}
                 </div>
+              )
+            })}
+          </div>
 
-                <div className="pago-actions">
-                  <button
-                    className={`pago-btn ${pago.estado === 'pagado' ? 'undo' : 'confirm'}`}
-                    onClick={() => handleToggleEstado(pago)}
-                    title={pago.estado === 'pagado' ? 'Marcar pendiente' : 'Marcar pagado'}
-                  >
-                    {pago.estado === 'pagado' ? <Clock size={16} /> : <Check size={16} />}
-                  </button>
-                  <button
-                    className="pago-btn delete"
-                    onClick={() => handleDelete(pago)}
-                    title="Eliminar"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+          {hasMore && (
+            <button
+              className="pagos-load-more"
+              onClick={() => setVisibleCount(prev => prev + 10)}
+            >
+              Ver más ({remaining} restantes)
+            </button>
+          )}
+        </>
       )}
 
       <PagoDialog
@@ -202,6 +454,49 @@ export function PagosClient({
         alumnos={alumnos}
         onSuccess={handlePagoCreated}
       />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, pago: null })}
+        onConfirm={handleConfirmDelete}
+        title="¿Eliminar este pago?"
+        description={deleteConfirm.pago ? `Pago de ${deleteConfirm.pago.alumno.nombre} - ${formatMes(deleteConfirm.pago.mesCorrespondiente)}` : ''}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      <ConfirmModal
+        isOpen={bulkDeleteConfirm}
+        onClose={() => setBulkDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`¿Eliminar ${selectedPagos.size} pago(s)?`}
+        description="Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* Floating action bar */}
+      {selectionMode && (
+        <div className="floating-action-bar">
+          <div className="floating-action-bar-content">
+            <button className="fab-close" onClick={() => setSelectedPagos(new Set())}>
+              <X size={18} />
+            </button>
+            <span className="fab-count">{selectedPagos.size} seleccionado{selectedPagos.size > 1 ? 's' : ''}</span>
+
+            <div className="fab-actions">
+              <button className="fab-btn" onClick={handleBulkMarcarPagado} title="Marcar pagado">
+                <Check size={18} />
+              </button>
+              <button className="fab-btn danger" onClick={() => setBulkDeleteConfirm(true)} title="Eliminar">
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -44,7 +44,6 @@ export async function GET() {
         select: {
           precioPorClase: true,
           packs: {
-            where: { estaActivo: true },
             orderBy: { clasesPorSemana: 'asc' }
           }
         }

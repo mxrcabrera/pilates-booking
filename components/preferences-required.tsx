@@ -78,7 +78,7 @@ export function PreferencesRequired({ missingFields }: PreferencesRequiredProps)
               }} />
               <span style={{
                 color: 'rgba(255, 255, 255, 0.9)',
-                fontSize: '0.9375rem',
+                fontSize: '1rem',
                 fontWeight: '500'
               }}>
                 {field}

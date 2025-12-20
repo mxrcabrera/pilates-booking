@@ -42,5 +42,6 @@ export const CACHE_KEYS = {
   ALUMNOS: 'alumnos-data',
   CALENDARIO: 'calendario-data',
   CONFIGURACION: 'configuracion-data',
+  DASHBOARD: 'dashboard-data',
   PAGOS: 'pagos-data',
 } as const

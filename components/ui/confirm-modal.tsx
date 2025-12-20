@@ -48,7 +48,7 @@ export function ConfirmModal({
       <DialogContent showCloseButton={false}>
         <div className="confirm-modal-body">
           <div className={`confirm-modal-icon confirm-modal-icon-${variant}`}>
-            <Icon size={32} />
+            <Icon />
           </div>
 
           <DialogHeader>

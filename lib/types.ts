@@ -30,6 +30,13 @@ export type AlumnoSimple = {
   nombre: string
 }
 
+// Versión para clases (con datos del pack)
+export type AlumnoClase = {
+  id: string
+  nombre: string
+  clasesPorMes: number | null
+}
+
 // Versión para pagos (con precio y packType)
 export type AlumnoPago = {
   id: string
@@ -45,14 +52,16 @@ export type ClaseAPI = {
   horaInicio: string
   horaRecurrente: string | null
   estado: string
+  asistencia: string
   esClasePrueba: boolean
   esRecurrente: boolean
   frecuenciaSemanal: number | null
   diasSemana: number[]
   profesorId: string
   alumnoId: string | null
-  alumno: AlumnoSimple | null
+  alumno: AlumnoClase | null
   profesor: { id: string; nombre: string }
+  clasesUsadasEsteMes: number
 }
 
 export type Clase = Omit<ClaseAPI, 'fecha'> & { fecha: Date }
@@ -61,6 +70,7 @@ export type ClaseHoy = {
   id: string
   horaInicio: string
   estado: string
+  asistencia: string
   esClasePrueba: boolean
   alumno: { nombre: string } | null
 }
@@ -73,6 +83,9 @@ export type Pago = {
   fechaVencimiento: string
   estado: string
   mesCorrespondiente: string
+  tipoPago: string // "mensual" (pack) o "clase"
+  clasesEsperadas: number | null // Clases que debe hacer en el mes
+  clasesCompletadas: number // Clases efectivamente hechas en el mes (calculado)
   alumno: {
     id: string
     nombre: string
@@ -131,11 +144,15 @@ export type AlumnosData = {
 export type CalendarioData = {
   clases: Clase[]
   alumnos: AlumnoSimple[]
+  packs: Pack[]
   currentUserId: string
   horarioMananaInicio: string
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
+  precioPorClase: string
+  maxAlumnosPorClase: number
+  horasAnticipacionMinima: number
 }
 
 export type CalendarioDataCached = Omit<CalendarioData, 'clases'> & {
@@ -153,8 +170,17 @@ export type PagosData = {
   alumnos: AlumnoPago[]
 }
 
+export type SiguienteClase = {
+  hora: string
+  cantAlumnos: number
+  esMañana: boolean
+}
+
 export type DashboardData = {
   totalAlumnos: number
   clasesHoy: ClaseHoy[]
   pagosVencidos: number
+  horarioTardeInicio: string
+  maxAlumnosPorClase: number
+  siguienteClase: SiguienteClase | null
 }

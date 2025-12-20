@@ -3,11 +3,7 @@
 import { Edit2, Trash2 } from 'lucide-react'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
-
-type PaymentStatus = {
-  texto: string
-  clase: 'al-dia' | 'por-vencer' | 'vencido'
-} | null
+import { getPaymentStatus, getStatusText, getClasesRestantes } from '@/lib/alumno-utils'
 
 export function AlumnoCard({
   alumno,
@@ -31,62 +27,9 @@ export function AlumnoCard({
 }) {
   const getPackLabel = () => PACK_LABELS[alumno.packType] || alumno.packType
 
-  // Status con género
-  const getStatusText = () => {
-    if (alumno.genero === 'M') {
-      return alumno.estaActivo ? 'Activo' : 'Inactivo'
-    }
-    return alumno.estaActivo ? 'Activa' : 'Inactiva'
-  }
-
-  // Estado de pago - más descriptivo
-  const getPaymentStatus = (): PaymentStatus => {
-    if (!alumno.estaActivo) return null
-
-    // Si no hay próximo pago pendiente = está al día
-    if (!alumno.proximoPagoVencimiento) {
-      return { texto: 'Al día', clase: 'al-dia' }
-    }
-
-    const hoy = new Date()
-    hoy.setHours(0, 0, 0, 0)
-    const vencimiento = new Date(alumno.proximoPagoVencimiento)
-    vencimiento.setHours(0, 0, 0, 0)
-    const dias = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
-
-    // Vencido (pasó la fecha)
-    if (dias < 0) {
-      const diasAtraso = Math.abs(dias)
-      // Más de 60 días = datos incorrectos, mostrar al día
-      if (diasAtraso > 60) return { texto: 'Al día', clase: 'al-dia' }
-      return { texto: 'Pago atrasado', clase: 'vencido' }
-    }
-
-    // Vence hoy
-    if (dias === 0) {
-      return { texto: 'Vence hoy', clase: 'vencido' }
-    }
-
-    // Por vencer (próximos 7 días)
-    if (dias <= 7) {
-      return { texto: `Vence en ${dias}d`, clase: 'por-vencer' }
-    }
-
-    // Falta más de 7 días = al día
-    return { texto: 'Al día', clase: 'al-dia' }
-  }
-
-  // Clases restantes del mes
-  const getClasesRestantes = () => {
-    if (!alumno.clasesPorMes) return null
-    const usadas = alumno.clasesEsteMes || 0
-    const restantes = alumno.clasesPorMes - usadas
-    if (restantes <= 0) return null
-    return `${restantes} clase${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}`
-  }
-
-  const paymentStatus = getPaymentStatus()
-  const clasesRestantes = getClasesRestantes()
+  const paymentStatus = getPaymentStatus(alumno)
+  const statusText = getStatusText(alumno.genero, alumno.estaActivo)
+  const clasesRestantes = getClasesRestantes(alumno)
 
   // Vista LISTA
   if (viewMode === 'list') {
@@ -108,7 +51,7 @@ export function AlumnoCard({
           <div className="alumno-row-main">
             <span className="alumno-row-nombre">{alumno.nombre}</span>
             {!alumno.estaActivo && (
-              <span className="alumno-status-badge">{getStatusText()}</span>
+              <span className="alumno-status-badge">{statusText}</span>
             )}
           </div>
           <div className="alumno-row-details">
@@ -201,7 +144,7 @@ export function AlumnoCard({
             {paymentStatus.texto}
           </span>
         ) : (
-          <span className="alumno-status-badge">{getStatusText()}</span>
+          <span className="alumno-status-badge">{statusText}</span>
         )}
       </div>
     </div>

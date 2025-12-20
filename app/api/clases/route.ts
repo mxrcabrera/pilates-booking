@@ -188,14 +188,20 @@ export async function POST(request: NextRequest) {
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
         // Validar que la clase sea al menos X horas en el futuro
+        // Usar UTC para evitar problemas de timezone
         const [hora, minuto] = horaInicio.split(':').map(Number)
-        const fechaHoraClase = new Date(fecha)
-        fechaHoraClase.setHours(hora, minuto, 0, 0)
+        const fechaHoraClaseUTC = new Date(Date.UTC(
+          fecha.getUTCFullYear(),
+          fecha.getUTCMonth(),
+          fecha.getUTCDate(),
+          hora - 3, // Argentina es UTC-3
+          minuto
+        ))
 
         const ahora = new Date()
         const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
 
-        if (fechaHoraClase < tiempoMinimoAnticipacion) {
+        if (fechaHoraClaseUTC < tiempoMinimoAnticipacion) {
           const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
           return NextResponse.json({ error: `Las clases deben reservarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
         }
@@ -261,6 +267,19 @@ export async function POST(request: NextRequest) {
               ? `Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`
               : `Solo hay ${espaciosDisponibles} lugar(es) disponible(s) en este horario`
           }, { status: 400 })
+        }
+
+        // Validar que todos los alumnos pertenecen al profesor
+        if (alumnosArray.length > 0) {
+          const alumnosValidos = await prisma.alumno.count({
+            where: {
+              id: { in: alumnosArray },
+              profesorId: userId
+            }
+          })
+          if (alumnosValidos !== alumnosArray.length) {
+            return NextResponse.json({ error: 'Uno o más alumnos no son válidos' }, { status: 400 })
+          }
         }
 
         // Crear una clase por cada alumno seleccionado
@@ -372,14 +391,20 @@ export async function POST(request: NextRequest) {
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
         // Validar que la clase sea al menos X horas en el futuro
+        // Usar UTC para evitar problemas de timezone
         const [hora, minuto] = horaInicio.split(':').map(Number)
-        const fechaHoraClase = new Date(fecha)
-        fechaHoraClase.setHours(hora, minuto, 0, 0)
+        const fechaHoraClaseUTC = new Date(Date.UTC(
+          fecha.getUTCFullYear(),
+          fecha.getUTCMonth(),
+          fecha.getUTCDate(),
+          hora - 3, // Argentina es UTC-3
+          minuto
+        ))
 
         const ahora = new Date()
         const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
 
-        if (fechaHoraClase < tiempoMinimoAnticipacion) {
+        if (fechaHoraClaseUTC < tiempoMinimoAnticipacion) {
           const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
           return NextResponse.json({ error: `Las clases deben modificarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
         }
@@ -443,6 +468,24 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: `Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos` }, { status: 400 })
         }
 
+        // Validar que la clase pertenece al profesor
+        const claseExistente = await prisma.clase.findFirst({
+          where: { id, profesorId: userId }
+        })
+        if (!claseExistente) {
+          return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
+        }
+
+        // Validar que el alumno pertenece al profesor (si se especifica)
+        if (alumnoId) {
+          const alumnoValido = await prisma.alumno.findFirst({
+            where: { id: alumnoId, profesorId: userId }
+          })
+          if (!alumnoValido) {
+            return NextResponse.json({ error: 'Alumno no válido' }, { status: 400 })
+          }
+        }
+
         const claseActualizada = await prisma.clase.update({
           where: { id },
           data: {
@@ -497,17 +540,21 @@ export async function POST(request: NextRequest) {
       case 'delete': {
         const { id } = data
 
-        // Obtener datos antes de borrar para sync en background
+        // Validar que la clase pertenece al profesor y obtener datos para sync
         const [clase, user] = await Promise.all([
-          prisma.clase.findUnique({
-            where: { id },
-            select: { googleEventId: true }
+          prisma.clase.findFirst({
+            where: { id, profesorId: userId },
+            select: { id: true, googleEventId: true }
           }),
           prisma.user.findUnique({
             where: { id: userId },
             select: { syncGoogleCalendar: true }
           })
         ])
+
+        if (!clase) {
+          return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
+        }
 
         await prisma.clase.delete({ where: { id } })
 
@@ -530,6 +577,20 @@ export async function POST(request: NextRequest) {
       case 'changeStatus': {
         const { id, estado } = data
 
+        // Validar que la clase pertenece al profesor
+        const clase = await prisma.clase.findFirst({
+          where: { id, profesorId: userId }
+        })
+        if (!clase) {
+          return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
+        }
+
+        // Validar estado válido
+        const estadosValidos = ['reservada', 'completada', 'cancelada']
+        if (!estadosValidos.includes(estado)) {
+          return NextResponse.json({ error: 'Estado no válido' }, { status: 400 })
+        }
+
         await prisma.clase.update({
           where: { id },
           data: { estado }
@@ -540,6 +601,20 @@ export async function POST(request: NextRequest) {
 
       case 'changeAsistencia': {
         const { id, asistencia } = data
+
+        // Validar que la clase pertenece al profesor
+        const clase = await prisma.clase.findFirst({
+          where: { id, profesorId: userId }
+        })
+        if (!clase) {
+          return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
+        }
+
+        // Validar asistencia válida
+        const asistenciasValidas = ['pendiente', 'presente', 'ausente']
+        if (!asistenciasValidas.includes(asistencia)) {
+          return NextResponse.json({ error: 'Asistencia no válida' }, { status: 400 })
+        }
 
         // Cuando marcamos asistencia, también completamos la clase
         const nuevoEstado = asistencia === 'pendiente' ? 'reservada' : 'completada'

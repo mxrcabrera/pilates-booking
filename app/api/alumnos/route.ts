@@ -92,6 +92,35 @@ export async function POST(request: NextRequest) {
       case 'create': {
         const { nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor } = data
 
+        // Validar campos obligatorios
+        if (!nombre?.trim()) {
+          return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
+        }
+        if (!email?.trim()) {
+          return NextResponse.json({ error: 'El email es obligatorio' }, { status: 400 })
+        }
+        if (!telefono?.trim()) {
+          return NextResponse.json({ error: 'El teléfono es obligatorio' }, { status: 400 })
+        }
+
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email)) {
+          return NextResponse.json({ error: 'El formato del email no es válido' }, { status: 400 })
+        }
+
+        // Validar packType válido
+        const packTypesValidos = ['1x', '2x', '3x', '4x', '5x', 'clase']
+        if (!packType || !packTypesValidos.includes(packType)) {
+          return NextResponse.json({ error: 'Tipo de pack no válido' }, { status: 400 })
+        }
+
+        // Validar precio
+        const precioNum = parseFloat(precio)
+        if (isNaN(precioNum) || precioNum < 0) {
+          return NextResponse.json({ error: 'El precio debe ser un número mayor o igual a 0' }, { status: 400 })
+        }
+
         const alumno = await prisma.alumno.create({
           data: {
             profesorId: userId,
@@ -115,6 +144,43 @@ export async function POST(request: NextRequest) {
 
       case 'update': {
         const { id, nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor } = data
+
+        // Validar que el alumno pertenece al profesor
+        const alumnoExistente = await prisma.alumno.findFirst({
+          where: { id, profesorId: userId }
+        })
+        if (!alumnoExistente) {
+          return NextResponse.json({ error: 'Alumno no encontrado' }, { status: 404 })
+        }
+
+        // Validar campos obligatorios
+        if (!nombre?.trim()) {
+          return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
+        }
+        if (!email?.trim()) {
+          return NextResponse.json({ error: 'El email es obligatorio' }, { status: 400 })
+        }
+        if (!telefono?.trim()) {
+          return NextResponse.json({ error: 'El teléfono es obligatorio' }, { status: 400 })
+        }
+
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email)) {
+          return NextResponse.json({ error: 'El formato del email no es válido' }, { status: 400 })
+        }
+
+        // Validar packType válido
+        const packTypesValidos = ['1x', '2x', '3x', '4x', '5x', 'clase']
+        if (!packType || !packTypesValidos.includes(packType)) {
+          return NextResponse.json({ error: 'Tipo de pack no válido' }, { status: 400 })
+        }
+
+        // Validar precio
+        const precioNum = parseFloat(precio)
+        if (isNaN(precioNum) || precioNum < 0) {
+          return NextResponse.json({ error: 'El precio debe ser un número mayor o igual a 0' }, { status: 400 })
+        }
 
         const alumno = await prisma.alumno.update({
           where: { id },
@@ -140,8 +206,9 @@ export async function POST(request: NextRequest) {
       case 'toggleStatus': {
         const { id } = data
 
-        const alumno = await prisma.alumno.findUnique({
-          where: { id }
+        // Validar que el alumno pertenece al profesor
+        const alumno = await prisma.alumno.findFirst({
+          where: { id, profesorId: userId }
         })
 
         if (!alumno) {
@@ -158,6 +225,15 @@ export async function POST(request: NextRequest) {
 
       case 'delete': {
         const { id } = data
+
+        // Validar que el alumno pertenece al profesor
+        const alumno = await prisma.alumno.findFirst({
+          where: { id, profesorId: userId }
+        })
+        if (!alumno) {
+          return NextResponse.json({ error: 'Alumno no encontrado' }, { status: 404 })
+        }
+
         await prisma.alumno.delete({ where: { id } })
         return NextResponse.json({ success: true })
       }

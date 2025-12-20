@@ -182,6 +182,28 @@ export async function POST(request: NextRequest) {
       case 'create': {
         const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas } = data
 
+        // Validar campos obligatorios
+        if (!alumnoId) {
+          return NextResponse.json({ error: 'El alumno es obligatorio' }, { status: 400 })
+        }
+        if (!mesCorrespondiente?.trim()) {
+          return NextResponse.json({ error: 'El mes correspondiente es obligatorio' }, { status: 400 })
+        }
+
+        // Validar monto
+        const montoNum = parseFloat(monto)
+        if (isNaN(montoNum) || montoNum <= 0) {
+          return NextResponse.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
+        }
+
+        // Validar que la fecha de vencimiento no sea en el pasado
+        const fechaVenc = new Date(fechaVencimiento)
+        const hoy = new Date()
+        hoy.setHours(0, 0, 0, 0)
+        if (fechaVenc < hoy) {
+          return NextResponse.json({ error: 'La fecha de vencimiento no puede ser en el pasado' }, { status: 400 })
+        }
+
         // Verificar que el alumno pertenece al profesor
         const alumno = await prisma.alumno.findFirst({
           where: { id: alumnoId, profesorId: userId }

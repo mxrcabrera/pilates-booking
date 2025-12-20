@@ -200,36 +200,72 @@ export async function POST(request: NextRequest) {
 
       case 'deleteHorario': {
         const { id } = data
+
+        // Validar que el horario pertenece al profesor
+        const horario = await prisma.horarioDisponible.findFirst({
+          where: { id, profesorId: userId }
+        })
+        if (!horario) {
+          return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
+        }
+
         await prisma.horarioDisponible.delete({ where: { id } })
         return NextResponse.json({ success: true })
       }
 
       case 'toggleHorario': {
         const { id } = data
-        // Usar raw SQL para toggle en una sola query
-        const result = await prisma.$executeRaw`
-          UPDATE "HorarioDisponible"
-          SET "estaActivo" = NOT "estaActivo"
-          WHERE id = ${id}
-        `
-        if (result === 0) {
+
+        // Validar que el horario pertenece al profesor
+        const horario = await prisma.horarioDisponible.findFirst({
+          where: { id, profesorId: userId }
+        })
+        if (!horario) {
           return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
         }
+
+        await prisma.horarioDisponible.update({
+          where: { id },
+          data: { estaActivo: !horario.estaActivo }
+        })
         return NextResponse.json({ success: true })
       }
 
       case 'savePack': {
         const { id, nombre, clasesPorSemana, precio } = data
-        let pack
 
+        // Validar campos
+        if (!nombre?.trim()) {
+          return NextResponse.json({ error: 'El nombre del pack es obligatorio' }, { status: 400 })
+        }
+
+        const clasesPorSemanaNum = parseInt(clasesPorSemana)
+        if (isNaN(clasesPorSemanaNum) || clasesPorSemanaNum < 1) {
+          return NextResponse.json({ error: 'Las clases por semana deben ser al menos 1' }, { status: 400 })
+        }
+
+        const precioNum = parseFloat(precio)
+        if (isNaN(precioNum) || precioNum <= 0) {
+          return NextResponse.json({ error: 'El precio debe ser mayor a 0' }, { status: 400 })
+        }
+
+        let pack
         if (id) {
+          // Validar que el pack pertenece al profesor
+          const packExistente = await prisma.pack.findFirst({
+            where: { id, profesorId: userId }
+          })
+          if (!packExistente) {
+            return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
+          }
+
           pack = await prisma.pack.update({
             where: { id },
-            data: { nombre, clasesPorSemana, precio }
+            data: { nombre, clasesPorSemana: clasesPorSemanaNum, precio: precioNum }
           })
         } else {
           pack = await prisma.pack.create({
-            data: { profesorId: userId, nombre, clasesPorSemana, precio }
+            data: { profesorId: userId, nombre, clasesPorSemana: clasesPorSemanaNum, precio: precioNum }
           })
         }
         return NextResponse.json({ success: true, pack })
@@ -297,6 +333,36 @@ export async function POST(request: NextRequest) {
           syncGoogleCalendar,
           precioPorClase
         } = data
+
+        // Validar valores numéricos
+        if (horasAnticipacionMinima !== undefined && (isNaN(horasAnticipacionMinima) || horasAnticipacionMinima < 0)) {
+          return NextResponse.json({ error: 'Las horas de anticipación deben ser 0 o más' }, { status: 400 })
+        }
+
+        if (maxAlumnosPorClase !== undefined && (isNaN(maxAlumnosPorClase) || maxAlumnosPorClase < 1)) {
+          return NextResponse.json({ error: 'El máximo de alumnos debe ser al menos 1' }, { status: 400 })
+        }
+
+        // Validar horarios
+        if (horarioMananaInicio && horarioMananaFin && horarioMananaInicio >= horarioMananaFin) {
+          return NextResponse.json({ error: 'El horario de mañana: inicio debe ser antes del fin' }, { status: 400 })
+        }
+
+        if (horarioTardeInicio && horarioTardeFin && horarioTardeInicio >= horarioTardeFin) {
+          return NextResponse.json({ error: 'El horario de tarde: inicio debe ser antes del fin' }, { status: 400 })
+        }
+
+        // Validar que mañana y tarde no se solapen
+        if (horarioMananaFin && horarioTardeInicio && horarioMananaFin > horarioTardeInicio) {
+          return NextResponse.json({ error: 'El horario de mañana no puede solaparse con el de tarde' }, { status: 400 })
+        }
+
+        if (precioPorClase !== undefined) {
+          const precioNum = parseFloat(precioPorClase)
+          if (isNaN(precioNum) || precioNum < 0) {
+            return NextResponse.json({ error: 'El precio por clase debe ser 0 o más' }, { status: 400 })
+          }
+        }
 
         const espacioNormalizado = espacioCompartidoId?.trim().toLowerCase() || null
 

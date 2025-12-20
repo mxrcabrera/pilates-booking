@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth-utils'
+import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function updateProfile(formData: FormData) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth-utils'
+import { getCurrentUser } from '@/lib/auth'
 import { Decimal } from '@prisma/client/runtime/library'
 
 export const runtime = 'nodejs'

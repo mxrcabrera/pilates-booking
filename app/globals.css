@@ -9089,3 +9089,193 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   display: none;
 }
 
+/* ========================================
+   LEGAL PAGES (Privacy, Terms)
+   ======================================== */
+.legal-page {
+  min-height: 100vh;
+  padding: 3rem 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.legal-container {
+  max-width: 48rem;
+  margin: 0 auto;
+  background: rgba(25, 30, 50, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(100, 130, 200, 0.15);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.legal-title {
+  font-family: var(--font-serif), 'Cormorant Garamond', 'Georgia', serif;
+  font-size: 2rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: 0.01em;
+}
+
+.legal-date {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 2rem 0;
+}
+
+.legal-section {
+  margin-bottom: 1.75rem;
+}
+
+.legal-section:last-child {
+  margin-bottom: 0;
+}
+
+.legal-heading {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 0.75rem 0;
+}
+
+.legal-text {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 0.5rem 0;
+}
+
+.legal-list {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.legal-list li {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 0.25rem;
+}
+
+.legal-list li::marker {
+  color: rgba(147, 155, 245, 0.6);
+}
+
+@media (max-width: 640px) {
+  .legal-container {
+    padding: 1.5rem;
+  }
+
+  .legal-title {
+    font-size: 1.5rem;
+  }
+
+  .legal-heading {
+    font-size: 1rem;
+  }
+}
+
+/* ========================================
+   PREFERENCES REQUIRED
+   ======================================== */
+.preferences-required-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  padding: 1rem;
+}
+
+.preferences-required-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  text-align: center;
+  max-width: 400px;
+  padding: 2rem;
+}
+
+.preferences-required-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(147, 155, 245, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border: 2px solid rgba(147, 155, 245, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(147, 155, 245, 0.9);
+}
+
+.preferences-required-text h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 0.75rem 0;
+}
+
+.preferences-required-text p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.preferences-required-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.preferences-required-item {
+  background: rgba(147, 155, 245, 0.08);
+  border: 1px solid rgba(147, 155, 245, 0.2);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.preferences-required-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(147, 155, 245, 0.6);
+  flex-shrink: 0;
+}
+
+.preferences-required-item span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.preferences-required-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, rgba(147, 155, 245, 0.9) 0%, rgba(99, 102, 241, 0.9) 100%);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preferences-required-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(147, 155, 245, 0.3);
+}

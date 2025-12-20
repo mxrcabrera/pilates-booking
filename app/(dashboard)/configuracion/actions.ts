@@ -167,36 +167,71 @@ export async function updatePreferencias(formData: FormData) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  const horasAnticipacionMinima = parseInt(formData.get('horasAnticipacionMinima') as string)
-  const maxAlumnosPorClase = parseInt(formData.get('maxAlumnosPorClase') as string)
-  const horarioMananaInicio = formData.get('horarioMananaInicio') as string
-  const horarioMananaFin = formData.get('horarioMananaFin') as string
-  const turnoMananaActivo = formData.get('turnoMananaActivo') === 'on'
-  const horarioTardeInicio = formData.get('horarioTardeInicio') as string
-  const horarioTardeFin = formData.get('horarioTardeFin') as string
-  const turnoTardeActivo = formData.get('turnoTardeActivo') === 'on'
-  const espacioCompartidoId = formData.get('espacioCompartidoId') as string
-  const syncGoogleCalendar = formData.get('syncGoogleCalendar') === 'on'
-  const precioPorClaseStr = formData.get('precioPorClase') as string
+  // Construir objeto de datos solo con campos presentes
+  const data: Record<string, unknown> = {}
 
-  // Normalizar el código de espacio (trim y lowercase)
-  const espacioNormalizado = espacioCompartidoId?.trim().toLowerCase() || null
+  const horasAnticipacionMinimaStr = formData.get('horasAnticipacionMinima') as string | null
+  if (horasAnticipacionMinimaStr) {
+    data.horasAnticipacionMinima = parseInt(horasAnticipacionMinimaStr)
+  }
+
+  const maxAlumnosPorClaseStr = formData.get('maxAlumnosPorClase') as string | null
+  if (maxAlumnosPorClaseStr) {
+    data.maxAlumnosPorClase = parseInt(maxAlumnosPorClaseStr)
+  }
+
+  const horarioMananaInicio = formData.get('horarioMananaInicio') as string | null
+  if (horarioMananaInicio) {
+    data.horarioMananaInicio = horarioMananaInicio
+  }
+
+  const horarioMananaFin = formData.get('horarioMananaFin') as string | null
+  if (horarioMananaFin) {
+    data.horarioMananaFin = horarioMananaFin
+  }
+
+  // turnoMananaActivo: si el campo existe en el form, usar su valor
+  if (formData.has('turnoMananaActivo')) {
+    data.turnoMananaActivo = formData.get('turnoMananaActivo') === 'on'
+  }
+
+  const horarioTardeInicio = formData.get('horarioTardeInicio') as string | null
+  if (horarioTardeInicio) {
+    data.horarioTardeInicio = horarioTardeInicio
+  }
+
+  const horarioTardeFin = formData.get('horarioTardeFin') as string | null
+  if (horarioTardeFin) {
+    data.horarioTardeFin = horarioTardeFin
+  }
+
+  // turnoTardeActivo: si el campo existe en el form, usar su valor
+  if (formData.has('turnoTardeActivo')) {
+    data.turnoTardeActivo = formData.get('turnoTardeActivo') === 'on'
+  }
+
+  const espacioCompartidoId = formData.get('espacioCompartidoId') as string | null
+  if (espacioCompartidoId !== null) {
+    data.espacioCompartidoId = espacioCompartidoId?.trim().toLowerCase() || null
+  }
+
+  if (formData.has('syncGoogleCalendar')) {
+    data.syncGoogleCalendar = formData.get('syncGoogleCalendar') === 'on'
+  }
+
+  const precioPorClaseStr = formData.get('precioPorClase') as string | null
+  if (precioPorClaseStr) {
+    data.precioPorClase = parseFloat(precioPorClaseStr) || 0
+  }
+
+  // Solo actualizar si hay datos
+  if (Object.keys(data).length === 0) {
+    throw new Error('No hay datos para actualizar')
+  }
 
   await prisma.user.update({
     where: { id: userId },
-    data: {
-      horasAnticipacionMinima,
-      maxAlumnosPorClase,
-      horarioMananaInicio,
-      horarioMananaFin,
-      turnoMananaActivo,
-      horarioTardeInicio,
-      horarioTardeFin,
-      turnoTardeActivo,
-      espacioCompartidoId: espacioNormalizado,
-      syncGoogleCalendar,
-      ...(precioPorClaseStr && { precioPorClase: parseFloat(precioPorClaseStr) || 0 })
-    }
+    data
   })
 
   revalidatePath('/configuracion')

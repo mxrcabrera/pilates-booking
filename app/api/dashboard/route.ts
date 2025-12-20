@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
-import { startOfDay, addDays } from 'date-fns'
+import { startOfDay } from 'date-fns'
 
 export const runtime = 'nodejs'
 
@@ -27,11 +27,12 @@ export async function GET() {
       inicioDelDiaLocal.getDate() + 1
     ))
 
-    // Una sola ronda de queries en paralelo (incluye verificación de rol)
-    const [user, totalAlumnos, clasesHoyRaw, clasesMañanaRaw, pagosVencidos] = await Promise.all([
+    // Una sola ronda de queries en paralelo (incluye verificación de rol y datos de setup)
+    const [user, totalAlumnos, clasesHoyRaw, clasesMañanaRaw, pagosVencidos, horariosCount, packsCount] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: {
+          nombre: true,
           role: true,
           horarioTardeInicio: true,
           maxAlumnosPorClase: true
@@ -94,6 +95,12 @@ export async function GET() {
             lt: new Date()
           }
         }
+      }),
+      prisma.horarioDisponible.count({
+        where: { profesorId: userId }
+      }),
+      prisma.pack.count({
+        where: { profesorId: userId }
       })
     ])
 
@@ -121,13 +128,22 @@ export async function GET() {
       esMañana: true
     } : null
 
+    // Datos para el setup wizard (solo si el usuario es nuevo)
+    const setupStatus = {
+      hasHorarios: horariosCount > 0,
+      hasPacks: packsCount > 0,
+      hasAlumnos: totalAlumnos > 0,
+      userName: user?.nombre || null
+    }
+
     return NextResponse.json({
       totalAlumnos,
       clasesHoy,
       pagosVencidos,
       horarioTardeInicio,
       maxAlumnosPorClase,
-      siguienteClase
+      siguienteClase,
+      setupStatus
     })
   } catch (error: any) {
     console.error('Dashboard GET error:', error)

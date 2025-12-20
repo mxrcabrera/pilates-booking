@@ -176,6 +176,13 @@ export type SiguienteClase = {
   esMañana: boolean
 }
 
+export type SetupStatus = {
+  hasHorarios: boolean
+  hasPacks: boolean
+  hasAlumnos: boolean
+  userName: string | null
+}
+
 export type DashboardData = {
   totalAlumnos: number
   clasesHoy: ClaseHoy[]
@@ -183,4 +190,5 @@ export type DashboardData = {
   horarioTardeInicio: string
   maxAlumnosPorClase: number
   siguienteClase: SiguienteClase | null
+  setupStatus: SetupStatus
 }

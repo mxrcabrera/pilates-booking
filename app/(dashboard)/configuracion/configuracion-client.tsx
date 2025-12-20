@@ -10,6 +10,9 @@ import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { TimeInput } from '@/components/time-input'
 import { SelectInput } from '@/components/select-input'
 import type { Horario, Pack, ProfesorConfig } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
+
+const DIAS_NOMBRES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 
 interface ConfiguracionClientProps {
   profesor: ProfesorConfig
@@ -38,16 +41,14 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
       invalidateCache(CACHE_KEYS.ALUMNOS)
       setMessage({ type: 'success', text: 'Configuración guardada correctamente' })
       setTimeout(() => setMessage(null), 3000)
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Error al guardar configuración' })
+    } catch (err) {
+      setMessage({ type: 'error', text: getErrorMessage(err) || 'Error al guardar configuración' })
     } finally {
       setIsLoading(false)
     }
   }
 
   // Transformar horarios de DB a formato para HorariosDisponibles
-  const DIAS_NOMBRES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-
   const horariosAgrupados = useMemo(() => {
     const result = []
 
@@ -197,8 +198,8 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
               setHorarioDialogOpen(true)
             }
           }}
-          onEliminar={(id) => console.log('eliminar', id)}
-          onAgregarDisponibilidad={(dia) => {
+          onEliminar={(_id) => { /* Eliminación manejada en HorariosSection */ }}
+          onAgregarDisponibilidad={(_dia) => {
             setHorarioToEdit(null)
             setHorarioDialogOpen(true)
           }}

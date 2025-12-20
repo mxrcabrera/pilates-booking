@@ -5,7 +5,10 @@ import { updatePreferencias } from './actions'
 import { PacksSection } from './packs-section'
 import { TimeInput } from '@/components/time-input'
 import { SelectInput } from '@/components/select-input'
+import { SectionWrapper } from '@/components/ui/section-wrapper'
+import { FormMessage } from '@/components/ui/form-field'
 import type { Pack } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
 
 type PreferenciasProps = {
   horasAnticipacionMinima: number
@@ -28,8 +31,8 @@ export function PreferenciasSection({
   horarioTardeInicio,
   horarioTardeFin,
   espacioCompartidoId,
-  syncGoogleCalendar,
-  hasGoogleAccount,
+  syncGoogleCalendar: _syncGoogleCalendar,
+  hasGoogleAccount: _hasGoogleAccount,
   packs
 }: PreferenciasProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -45,21 +48,16 @@ export function PreferenciasSection({
     try {
       await updatePreferencias(formData)
       setMessage({ type: 'success', text: 'Preferencias actualizadas correctamente' })
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Error al actualizar preferencias' })
+    } catch (err) {
+      setMessage({ type: 'error', text: getErrorMessage(err) || 'Error al actualizar preferencias' })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="settings-section">
-      <div className="section-content">
-        {message && (
-          <div className={`form-message ${message.type}`}>
-            {message.text}
-          </div>
-        )}
+    <SectionWrapper>
+        {message && <FormMessage type={message.type} message={message.text} />}
 
         <form onSubmit={handleSubmit} className="form-content">
           <div className="form-group">
@@ -199,7 +197,6 @@ export function PreferenciasSection({
           </p>
           <PacksSection packs={packs} />
         </div>
-      </div>
-    </div>
+    </SectionWrapper>
   )
 }

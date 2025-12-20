@@ -7,8 +7,9 @@ import { AlumnoDialog } from './alumno-dialog'
 import { AlumnoDetailSheet } from './alumno-detail-sheet'
 import { toggleAlumnoStatusAPI, deleteAlumnoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
+import { getErrorMessage } from '@/lib/utils'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
-import { EmptyState } from '@/components/empty-state'
+import { EmptyState } from '@/components/ui/empty-state'
 import type { Alumno, Pack } from '@/lib/types'
 
 type FilterType = 'todos' | 'activos' | 'inactivos'
@@ -77,9 +78,9 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
     try {
       await toggleAlumnoStatusAPI(alumno.id)
       showSuccess(alumno.estaActivo ? 'Alumno desactivado' : 'Alumno activado')
-    } catch (err: any) {
+    } catch (err) {
       setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, estaActivo: !a.estaActivo } : a))
-      showError(err.message)
+      showError(getErrorMessage(err))
     }
   }
 
@@ -99,8 +100,8 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
         setIsSheetOpen(false)
         setSelectedAlumno(null)
       }
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     } finally {
       setIsDeleting(false)
     }
@@ -132,8 +133,8 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
       showSuccess(`${idsToDelete.length} alumno(s) eliminado(s)`)
       setBulkDeleteConfirm(false)
       setSelectedAlumnos(new Set())
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     } finally {
       setIsDeleting(false)
     }
@@ -154,8 +155,8 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
       }))
       showSuccess(`${idsToToggle.length} alumno(s) ${activate ? 'activado(s)' : 'desactivado(s)'}`)
       setSelectedAlumnos(new Set())
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     }
   }
 
@@ -318,7 +319,6 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
         }}
         alumno={selectedAlumno}
         onEdit={() => handleEdit(selectedAlumno!)}
-        packs={packs}
       />
 
       <ConfirmModal

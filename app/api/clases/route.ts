@@ -4,6 +4,10 @@ import { getCurrentUser } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
 import { auth } from '@/lib/auth'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
+import { getErrorMessage } from '@/lib/utils'
+
+// Google Calendar API responses don't have proper TypeScript types
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const runtime = 'nodejs'
 
@@ -142,9 +146,9 @@ export async function GET() {
       maxAlumnosPorClase: user.maxAlumnosPorClase || 3,
       horasAnticipacionMinima: user.horasAnticipacionMinima || 1
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Clases GET error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }
 
@@ -633,10 +637,10 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Clases API error:', error)
     return NextResponse.json(
-      { error: error.message || 'Error interno del servidor' },
+      { error: getErrorMessage(error) || 'Error interno del servidor' },
       { status: 500 }
     )
   }

@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import type { Pack } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
 
 type PacksSectionProps = {
   packs: Pack[]
@@ -48,8 +49,8 @@ export function PacksSection({ packs: initialPacks, renderButton }: PacksSection
       invalidateCache(CACHE_KEYS.ALUMNOS) // Invalidar cache de alumnos
       showSuccess('Pack eliminado')
       setDeleteConfirm({ isOpen: false, id: null })
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     } finally {
       setIsDeleting(false)
     }

@@ -7,7 +7,7 @@ import { getCachedData, setCachedData } from './client-cache'
 type UsePageDataOptions<T> = {
   cacheKey: string
   apiUrl: string
-  transform?: (data: any) => T
+  transform?: (data: unknown) => T
 }
 
 type UsePageDataResult<T> = {
@@ -49,18 +49,20 @@ export function usePageData<T>({
         setCachedData(cacheKey, responseData)
         setData(transform ? transform(responseData) : responseData)
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Intencionalmente solo se ejecuta al montar para evitar refetch innecesarios
   useEffect(() => {
     if (!data) {
       fetchData()
     }
-  }, []) // Solo al montar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const refresh = () => {
     setData(null)

@@ -9,6 +9,7 @@ import { marcarPagadoAPI, marcarPendienteAPI, deletePagoAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { formatMes, diasDiferencia } from '@/lib/dates'
 import type { Pago, AlumnoPago } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
 
 type FilterType = 'todos' | 'pendientes' | 'pagados'
 
@@ -161,9 +162,9 @@ export function PagosClient({
         showSuccess('Pago marcado como pendiente')
       }
       invalidateCache(CACHE_KEYS.PAGOS)
-    } catch (err: any) {
+    } catch (err) {
       setPagos(prev => prev.map(p => p.id === pago.id ? pago : p))
-      showError(err.message || 'Error al actualizar pago')
+      showError(getErrorMessage(err) || 'Error al actualizar pago')
     }
   }
 
@@ -179,9 +180,9 @@ export function PagosClient({
       await deletePagoAPI(pago.id)
       showSuccess('Pago eliminado')
       invalidateCache(CACHE_KEYS.PAGOS)
-    } catch (err: any) {
+    } catch (err) {
       setPagos(prev => [...prev, pago])
-      showError(err.message || 'Error al eliminar pago')
+      showError(getErrorMessage(err) || 'Error al eliminar pago')
     } finally {
       setIsDeleting(false)
     }
@@ -220,8 +221,8 @@ export function PagosClient({
       setBulkDeleteConfirm(false)
       setSelectedPagos(new Set())
       invalidateCache(CACHE_KEYS.PAGOS)
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     } finally {
       setIsDeleting(false)
     }
@@ -244,8 +245,8 @@ export function PagosClient({
       showSuccess(`${idsToMark.length} pago(s) marcado(s) como pagado`)
       setSelectedPagos(new Set())
       invalidateCache(CACHE_KEYS.PAGOS)
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     }
   }
 

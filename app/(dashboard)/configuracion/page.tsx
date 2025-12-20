@@ -1,7 +1,7 @@
 'use client'
 
 import { ConfiguracionClient } from './configuracion-client'
-import { PageLoading } from '@/components/page-loading'
+import { PageLoading } from '@/components/ui/loading'
 import { usePageData } from '@/lib/use-page-data'
 import { CACHE_KEYS } from '@/lib/client-cache'
 import type { ConfigData } from '@/lib/types'

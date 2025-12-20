@@ -2,22 +2,21 @@
 
 import { X, Edit2, UserX, UserCheck, Trash2 } from 'lucide-react'
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
-import type { Alumno, Pack } from '@/lib/types'
+import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
 import { getPaymentStatus, getStatusText, getClasesRestantesDetalle } from '@/lib/alumno-utils'
+import { getErrorMessage } from '@/lib/utils'
 
 export function AlumnoDetailSheet({
   isOpen,
   onClose,
   alumno,
-  onEdit,
-  packs
+  onEdit
 }: {
   isOpen: boolean
   onClose: () => void
   alumno: Alumno | null
   onEdit: () => void
-  packs: Pack[]
 }) {
   if (!isOpen || !alumno) return null
 
@@ -25,8 +24,8 @@ export function AlumnoDetailSheet({
     try {
       await toggleAlumnoStatus(alumno.id)
       onClose()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(err instanceof Error ? getErrorMessage(err) : 'Error al cambiar estado')
     }
   }
 
@@ -35,8 +34,8 @@ export function AlumnoDetailSheet({
     try {
       await deleteAlumno(alumno.id)
       onClose()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(err instanceof Error ? getErrorMessage(err) : 'Error al eliminar')
     }
   }
 

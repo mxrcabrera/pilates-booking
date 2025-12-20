@@ -1,6 +1,9 @@
 import { google } from 'googleapis'
 import { prisma } from './prisma'
 
+// Google Calendar API client doesn't have complete TypeScript types
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const CALENDAR_ID = 'primary'
 
 /**

@@ -3,13 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createAlumnoAPI, updateAlumnoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { getErrorMessage } from '@/lib/utils'
+import { DialogBase } from '@/components/ui/dialog-base'
 import { DateInput } from '@/components/date-input'
 import type { Alumno, Pack } from '@/lib/types'
 
@@ -28,7 +23,7 @@ export function AlumnoDialog({
   packs: Pack[]
   precioPorClase: string
 }) {
-  const { showSuccess, showError } = useToast()
+  const { showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [packType, setPackType] = useState<'mensual' | 'por_clase'>(
@@ -146,8 +141,8 @@ export function AlumnoDialog({
         onSuccess?.(result.alumno, false)
       }
       onClose()
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar alumno')
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setIsLoading(false)
     }
@@ -187,217 +182,218 @@ export function AlumnoDialog({
 
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{alumno ? 'Editar Alumno' : 'Nuevo Alumno'}</DialogTitle>
-        </DialogHeader>
+    <DialogBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title={alumno ? 'Editar Alumno' : 'Nuevo Alumno'}
+      size="lg"
+      footer={
+        <>
+          <button
+            type="submit"
+            form="alumno-form"
+            className="btn-primary"
+            disabled={isLoading || (!puedeMensual && !puedePorClase)}
+          >
+            {isLoading ? 'Guardando...' : 'Guardar'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost"
+            disabled={isLoading}
+          >
+            Cancelar
+          </button>
+        </>
+      }
+    >
+      {error && (
+        <div className="form-message error">
+          {error}
+        </div>
+      )}
 
-        {error && (
-          <div className="form-message error">
-            {error}
+      <form id="alumno-form" onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Nombre Completo</label>
+          <input
+            type="text"
+            name="nombre"
+            placeholder="María García"
+            required
+            defaultValue={alumno?.nombre}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="maria@email.com"
+            required
+            defaultValue={alumno?.email}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Teléfono</label>
+          <input
+            type="tel"
+            name="telefono"
+            placeholder="+54 9 11 1234-5678"
+            required
+            defaultValue={alumno?.telefono}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Cumpleaños</label>
+          <DateInput
+            name="cumpleanos"
+            max={getMaxDate()}
+            defaultValue={formatDateForInput(alumno?.cumpleanos || null)}
+            onChange={handleCumpleanosChange}
+            disabled={isLoading}
+            required={false}
+          />
+        </div>
+
+        {esMenor && (
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={consentimientoTutor}
+                onChange={(e) => setConsentimientoTutor(e.target.checked)}
+                disabled={isLoading}
+              />
+              <span>Tengo consentimiento de padre, madre o tutor</span>
+            </label>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="dialog-body">
-          <div className="form-group">
-            <label>Nombre Completo</label>
-            <input
-              type="text"
-              name="nombre"
-              placeholder="María García"
-              required
-              defaultValue={alumno?.nombre}
+        <div className="form-group">
+          <label>Patologías / Observaciones</label>
+          <textarea
+              name="patologias"
+              placeholder="Lesiones, condiciones médicas, limitaciones físicas..."
+              rows={3}
+              defaultValue={alumno?.patologias || ''}
               disabled={isLoading}
-            />
-          </div>
+              className="form-textarea"
+          />
+        </div>
 
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="maria@email.com"
-              required
-              defaultValue={alumno?.email}
+        <div className="form-group">
+          <label>Género</label>
+          <div className="genero-grid">
+            <button
+              type="button"
+              onClick={() => setSelectedGenero('F')}
               disabled={isLoading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Teléfono</label>
-            <input
-              type="tel"
-              name="telefono"
-              placeholder="+54 9 11 1234-5678"
-              required
-              defaultValue={alumno?.telefono}
+              className={`pack-option ${selectedGenero === 'F' ? 'selected' : ''}`}
+            >
+              <div className="pack-option-label">Mujer</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedGenero('M')}
               disabled={isLoading}
-            />
+              className={`pack-option ${selectedGenero === 'M' ? 'selected' : ''}`}
+            >
+              <div className="pack-option-label">Hombre</div>
+            </button>
           </div>
+        </div>
 
-          <div className="form-group">
-            <label>Cumpleaños</label>
-            <DateInput
-              name="cumpleanos"
-              max={getMaxDate()}
-              defaultValue={formatDateForInput(alumno?.cumpleanos || null)}
-              onChange={handleCumpleanosChange}
-              disabled={isLoading}
-              required={false}
-            />
-          </div>
-
-          {esMenor && (
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={consentimientoTutor}
-                  onChange={(e) => setConsentimientoTutor(e.target.checked)}
-                  disabled={isLoading}
-                />
-                <span>Tengo consentimiento de padre, madre o tutor</span>
-              </label>
+        <div className="form-group">
+          <label>Tipo de Pago</label>
+          {!puedeMensual && !puedePorClase ? (
+            <div className="form-warning-box">
+              <p className="form-warning-text">
+                No hay opciones de pago configuradas. Creá packs o configurá el precio por clase en <strong>Configuración &gt; Packs y Precios</strong>
+              </p>
+            </div>
+          ) : (
+            <div className="tipo-pago-grid">
+              <button
+                type="button"
+                onClick={() => puedeMensual && setPackType('mensual')}
+                disabled={isLoading || !puedeMensual}
+                className={`pack-option ${packType === 'mensual' ? 'selected' : ''}`}
+                style={{ opacity: puedeMensual ? 1 : 0.5 }}
+              >
+                <div className="pack-option-label">Mensual</div>
+                {!puedeMensual && <div className="pack-option-note">Sin packs</div>}
+              </button>
+              <button
+                type="button"
+                onClick={() => puedePorClase && setPackType('por_clase')}
+                disabled={isLoading || !puedePorClase}
+                className={`pack-option ${packType === 'por_clase' ? 'selected' : ''}`}
+                style={{ opacity: puedePorClase ? 1 : 0.5 }}
+              >
+                <div className="pack-option-label">Por Clase</div>
+                {!puedePorClase && <div className="pack-option-note">Sin precio</div>}
+              </button>
             </div>
           )}
+        </div>
 
+        {packType === 'mensual' && (
           <div className="form-group">
-            <label>Patologías / Observaciones</label>
-            <textarea
-                name="patologias"
-                placeholder="Lesiones, condiciones médicas, limitaciones físicas..."
-                rows={3}
-                defaultValue={alumno?.patologias || ''}
-                disabled={isLoading}
-                className="form-textarea"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Género</label>
-            <div className="genero-grid">
-              <button
-                type="button"
-                onClick={() => setSelectedGenero('F')}
-                disabled={isLoading}
-                className={`pack-option ${selectedGenero === 'F' ? 'selected' : ''}`}
-              >
-                <div className="pack-option-label">Mujer</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedGenero('M')}
-                disabled={isLoading}
-                className={`pack-option ${selectedGenero === 'M' ? 'selected' : ''}`}
-              >
-                <div className="pack-option-label">Hombre</div>
-              </button>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Tipo de Pago</label>
-            {!puedeMensual && !puedePorClase ? (
-              <div className="form-warning-box">
-                <p className="form-warning-text">
-                  No hay opciones de pago configuradas. Creá packs o configurá el precio por clase en <strong>Configuración &gt; Packs y Precios</strong>
-                </p>
-              </div>
+            <label>Pack Mensual</label>
+            {packs.length === 0 ? (
+              <p className="form-warning-text">
+                No tenés packs configurados. Crealos en Configuracion &gt; Packs y Precios
+              </p>
             ) : (
-              <div className="tipo-pago-grid">
-                <button
-                  type="button"
-                  onClick={() => puedeMensual && setPackType('mensual')}
-                  disabled={isLoading || !puedeMensual}
-                  className={`pack-option ${packType === 'mensual' ? 'selected' : ''}`}
-                  style={{ opacity: puedeMensual ? 1 : 0.5 }}
-                >
-                  <div className="pack-option-label">Mensual</div>
-                  {!puedeMensual && <div className="pack-option-note">Sin packs</div>}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => puedePorClase && setPackType('por_clase')}
-                  disabled={isLoading || !puedePorClase}
-                  className={`pack-option ${packType === 'por_clase' ? 'selected' : ''}`}
-                  style={{ opacity: puedePorClase ? 1 : 0.5 }}
-                >
-                  <div className="pack-option-label">Por Clase</div>
-                  {!puedePorClase && <div className="pack-option-note">Sin precio</div>}
-                </button>
+              <div className="pack-list">
+                {packs.map(pack => (
+                  <button
+                    key={pack.id}
+                    type="button"
+                    onClick={() => setSelectedPackId(pack.id)}
+                    disabled={isLoading}
+                    className={`pack-option pack-option-detailed ${selectedPackId === pack.id ? 'selected' : ''}`}
+                  >
+                    <div className="pack-option-content">
+                      <div className="pack-option-info">
+                        <div className="pack-option-label">{pack.nombre}</div>
+                        <div className="pack-option-description">
+                          {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''} por semana
+                        </div>
+                      </div>
+                      <div className="pack-option-price">
+                        ${parseFloat(pack.precio).toLocaleString('es-AR')}
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
+        )}
 
-          {packType === 'mensual' && (
-            <div className="form-group">
-              <label>Pack Mensual</label>
-              {packs.length === 0 ? (
-                <p className="form-warning-text">
-                  No tenés packs configurados. Crealos en Configuracion &gt; Packs y Precios
-                </p>
-              ) : (
-                <div className="pack-list">
-                  {packs.map(pack => (
-                    <button
-                      key={pack.id}
-                      type="button"
-                      onClick={() => setSelectedPackId(pack.id)}
-                      disabled={isLoading}
-                      className={`pack-option pack-option-detailed ${selectedPackId === pack.id ? 'selected' : ''}`}
-                    >
-                      <div className="pack-option-content">
-                        <div className="pack-option-info">
-                          <div className="pack-option-label">{pack.nombre}</div>
-                          <div className="pack-option-description">
-                            {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''} por semana
-                          </div>
-                        </div>
-                        <div className="pack-option-price">
-                          ${parseFloat(pack.precio).toLocaleString('es-AR')}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {packType === 'por_clase' && (
-            <div className="form-group">
-              <label>Precio por Clase</label>
-              <div className="precio-info-box">
-                <div className="precio-info-amount">
-                  ${parseFloat(precioPorClase).toLocaleString('es-AR')}
-                </div>
-                <div className="precio-info-note">
-                  Precio configurado en ajustes
-                </div>
+        {packType === 'por_clase' && (
+          <div className="form-group">
+            <label>Precio por Clase</label>
+            <div className="precio-info-box">
+              <div className="precio-info-amount">
+                ${parseFloat(precioPorClase).toLocaleString('es-AR')}
+              </div>
+              <div className="precio-info-note">
+                Precio configurado en ajustes
               </div>
             </div>
-          )}
-
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-ghost"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isLoading || (!puedeMensual && !puedePorClase)}
-            >
-              {isLoading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        )}
+      </form>
+    </DialogBase>
   )
 }

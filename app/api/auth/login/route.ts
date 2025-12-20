@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, verifyPassword, createToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { getErrorMessage } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 
@@ -94,10 +95,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ success: true, redirectTo: '/dashboard' })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Auth error:', error)
     return NextResponse.json(
-      { error: error.message || 'Error interno del servidor' },
+      { error: getErrorMessage(error) || 'Error interno del servidor' },
       { status: 500 }
     )
   }

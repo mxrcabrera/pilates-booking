@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 
@@ -162,7 +163,7 @@ export async function GET(request: NextRequest) {
     }))
 
     return NextResponse.json({ pagos, alumnos: alumnosSerializados })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching pagos:', error)
     return NextResponse.json({ error: 'Error al obtener pagos' }, { status: 500 })
   }
@@ -345,8 +346,8 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error en pagos:', error)
-    return NextResponse.json({ error: error.message || 'Error al procesar' }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) || 'Error al procesar' }, { status: 500 })
   }
 }

@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { updateProfile } from './actions'
+import { getErrorMessage } from '@/lib/utils'
+import { SectionWrapper } from '@/components/ui/section-wrapper'
+import { FormField, FormMessage } from '@/components/ui/form-field'
 
 type Profesor = {
   nombre: string
@@ -23,46 +26,37 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
     try {
       await updateProfile(formData)
       setMessage({ type: 'success', text: 'Perfil actualizado correctamente' })
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Error al actualizar perfil' })
+    } catch (err) {
+      setMessage({ type: 'error', text: getErrorMessage(err) || 'Error al actualizar perfil' })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="settings-section">
-      <div className="section-content">
-        {message && (
-          <div className={`form-message ${message.type}`}>
-            {message.text}
-          </div>
-        )}
+    <SectionWrapper>
+      {message && <FormMessage type={message.type} message={message.text} />}
 
-        <form onSubmit={handleSubmit} className="form-content">
-        <div className="form-group">
-          <label>Nombre</label>
-          <input 
-            type="text" 
+      <form onSubmit={handleSubmit} className="form-content">
+        <FormField label="Nombre" required>
+          <input
+            type="text"
             name="nombre"
             defaultValue={profesor.nombre}
             required
             disabled={isLoading}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Email</label>
-          <input 
-            type="email" 
-            defaultValue={profesor.email} 
-            disabled 
+        <FormField label="Email" hint="El email no se puede modificar">
+          <input
+            type="email"
+            defaultValue={profesor.email}
+            disabled
           />
-          <p className="form-hint">El email no se puede modificar</p>
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Teléfono</label>
+        <FormField label="Teléfono">
           <input
             type="tel"
             name="telefono"
@@ -70,15 +64,14 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
             placeholder="+54 9 11 1234-5678"
             disabled={isLoading}
           />
-        </div>
+        </FormField>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-primary" disabled={isLoading}>
-              {isLoading ? 'Guardando...' : 'Guardar Cambios'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="form-actions">
+          <button type="submit" className="btn-primary" disabled={isLoading}>
+            {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+          </button>
+        </div>
+      </form>
+    </SectionWrapper>
   )
 }

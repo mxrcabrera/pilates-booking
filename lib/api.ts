@@ -1,6 +1,6 @@
 // Helper functions for API calls
 
-export async function apiCall(action: string, data: Record<string, any> = {}) {
+export async function apiCall(action: string, data: Record<string, unknown> = {}) {
   const response = await fetch('/api/configuracion', {
     method: 'POST',
     headers: {
@@ -91,7 +91,7 @@ export async function updatePreferenciasAPI(data: {
 }
 
 // Helper genérico para otras APIs
-async function apiCallTo(endpoint: string, action: string, data: Record<string, any> = {}) {
+async function apiCallTo(endpoint: string, action: string, data: Record<string, unknown> = {}) {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {

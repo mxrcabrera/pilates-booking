@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { changePassword } from './actions'
+import { getErrorMessage } from '@/lib/utils'
+import { SectionWrapper } from '@/components/ui/section-wrapper'
+import { FormField, FormMessage } from '@/components/ui/form-field'
 
 export function PasswordForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -18,49 +21,41 @@ export function PasswordForm() {
       await changePassword(formData)
       setMessage({ type: 'success', text: 'Contraseña cambiada correctamente' })
       e.currentTarget.reset()
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Error al cambiar contraseña' })
+    } catch (err) {
+      setMessage({ type: 'error', text: getErrorMessage(err) || 'Error al cambiar contraseña' })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="settings-section">
-      <div className="section-content">
-        {message && (
-          <div className={`form-message ${message.type}`}>
-            {message.text}
-          </div>
-        )}
+    <SectionWrapper>
+      {message && <FormMessage type={message.type} message={message.text} />}
 
-        <form onSubmit={handleSubmit} className="form-content">
-        <div className="form-group">
-          <label>Contraseña Actual</label>
-          <input 
-            type="password" 
+      <form onSubmit={handleSubmit} className="form-content">
+        <FormField label="Contraseña Actual" required>
+          <input
+            type="password"
             name="currentPassword"
-            placeholder="••••••••" 
+            placeholder="••••••••"
             required
             minLength={6}
             disabled={isLoading}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Nueva Contraseña</label>
-          <input 
-            type="password" 
+        <FormField label="Nueva Contraseña" required>
+          <input
+            type="password"
             name="newPassword"
-            placeholder="••••••••" 
+            placeholder="••••••••"
             required
             minLength={6}
             disabled={isLoading}
           />
-        </div>
+        </FormField>
 
-        <div className="form-group">
-          <label>Confirmar Contraseña</label>
+        <FormField label="Confirmar Contraseña" required>
           <input
             type="password"
             name="confirmPassword"
@@ -69,15 +64,14 @@ export function PasswordForm() {
             minLength={6}
             disabled={isLoading}
           />
-        </div>
+        </FormField>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-primary" disabled={isLoading}>
-              {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="form-actions">
+          <button type="submit" className="btn-primary" disabled={isLoading}>
+            {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
+          </button>
+        </div>
+      </form>
+    </SectionWrapper>
   )
 }

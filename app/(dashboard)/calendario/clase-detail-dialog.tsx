@@ -7,15 +7,10 @@ import { es } from 'date-fns/locale'
 import { deleteClaseAPI, changeClaseStatusAPI, changeAsistenciaAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { DialogBase } from '@/components/ui/dialog-base'
 import type { Clase } from '@/lib/types'
 import { DIAS_SEMANA_COMPLETO, ESTADO_LABELS, ASISTENCIA_LABELS } from '@/lib/constants'
+import { getErrorMessage } from '@/lib/utils'
 
 const DIAS_NOMBRES: Record<number, string> = DIAS_SEMANA_COMPLETO.reduce((acc, dia, index) => {
   acc[index] = dia
@@ -89,8 +84,8 @@ export function ClaseDetailDialog({
       }
       setDeleteConfirmOpen(false)
       onClose()
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     } finally {
       setIsDeleting(false)
     }
@@ -107,15 +102,14 @@ export function ClaseDetailDialog({
         await changeClaseStatusAPI(clase.id, nuevoEstado)
         showSuccess('Estado actualizado')
       }
-    } catch (err: any) {
+    } catch (err) {
       setCurrentEstado(clase.estado)
-      showError(err.message)
+      showError(getErrorMessage(err))
     }
   }
 
   const handleAsistenciaChange = async (nuevaAsistencia: string) => {
     try {
-      const asistenciaAnterior = currentAsistencia
       setCurrentAsistencia(nuevaAsistencia)
       // También actualizar estado visual
       setCurrentEstado(nuevaAsistencia === 'pendiente' ? 'reservada' : 'completada')
@@ -127,134 +121,156 @@ export function ClaseDetailDialog({
         pendiente: 'Asistencia desmarcada'
       }
       showSuccess(mensajes[nuevaAsistencia])
-    } catch (err: any) {
+    } catch (err) {
       setCurrentAsistencia(clase.asistencia)
       setCurrentEstado(clase.estado)
-      showError(err.message)
+      showError(getErrorMessage(err))
     }
   }
 
+  const footerButtons = (
+    <>
+      <button onClick={() => setDeleteConfirmOpen(true)} className="btn-ghost danger">
+        <Trash2 size={18} />
+        <span>Eliminar</span>
+      </button>
+      <button onClick={onEdit} className="btn-primary">
+        <Edit2 size={18} />
+        <span>Editar</span>
+      </button>
+    </>
+  )
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Detalle de Clase</DialogTitle>
-        </DialogHeader>
-
-        <div className="dialog-body">
-          <div className="clase-detail-section">
-            <div className="detail-item">
-              <span className="detail-label">Alumno</span>
-              <span className="detail-value">
-                {clase.alumno?.nombre || 'Sin asignar'}
-              </span>
-            </div>
-
-            <div className="detail-item">
-              <span className="detail-label">Fecha</span>
-              <span className="detail-value">
-                {format(clase.fecha, "EEEE, d 'de' MMMM", { locale: es })}
-              </span>
-            </div>
-
-            <div className="detail-item">
-              <span className="detail-label">Hora</span>
-              <span className="detail-value">{clase.horaInicio}</span>
-            </div>
-
-            <div className="detail-item">
-              <span className="detail-label">Estado</span>
-              <span className={`status-badge ${currentEstado}`}>
-                {ESTADO_LABELS[currentEstado]}
-              </span>
-            </div>
-
-            {clase.alumno && (
-              <div className="detail-item">
-                <span className="detail-label">Asistencia</span>
-                <span className={`status-badge asistencia-${currentAsistencia}`}>
-                  {ASISTENCIA_LABELS[currentAsistencia]}
-                </span>
-              </div>
-            )}
-
-            {clase.alumno && clase.alumno.clasesPorMes && (() => {
-              const porcentaje = (clase.clasesUsadasEsteMes / clase.alumno.clasesPorMes) * 100
-              const colorClass = porcentaje >= 100 ? 'complete' : porcentaje >= 50 ? 'medium' : ''
-              return (
-                <div className="detail-item clases-progress-item">
-                  <span className="detail-label">Clases del mes</span>
-                  <span className="clases-progress-text">
-                    {clase.clasesUsadasEsteMes}/{clase.alumno.clasesPorMes}
-                  </span>
-                  <div className="clases-progress-bar">
-                    <div
-                      className={`clases-progress-fill ${colorClass}`}
-                      style={{ width: `${Math.min(porcentaje, 100)}%` }}
-                    />
-                  </div>
-                  {porcentaje >= 100 && (
-                    <div className="pack-completo-alert">
-                      Pack completado - Renovar pago
-                    </div>
-                  )}
-                </div>
-              )
-            })()}
-
-            {clase.esClasePrueba && (
-              <div className="detail-item">
-                <span className="clase-prueba-badge">Clase de Prueba</span>
-              </div>
-            )}
-
-            {clase.esRecurrente && clase.diasSemana.length > 0 && (
-              <div className="detail-item">
-                <span className="detail-label">Días de clase</span>
-                <span className="detail-value">
-                  {clase.diasSemana.map(dia => DIAS_NOMBRES[dia]).join(', ')}
-                </span>
-              </div>
-            )}
-
-            {clase.esRecurrente && (
-              <div className="detail-item">
-                <span className="detail-label">Frecuencia</span>
-                <span className="detail-value">
-                  🔁 {clase.frecuenciaSemanal}x por semana
-                </span>
-              </div>
-            )}
+    <>
+      <DialogBase
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Detalle de Clase"
+        footer={footerButtons}
+      >
+        <div className="clase-detail-section">
+          <div className="detail-item">
+            <span className="detail-label">Alumno</span>
+            <span className="detail-value">
+              {clase.alumno?.nombre || 'Sin asignar'}
+            </span>
           </div>
 
-          <div className="clase-actions-section">
-            <p className="section-label">Acciones rápidas</p>
-            <div className="clase-actions-grid">
-              {/* Si está cancelada: botón para reprogramar */}
-              {currentEstado === 'cancelada' ? (
-                <button
-                  onClick={onEdit}
-                  className="action-btn primary"
-                >
-                  <RefreshCw size={18} />
-                  <span>Reprogramar</span>
-                </button>
-              ) : (
-                <>
-                  {/* Botones de asistencia - solo si hay alumno */}
-                  {clase.alumno && (
-                    <>
-                      {currentAsistencia === 'presente' ? (
-                        <button
-                          onClick={() => handleAsistenciaChange('ausente')}
-                          className="action-btn danger"
-                          disabled={!puedeMarcarAsistencia}
-                          title={!puedeMarcarAsistencia ? 'Disponible desde que empiece la clase' : ''}
-                        >
-                          <UserX size={18} />
-                          <span>Marcar ausente</span>
-                        </button>
-                      ) : currentAsistencia === 'ausente' ? (
+          <div className="detail-item">
+            <span className="detail-label">Fecha</span>
+            <span className="detail-value">
+              {format(clase.fecha, "EEEE, d 'de' MMMM", { locale: es })}
+            </span>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Hora</span>
+            <span className="detail-value">{clase.horaInicio}</span>
+          </div>
+
+          <div className="detail-item">
+            <span className="detail-label">Estado</span>
+            <span className={`status-badge ${currentEstado}`}>
+              {ESTADO_LABELS[currentEstado]}
+            </span>
+          </div>
+
+          {clase.alumno && (
+            <div className="detail-item">
+              <span className="detail-label">Asistencia</span>
+              <span className={`status-badge asistencia-${currentAsistencia}`}>
+                {ASISTENCIA_LABELS[currentAsistencia]}
+              </span>
+            </div>
+          )}
+
+          {clase.alumno && clase.alumno.clasesPorMes && (() => {
+            const porcentaje = (clase.clasesUsadasEsteMes / clase.alumno.clasesPorMes) * 100
+            const colorClass = porcentaje >= 100 ? 'complete' : porcentaje >= 50 ? 'medium' : ''
+            return (
+              <div className="detail-item clases-progress-item">
+                <span className="detail-label">Clases del mes</span>
+                <span className="clases-progress-text">
+                  {clase.clasesUsadasEsteMes}/{clase.alumno.clasesPorMes}
+                </span>
+                <div className="clases-progress-bar">
+                  <div
+                    className={`clases-progress-fill ${colorClass}`}
+                    style={{ width: `${Math.min(porcentaje, 100)}%` }}
+                  />
+                </div>
+                {porcentaje >= 100 && (
+                  <div className="pack-completo-alert">
+                    Pack completado - Renovar pago
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {clase.esClasePrueba && (
+            <div className="detail-item">
+              <span className="clase-prueba-badge">Clase de Prueba</span>
+            </div>
+          )}
+
+          {clase.esRecurrente && clase.diasSemana.length > 0 && (
+            <div className="detail-item">
+              <span className="detail-label">Días de clase</span>
+              <span className="detail-value">
+                {clase.diasSemana.map(dia => DIAS_NOMBRES[dia]).join(', ')}
+              </span>
+            </div>
+          )}
+
+          {clase.esRecurrente && (
+            <div className="detail-item">
+              <span className="detail-label">Frecuencia</span>
+              <span className="detail-value">
+                🔁 {clase.frecuenciaSemanal}x por semana
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="clase-actions-section">
+          <p className="section-label">Acciones rápidas</p>
+          <div className="clase-actions-grid">
+            {currentEstado === 'cancelada' ? (
+              <button
+                onClick={onEdit}
+                className="action-btn primary"
+              >
+                <RefreshCw size={18} />
+                <span>Reprogramar</span>
+              </button>
+            ) : (
+              <>
+                {clase.alumno && (
+                  <>
+                    {currentAsistencia === 'presente' ? (
+                      <button
+                        onClick={() => handleAsistenciaChange('ausente')}
+                        className="action-btn danger"
+                        disabled={!puedeMarcarAsistencia}
+                        title={!puedeMarcarAsistencia ? 'Disponible desde que empiece la clase' : ''}
+                      >
+                        <UserX size={18} />
+                        <span>Marcar ausente</span>
+                      </button>
+                    ) : currentAsistencia === 'ausente' ? (
+                      <button
+                        onClick={() => handleAsistenciaChange('presente')}
+                        className="action-btn success"
+                        disabled={!puedeMarcarAsistencia}
+                        title={!puedeMarcarAsistencia ? 'Disponible desde que empiece la clase' : ''}
+                      >
+                        <CheckCircle size={18} />
+                        <span>Marcar presente</span>
+                      </button>
+                    ) : (
+                      <>
                         <button
                           onClick={() => handleAsistenciaChange('presente')}
                           className="action-btn success"
@@ -262,60 +278,36 @@ export function ClaseDetailDialog({
                           title={!puedeMarcarAsistencia ? 'Disponible desde que empiece la clase' : ''}
                         >
                           <CheckCircle size={18} />
-                          <span>Marcar presente</span>
+                          <span>Presente</span>
                         </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleAsistenciaChange('presente')}
-                            className="action-btn success"
-                            disabled={!puedeMarcarAsistencia}
-                            title={!puedeMarcarAsistencia ? 'Disponible desde que empiece la clase' : ''}
-                          >
-                            <CheckCircle size={18} />
-                            <span>Presente</span>
-                          </button>
-                          <button
-                            onClick={() => handleAsistenciaChange('ausente')}
-                            className="action-btn danger"
-                            disabled={!puedeMarcarAsistencia}
-                            title={!puedeMarcarAsistencia ? 'Disponible desde que empiece la clase' : ''}
-                          >
-                            <UserX size={18} />
-                            <span>Ausente</span>
-                          </button>
-                        </>
-                      )}
-                    </>
-                  )}
+                        <button
+                          onClick={() => handleAsistenciaChange('ausente')}
+                          className="action-btn danger"
+                          disabled={!puedeMarcarAsistencia}
+                          title={!puedeMarcarAsistencia ? 'Disponible desde que empiece la clase' : ''}
+                        >
+                          <UserX size={18} />
+                          <span>Ausente</span>
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
 
-                  {/* Cancelar clase - disponible hasta X horas antes */}
-                  <button
-                    onClick={() => handleStatusChange('cancelada')}
-                    className="action-btn warning"
-                    disabled={!puedeCancelar}
-                    title={!puedeCancelar ? `Solo se puede cancelar con ${horasAnticipacionMinima}h de anticipación` : ''}
-                  >
-                    <XCircle size={18} />
-                    <span>Cancelar clase</span>
-                  </button>
-                </>
-              )}
-            </div>
+                <button
+                  onClick={() => handleStatusChange('cancelada')}
+                  className="action-btn warning"
+                  disabled={!puedeCancelar}
+                  title={!puedeCancelar ? `Solo se puede cancelar con ${horasAnticipacionMinima}h de anticipación` : ''}
+                >
+                  <XCircle size={18} />
+                  <span>Cancelar clase</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
-
-        <DialogFooter>
-          <button onClick={() => setDeleteConfirmOpen(true)} className="btn-ghost danger">
-            <Trash2 size={18} />
-            <span>Eliminar</span>
-          </button>
-          <button onClick={onEdit} className="btn-primary">
-            <Edit2 size={18} />
-            <span>Editar</span>
-          </button>
-        </DialogFooter>
-      </DialogContent>
+      </DialogBase>
 
       <ConfirmModal
         isOpen={deleteConfirmOpen}
@@ -327,6 +319,6 @@ export function ClaseDetailDialog({
         variant="danger"
         isLoading={isDeleting}
       />
-    </Dialog>
+    </>
   )
 }

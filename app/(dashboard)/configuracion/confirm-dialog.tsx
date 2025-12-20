@@ -1,13 +1,7 @@
 'use client'
 
 import { AlertTriangle } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { DialogBase } from '@/components/ui/dialog-base'
 
 type ConfirmDialogProps = {
   isOpen: boolean
@@ -39,36 +33,36 @@ export function ConfirmDialog({ isOpen, onClose, onConfirm, tipo }: ConfirmDialo
   const current = config[tipo]
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent showCloseButton={false}>
-        <div className="confirm-dialog-body">
-          <div className="confirm-icon">
-            <AlertTriangle size={48} />
-          </div>
-
-          <DialogHeader>
-            <DialogTitle>{current.title}</DialogTitle>
-            <DialogDescription>{current.description}</DialogDescription>
-          </DialogHeader>
-
-          <div className="confirm-options">
-            {current.options.map(option => (
-              <button
-                key={option.value}
-                onClick={() => onConfirm(option.value as 'incluir' | 'excluir')}
-                className="confirm-option-btn"
-              >
-                <span className="option-emoji">{option.emoji}</span>
-                <span className="option-label">{option.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <button onClick={onClose} className="confirm-cancel">
-            Cancelar
-          </button>
+    <DialogBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title={current.title}
+      description={current.description}
+      size="sm"
+      showCloseButton={false}
+    >
+      <div className="confirm-dialog-body">
+        <div className="confirm-icon">
+          <AlertTriangle size={48} />
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div className="confirm-options">
+          {current.options.map(option => (
+            <button
+              key={option.value}
+              onClick={() => onConfirm(option.value as 'incluir' | 'excluir')}
+              className="confirm-option-btn"
+            >
+              <span className="option-emoji">{option.emoji}</span>
+              <span className="option-label">{option.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <button onClick={onClose} className="confirm-cancel">
+          Cancelar
+        </button>
+      </div>
+    </DialogBase>
   )
 }

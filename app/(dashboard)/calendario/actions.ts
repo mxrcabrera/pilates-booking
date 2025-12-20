@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { addWeeks } from 'date-fns'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
+import type { Prisma } from '@prisma/client'
 
 export async function createClase(formData: FormData) {
   const userId = await getCurrentUser()
@@ -164,7 +165,7 @@ export async function createClase(formData: FormData) {
 
   // Crear clases recurrentes
   if (esRecurrente && diasSemana.length > 0) {
-    const clasesACrear: any[] = []
+    const clasesACrear: Prisma.ClaseCreateManyInput[] = []
     const diaInicialSeleccionado = fecha.getUTCDay()
     
     for (const diaSeleccionado of diasSemana) {
@@ -322,8 +323,8 @@ export async function updateClase(formData: FormData) {
     throw new Error(`Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`)
   }
 
-  // Obtener clase actual para comparar cambios
-  const claseActual = await prisma.clase.findUnique({
+  // Obtener clase actual para comparar cambios (reservado para uso futuro)
+  const _claseActual = await prisma.clase.findUnique({
     where: { id }
   })
 

@@ -6,15 +6,9 @@ import { ConfirmDialog } from './confirm-dialog'
 import { useToast } from '@/components/ui/toast'
 import { Sun, Moon } from 'lucide-react'
 import { TimeInput } from '@/components/time-input'
-import { SelectInput } from '@/components/select-input'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { DialogBase } from '@/components/ui/dialog-base'
 import type { Horario } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
 
 const RANGOS_DIAS = [
   { value: 'single', label: 'Un solo día', dias: [] },
@@ -69,7 +63,7 @@ export function HorarioDialog({
   onBatchCreate
 }: HorarioDialogProps) {
   const { showSuccess, showError } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, _setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rangoSeleccionado, setRangoSeleccionado] = useState('single')
   const [turnoSeleccionado, setTurnoSeleccionado] = useState('maniana')
@@ -215,7 +209,7 @@ export function HorarioDialog({
         }
       })
       .catch(err => {
-        showError(err.message || 'Error al guardar horarios')
+        showError(getErrorMessage(err) || 'Error al guardar horarios')
       })
 
     return optimisticHorarios
@@ -263,7 +257,7 @@ export function HorarioDialog({
         horaFin: formData.get('horaFin') as string,
         esManiana: turnoSeleccionado === 'maniana'
       }).catch(err => {
-        showError(err.message || 'Error al guardar horario')
+        showError(getErrorMessage(err) || 'Error al guardar horario')
       })
     } else {
       // Creación batch - procesarHorarios ya hace optimistic update
@@ -285,196 +279,202 @@ export function HorarioDialog({
     setPendingSubmit(null)
   }
 
+  const dialogTitle = horario ? (
+    <span className="dialog-title-with-badge">
+      Editar Horario
+      <span className="dialog-title-badge">
+        {DIAS_INDIVIDUALES.find(d => d.value === horario.diaSemana)?.label}
+      </span>
+    </span>
+  ) : 'Nuevo Horario'
+
+  const footerButtons = (
+    <>
+      <button
+        type="button"
+        onClick={onClose}
+        className="btn-ghost"
+        disabled={isLoading}
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        form="horario-form"
+        className="btn-primary"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Guardando...' : 'Guardar'}
+      </button>
+    </>
+  )
+
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="modal-mobile">
-          <DialogHeader>
-            <DialogTitle>
-              {horario ? (
-                <span className="dialog-title-with-badge">
-                  Editar Horario
-                  <span className="dialog-title-badge">
-                    {DIAS_INDIVIDUALES.find(d => d.value === horario.diaSemana)?.label}
-                  </span>
-                </span>
-              ) : 'Nuevo Horario'}
-            </DialogTitle>
-          </DialogHeader>
+      <DialogBase
+        isOpen={isOpen}
+        onClose={onClose}
+        title={typeof dialogTitle === 'string' ? dialogTitle : 'Horario'}
+        footer={footerButtons}
+      >
+        {typeof dialogTitle !== 'string' && (
+          <div className="dialog-title-override" style={{ marginTop: '-1rem', marginBottom: '1rem' }}>
+            {dialogTitle}
+          </div>
+        )}
 
-          {error && (
-            <div className="form-message error">
-              {error}
+        {error && (
+          <div className="form-message error">
+            {error}
+          </div>
+        )}
+
+        <form id="horario-form" onSubmit={handleSubmit}>
+          {!horario && (
+            <>
+              <div className="form-group">
+                <label>¿Qué días?</label>
+                <div className="rango-grid">
+                  {RANGOS_DIAS.map(rango => (
+                    <button
+                      key={rango.value}
+                      type="button"
+                      className={`rango-btn ${rangoSeleccionado === rango.value ? 'active' : ''}`}
+                      onClick={() => setRangoSeleccionado(rango.value)}
+                    >
+                      {rango.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {rangoSeleccionado === 'single' && (
+                <div className="form-group">
+                  <label>Elegí el día</label>
+                  <div className="dias-grid">
+                    {DIAS_INDIVIDUALES.map(dia => (
+                      <label key={dia.value} className="dia-option">
+                        <input
+                          type="radio"
+                          name="diaSemana"
+                          value={dia.value}
+                          required
+                        />
+                        <span>{dia.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Turno</label>
+                <div className="turno-grid">
+                  {TURNOS.map(turno => (
+                    <button
+                      key={turno.value}
+                      type="button"
+                      className={`turno-btn ${turnoSeleccionado === turno.value ? 'active' : ''}`}
+                      onClick={() => setTurnoSeleccionado(turno.value)}
+                    >
+                      <TurnoIcon type={turno.icon} />
+                      <span className="turno-label">{turno.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {horario && (
+            <div className="form-group">
+              <label>Turno</label>
+              <div className="turno-grid">
+                <button
+                  type="button"
+                  className={`turno-btn ${turnoSeleccionado === 'maniana' ? 'active' : ''}`}
+                  onClick={() => setTurnoSeleccionado('maniana')}
+                >
+                  <TurnoIcon type="sun" />
+                  <span className="turno-label">Mañana</span>
+                </button>
+                <button
+                  type="button"
+                  className={`turno-btn ${turnoSeleccionado === 'tarde' ? 'active' : ''}`}
+                  onClick={() => setTurnoSeleccionado('tarde')}
+                >
+                  <TurnoIcon type="moon" />
+                  <span className="turno-label">Tarde</span>
+                </button>
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="dialog-body">
-            {!horario && (
-              <>
-                <div className="form-group">
-                  <label>¿Qué días?</label>
-                  <div className="rango-grid">
-                    {RANGOS_DIAS.map(rango => (
-                      <button
-                        key={rango.value}
-                        type="button"
-                        className={`rango-btn ${rangoSeleccionado === rango.value ? 'active' : ''}`}
-                        onClick={() => setRangoSeleccionado(rango.value)}
-                      >
-                        {rango.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {rangoSeleccionado === 'single' && (
-                  <div className="form-group">
-                    <label>Elegí el día</label>
-                    <div className="dias-grid">
-                      {DIAS_INDIVIDUALES.map(dia => (
-                        <label key={dia.value} className="dia-option">
-                          <input
-                            type="radio"
-                            name="diaSemana"
-                            value={dia.value}
-                            required
-                          />
-                          <span>{dia.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label>Turno</label>
-                  <div className="turno-grid">
-                    {TURNOS.map(turno => (
-                      <button
-                        key={turno.value}
-                        type="button"
-                        className={`turno-btn ${turnoSeleccionado === turno.value ? 'active' : ''}`}
-                        onClick={() => setTurnoSeleccionado(turno.value)}
-                      >
-                        <TurnoIcon type={turno.icon} />
-                        <span className="turno-label">{turno.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {horario && (
-              <>
-                <div className="form-group">
-                  <label>Turno</label>
-                  <div className="turno-grid">
-                    <button
-                      type="button"
-                      className={`turno-btn ${turnoSeleccionado === 'maniana' ? 'active' : ''}`}
-                      onClick={() => setTurnoSeleccionado('maniana')}
-                    >
-                      <TurnoIcon type="sun" />
-                      <span className="turno-label">Mañana</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`turno-btn ${turnoSeleccionado === 'tarde' ? 'active' : ''}`}
-                      onClick={() => setTurnoSeleccionado('tarde')}
-                    >
-                      <TurnoIcon type="moon" />
-                      <span className="turno-label">Tarde</span>
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {turnoSeleccionado === 'ambos' && !horario && (
-              <>
-                <div className="form-group">
-                  <label className="label-with-icon"><Sun size={16} className="turno-icon-sun" /> Horario Mañana</label>
-                  <div className="form-row">
-                    <TimeInput
-                      name="horaInicioManiana"
-                      defaultValue={horarioMananaInicio}
-                      disabled={isLoading}
-                    />
-                    <TimeInput
-                      name="horaFinManiana"
-                      defaultValue={horarioMananaFin}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="label-with-icon"><Moon size={16} className="turno-icon-moon" /> Horario Tarde</label>
-                  <div className="form-row">
-                    <TimeInput
-                      name="horaInicioTarde"
-                      defaultValue={horarioTardeInicio}
-                      disabled={isLoading}
-                    />
-                    <TimeInput
-                      name="horaFinTarde"
-                      defaultValue={horarioTardeFin}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {turnoSeleccionado !== 'ambos' && (
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Desde</label>
+          {turnoSeleccionado === 'ambos' && !horario && (
+            <>
+              <div className="form-group">
+                <label className="label-with-icon"><Sun size={16} className="turno-icon-sun" /> Horario Mañana</label>
+                <div className="form-row">
                   <TimeInput
-                    name="horaInicio"
-                    value={horaInicio}
-                    onChange={(e) => setHoraInicio(e.target.value)}
+                    name="horaInicioManiana"
+                    defaultValue={horarioMananaInicio}
                     disabled={isLoading}
                   />
-                </div>
-
-                <div className="form-group">
-                  <label>Hasta</label>
                   <TimeInput
-                    name="horaFin"
-                    value={horaFin}
-                    onChange={(e) => setHoraFin(e.target.value)}
+                    name="horaFinManiana"
+                    defaultValue={horarioMananaFin}
                     disabled={isLoading}
                   />
                 </div>
               </div>
-            )}
 
-            {!horario && rangoSeleccionado !== 'single' && (
-              <input type="hidden" name="esManiana" value={turnoSeleccionado === 'maniana' ? 'true' : 'false'} />
-            )}
+              <div className="form-group">
+                <label className="label-with-icon"><Moon size={16} className="turno-icon-moon" /> Horario Tarde</label>
+                <div className="form-row">
+                  <TimeInput
+                    name="horaInicioTarde"
+                    defaultValue={horarioTardeInicio}
+                    disabled={isLoading}
+                  />
+                  <TimeInput
+                    name="horaFinTarde"
+                    defaultValue={horarioTardeFin}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
-            <DialogFooter>
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-ghost"
-                disabled={isLoading}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Guardando...' : 'Guardar'}
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          {turnoSeleccionado !== 'ambos' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Desde</label>
+                <TimeInput
+                  name="horaInicio"
+                  value={horaInicio}
+                  onChange={(e) => setHoraInicio(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Hasta</label>
+                <TimeInput
+                  name="horaFin"
+                  value={horaFin}
+                  onChange={(e) => setHoraFin(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+          )}
+
+          {!horario && rangoSeleccionado !== 'single' && (
+            <input type="hidden" name="esManiana" value={turnoSeleccionado === 'maniana' ? 'true' : 'false'} />
+          )}
+        </form>
+      </DialogBase>
 
       {confirmType && (
         <ConfirmDialog

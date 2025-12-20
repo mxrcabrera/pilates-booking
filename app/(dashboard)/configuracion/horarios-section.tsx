@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { Clock, Plus, Trash2, Edit2, CheckSquare } from 'lucide-react'
 import { HorarioDialog } from './horario-dialog'
-import { deleteHorarioAPI, toggleHorarioAPI } from '@/lib/api'
+import { deleteHorarioAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
+import { SectionWrapper } from '@/components/ui/section-wrapper'
 import type { Horario } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
 
 type HorariosSectionProps = {
   horarios: Horario[]
@@ -36,7 +38,7 @@ export function HorariosSection({
     id: null,
     isBulk: false
   })
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isDeleting, _setIsDeleting] = useState(false)
 
   const handleEdit = (horario: Horario) => {
     setEditingHorario(horario)
@@ -80,25 +82,7 @@ export function HorariosSection({
       if (horarioToDelete) {
         setHorarios(prev => [...prev, horarioToDelete])
       }
-      showError(err.message)
-    })
-  }
-
-  const handleToggle = async (id: string) => {
-    // Actualización optimista
-    setHorarios(prev => prev.map(h => h.id === id ? { ...h, estaActivo: !h.estaActivo } : h))
-    showSuccess('Estado actualizado')
-
-    // Si es ID temporal, no llamar API
-    if (id.startsWith('temp-')) {
-      return
-    }
-
-    // API call en background
-    toggleHorarioAPI(id).catch(err => {
-      // Revertir en caso de error
-      setHorarios(prev => prev.map(h => h.id === id ? { ...h, estaActivo: !h.estaActivo } : h))
-      showError(err.message)
+      showError(getErrorMessage(err))
     })
   }
 
@@ -144,7 +128,7 @@ export function HorariosSection({
       Promise.all(realIds.map(id => deleteHorarioAPI(id))).catch(err => {
         // Revertir en caso de error
         setHorarios(prev => [...prev, ...horariosToDelete])
-        showError(err.message)
+        showError(getErrorMessage(err))
       })
     }
   }
@@ -162,8 +146,7 @@ export function HorariosSection({
   }, {} as Record<number, Horario[]>)
 
   return (
-    <div className="settings-section">
-      <div className="section-content">
+    <SectionWrapper>
         <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           {!isSelectionMode ? (
             <>
@@ -286,7 +269,6 @@ export function HorariosSection({
             })}
           </div>
         )}
-      </div>
 
       <HorarioDialog
         isOpen={isDialogOpen}
@@ -330,6 +312,6 @@ export function HorariosSection({
         variant="danger"
         isLoading={isDeleting}
       />
-    </div>
+    </SectionWrapper>
   )
 }

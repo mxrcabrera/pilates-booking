@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginWithGoogle } from './actions'
+import { getErrorMessage } from '@/lib/utils'
+import { FormField } from '@/components/ui/form-field'
 
 type Rol = 'profesor' | 'alumno'
 
@@ -49,8 +51,8 @@ export function LoginForm() {
         router.push(data.redirectTo)
         router.refresh()
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al procesar la solicitud')
+    } catch (err) {
+      setError(err instanceof Error ? getErrorMessage(err) : 'Error al procesar la solicitud')
       setIsLoading(false)
     }
   }
@@ -105,8 +107,7 @@ export function LoginForm() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="nombre">Nombre completo</label>
+            <FormField label="Nombre completo" htmlFor="nombre" required>
               <input
                 id="nombre"
                 name="nombre"
@@ -115,12 +116,11 @@ export function LoginForm() {
                 required
                 disabled={isLoading}
               />
-            </div>
+            </FormField>
           </>
         )}
 
-        <div>
-          <label htmlFor="email">Email</label>
+        <FormField label="Email" htmlFor="email" required>
           <input
             id="email"
             name="email"
@@ -129,10 +129,9 @@ export function LoginForm() {
             required
             disabled={isLoading}
           />
-        </div>
+        </FormField>
 
-        <div className="password-field">
-          <label htmlFor="password">Contraseña</label>
+        <FormField label="Contraseña" htmlFor="password" required className="password-field">
           <div className="password-input-wrapper">
             <input
               id="password"
@@ -163,7 +162,7 @@ export function LoginForm() {
               )}
             </button>
           </div>
-        </div>
+        </FormField>
 
         <button type="submit" disabled={isLoading || (isSignup && rol === 'alumno')}>
           {isLoading ? 'Cargando...' : (isSignup ? 'Crear cuenta' : 'Ingresar')}

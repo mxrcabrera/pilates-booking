@@ -2,12 +2,13 @@
 
 import { CalendarioClient } from './calendario-client'
 import { PreferencesRequired } from '@/components/preferences-required'
-import { PageLoading } from '@/components/page-loading'
+import { PageLoading } from '@/components/ui/loading'
 import { usePageData } from '@/lib/use-page-data'
 import { CACHE_KEYS } from '@/lib/client-cache'
-import type { Clase, ClaseAPI, CalendarioData, CalendarioDataCached } from '@/lib/types'
+import type { CalendarioData, CalendarioDataCached, PreferencesIncompleteResponse } from '@/lib/types'
 
-function parseCalendarioData(cached: CalendarioDataCached): CalendarioData {
+function parseCalendarioData(data: unknown): CalendarioData {
+  const cached = data as CalendarioDataCached
   return {
     ...cached,
     clases: cached.clases.map(c => ({
@@ -34,8 +35,8 @@ export default function CalendarioPage() {
     )
   }
 
-  if ((data as any)?.preferencesIncomplete) {
-    return <PreferencesRequired missingFields={(data as any).missingFields} />
+  if ((data as unknown as PreferencesIncompleteResponse)?.preferencesIncomplete) {
+    return <PreferencesRequired missingFields={(data as unknown as PreferencesIncompleteResponse).missingFields} />
   }
 
   if (isLoading || !data) {

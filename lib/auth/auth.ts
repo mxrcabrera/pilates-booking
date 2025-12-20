@@ -3,6 +3,9 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '../prisma'
 import { authConfig } from './auth.config'
 
+// NextAuth types don't include custom fields like role, accessToken, refreshToken
+// These are added via type augmentation in types/next-auth.d.ts but callbacks need explicit casting
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),

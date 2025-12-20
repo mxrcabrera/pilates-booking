@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/toast'
 import { changeAsistenciaAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import type { ClaseHoy, SiguienteClase } from '@/lib/types'
-import { formatearHora } from '@/lib/utils'
+import { formatearHora, getErrorMessage } from '@/lib/utils'
 
 interface DashboardClientProps {
   clasesHoy: ClaseHoy[]
@@ -135,12 +135,12 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
       showSuccess(mensajes[nuevaAsistencia])
       invalidateCache(CACHE_KEYS.DASHBOARD)
       invalidateCache(CACHE_KEYS.CALENDARIO)
-    } catch (err: any) {
+    } catch (err) {
       // Revert on error
       setClases(prev => prev.map(c =>
         c.id === claseId ? { ...c, asistencia: asistenciaAnterior } : c
       ))
-      showError(err.message || 'Error al actualizar')
+      showError(getErrorMessage(err) || 'Error al actualizar')
     } finally {
       setLoadingId(null)
     }
@@ -152,7 +152,7 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
   const ausentes = clases.filter(c => c.asistencia === 'ausente').length
 
   // Función para renderizar cada clase
-  function renderClaseItem(clase: ClaseHoy, isPastGroup: boolean) {
+  function renderClaseItem(clase: ClaseHoy, _isPastGroup: boolean) {
     const isLoading = loadingId === clase.id
     const esPresente = clase.asistencia === 'presente'
     const esAusente = clase.asistencia === 'ausente'

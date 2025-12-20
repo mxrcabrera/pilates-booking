@@ -3,15 +3,10 @@
 import { useState, useEffect } from 'react'
 import { savePackAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { DialogBase } from '@/components/ui/dialog-base'
 import { SelectInput } from '@/components/select-input'
 import type { Pack } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
 
 export function PackDialog({
   isOpen,
@@ -24,7 +19,7 @@ export function PackDialog({
   pack: Pack | null
   onSuccess?: (pack: Pack, isEdit: boolean) => void
 }) {
-  const { showSuccess, showError } = useToast()
+  const { showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,89 +48,89 @@ export function PackDialog({
         onSuccess?.(result.pack, !!pack)
       }
       onClose()
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar pack')
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al guardar pack')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{pack ? 'Editar Pack' : 'Nuevo Pack'}</DialogTitle>
-        </DialogHeader>
+    <DialogBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title={pack ? 'Editar Pack' : 'Nuevo Pack'}
+      footer={
+        <>
+          <button
+            type="submit"
+            form="pack-form"
+            className="btn-primary"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Guardando...' : 'Guardar'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost"
+            disabled={isLoading}
+          >
+            Cancelar
+          </button>
+        </>
+      }
+    >
+      {error && (
+        <div className="form-message error">
+          {error}
+        </div>
+      )}
 
-        {error && (
-          <div className="form-message error">
-            {error}
-          </div>
-        )}
+      <form id="pack-form" onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Nombre del Pack</label>
+          <input
+            type="text"
+            name="nombre"
+            placeholder="Pack Semanal"
+            required
+            defaultValue={pack?.nombre}
+            disabled={isLoading}
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="dialog-body">
-          <div className="form-group">
-            <label>Nombre del Pack</label>
-            <input
-              type="text"
-              name="nombre"
-              placeholder="Pack Semanal"
-              required
-              defaultValue={pack?.nombre}
-              disabled={isLoading}
-            />
-          </div>
+        <div className="form-group">
+          <label>Clases por Semana</label>
+          <SelectInput
+            name="clasesPorSemana"
+            required
+            defaultValue={pack?.clasesPorSemana?.toString()}
+            disabled={isLoading}
+          >
+            <option value="">Seleccionar...</option>
+            <option value="1">1 clase por semana</option>
+            <option value="2">2 clases por semana</option>
+            <option value="3">3 clases por semana</option>
+            <option value="4">4 clases por semana</option>
+            <option value="5">5 clases por semana</option>
+          </SelectInput>
+        </div>
 
-          <div className="form-group">
-            <label>Clases por Semana</label>
-            <SelectInput
-              name="clasesPorSemana"
-              required
-              defaultValue={pack?.clasesPorSemana?.toString()}
-              disabled={isLoading}
-            >
-              <option value="">Seleccionar...</option>
-              <option value="1">1 clase por semana</option>
-              <option value="2">2 clases por semana</option>
-              <option value="3">3 clases por semana</option>
-              <option value="4">4 clases por semana</option>
-              <option value="5">5 clases por semana</option>
-            </SelectInput>
-          </div>
-
-          <div className="form-group">
-            <label>Precio (ARS)</label>
-            <input
-              type="number"
-              name="precio"
-              placeholder="8000"
-              min="0"
-              step="0.01"
-              required
-              defaultValue={pack?.precio}
-              disabled={isLoading}
-            />
-          </div>
-
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-ghost"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="form-group">
+          <label>Precio (ARS)</label>
+          <input
+            type="number"
+            name="precio"
+            placeholder="8000"
+            min="0"
+            step="0.01"
+            required
+            defaultValue={pack?.precio}
+            disabled={isLoading}
+          />
+        </div>
+      </form>
+    </DialogBase>
   )
 }

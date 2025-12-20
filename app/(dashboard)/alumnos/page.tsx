@@ -1,7 +1,7 @@
 'use client'
 
 import { AlumnosClient } from './alumnos-client'
-import { PageLoading } from '@/components/page-loading'
+import { PageLoading } from '@/components/ui/loading'
 import { usePageData } from '@/lib/use-page-data'
 import { CACHE_KEYS } from '@/lib/client-cache'
 import type { AlumnosData } from '@/lib/types'

@@ -134,6 +134,12 @@ export type ProfesorConfig = {
   hasGoogleAccount: boolean
 }
 
+// ----- API RESPONSE TYPES -----
+export type PreferencesIncompleteResponse = {
+  preferencesIncomplete: true
+  missingFields: string[]
+}
+
 // ----- DATA TYPES (para páginas) -----
 export type AlumnosData = {
   alumnos: Alumno[]

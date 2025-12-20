@@ -6,7 +6,7 @@ type CacheEntry<T> = {
   timestamp: number
 }
 
-const cache = new Map<string, CacheEntry<any>>()
+const cache = new Map<string, CacheEntry<unknown>>()
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
 
 export function getCachedData<T>(key: string): T | null {
@@ -19,7 +19,7 @@ export function getCachedData<T>(key: string): T | null {
     return null
   }
 
-  return entry.data
+  return entry.data as T
 }
 
 export function setCachedData<T>(key: string, data: T): void {

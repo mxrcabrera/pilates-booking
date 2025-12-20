@@ -1,6 +1,6 @@
 'use client'
 
-import { PageLoading } from '@/components/page-loading'
+import { PageLoading } from '@/components/ui/loading'
 
 export default function DashboardLoading() {
   return <PageLoading />

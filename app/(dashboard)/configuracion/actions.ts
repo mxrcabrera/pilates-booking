@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { validateTimeRange, validateTimeInRange } from '@/lib/validation'
 
 export async function updateProfile(formData: FormData) {
   const userId = await getCurrentUser()
@@ -79,25 +80,17 @@ export async function saveHorario(formData: FormData) {
 
   if (!user) throw new Error('Usuario no encontrado')
 
-  // Validar que los horarios estén dentro del rango configurado
-  if (esManiana) {
-    if (horaInicio < user.horarioMananaInicio || horaFin > user.horarioMananaFin) {
-      throw new Error(
-        `El horario de mañana debe estar entre ${user.horarioMananaInicio} y ${user.horarioMananaFin}`
-      )
-    }
-  } else {
-    if (horaInicio < user.horarioTardeInicio || horaFin > user.horarioTardeFin) {
-      throw new Error(
-        `El horario de tarde debe estar entre ${user.horarioTardeInicio} y ${user.horarioTardeFin}`
-      )
-    }
-  }
+  // Validar rango de tiempo usando función centralizada
+  const timeRangeError = validateTimeRange(horaInicio, horaFin)
+  if (timeRangeError) throw new Error(timeRangeError)
 
-  // Validar que horaInicio < horaFin
-  if (horaInicio >= horaFin) {
-    throw new Error('La hora de inicio debe ser anterior a la hora de fin')
-  }
+  // Validar que los horarios estén dentro del rango configurado
+  const turnoNombre = esManiana ? 'mañana' : 'tarde'
+  const horarioInicio = esManiana ? user.horarioMananaInicio : user.horarioTardeInicio
+  const horarioFin = esManiana ? user.horarioMananaFin : user.horarioTardeFin
+
+  const rangeError = validateTimeInRange(horaInicio, horarioInicio, horarioFin, turnoNombre)
+  if (rangeError) throw new Error(rangeError)
 
   if (id) {
     // Actualizar (modo edición)

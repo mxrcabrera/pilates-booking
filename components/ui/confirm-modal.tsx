@@ -1,13 +1,7 @@
 'use client'
 
 import { AlertTriangle, Trash2, XCircle } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { DialogBase } from '@/components/ui/dialog-base'
 
 type ConfirmModalProps = {
   isOpen: boolean
@@ -39,41 +33,40 @@ export function ConfirmModal({
   }
   const Icon = icons[variant]
 
-  const handleConfirm = () => {
-    onConfirm()
-  }
+  const footerButtons = (
+    <>
+      <button
+        onClick={onClose}
+        className="btn-ghost"
+        disabled={isLoading}
+      >
+        {cancelText}
+      </button>
+      <button
+        onClick={onConfirm}
+        className={`btn-${variant === 'danger' ? 'danger' : 'primary'}`}
+        disabled={isLoading}
+      >
+        {isLoading ? 'Procesando...' : confirmText}
+      </button>
+    </>
+  )
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent showCloseButton={false}>
-        <div className="confirm-modal-body">
-          <div className={`confirm-modal-icon confirm-modal-icon-${variant}`}>
-            <Icon />
-          </div>
-
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            {description && <DialogDescription>{description}</DialogDescription>}
-          </DialogHeader>
-
-          <div className="confirm-modal-actions">
-            <button
-              onClick={onClose}
-              className="btn-ghost"
-              disabled={isLoading}
-            >
-              {cancelText}
-            </button>
-            <button
-              onClick={handleConfirm}
-              className={`btn-${variant === 'danger' ? 'danger' : 'primary'}`}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Procesando...' : confirmText}
-            </button>
-          </div>
+    <DialogBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      description={description}
+      size="sm"
+      showCloseButton={false}
+      footer={footerButtons}
+    >
+      <div className="confirm-modal-body">
+        <div className={`confirm-modal-icon confirm-modal-icon-${variant}`}>
+          <Icon />
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogBase>
   )
 }

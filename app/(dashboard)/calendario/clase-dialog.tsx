@@ -4,17 +4,12 @@ import { useState, useEffect } from 'react'
 import { createClaseAPI, updateClaseAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { format } from 'date-fns'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { DialogBase } from '@/components/ui/dialog-base'
 import { TimeInput } from '@/components/time-input'
 import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import type { Clase, AlumnoSimple, Pack } from '@/lib/types'
+import { getErrorMessage } from '@/lib/utils'
 
 const DIAS_SEMANA = [
   { value: 1, label: 'Lunes' },
@@ -37,9 +32,9 @@ export function ClaseDialog({
   packs,
   precioPorClase,
   horarioMananaInicio,
-  horarioMananaFin,
-  horarioTardeInicio,
-  horarioTardeFin,
+  horarioMananaFin: _horarioMananaFin,
+  horarioTardeInicio: _horarioTardeInicio,
+  horarioTardeFin: _horarioTardeFin,
   maxAlumnosPorClase,
   onSuccess
 }: {
@@ -55,9 +50,9 @@ export function ClaseDialog({
   horarioTardeInicio: string
   horarioTardeFin: string
   maxAlumnosPorClase: number
-  onSuccess?: (data: { clase?: any; clases?: any[]; isNew: boolean }) => void
+  onSuccess?: (data: { clase?: Clase; clases?: Clase[]; isNew: boolean }) => void
 }) {
-  const { showSuccess, showError } = useToast()
+  const { showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tipoClase, setTipoClase] = useState<TipoClase>('recurrente')
@@ -169,8 +164,8 @@ export function ClaseDialog({
         onSuccess?.({ clases: result.clases, isNew: true })
       }
       onClose()
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar clase')
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al guardar clase')
     } finally {
       setIsLoading(false)
     }
@@ -178,225 +173,225 @@ export function ClaseDialog({
 
   const defaultFecha = clase ? format(clase.fecha, 'yyyy-MM-dd') : fecha ? format(fecha, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{clase ? 'Editar Clase' : 'Nueva Clase'}</DialogTitle>
-        </DialogHeader>
+  const footerButtons = (
+    <>
+      <button
+        type="button"
+        onClick={onClose}
+        className="btn-ghost"
+        disabled={isLoading}
+      >
+        Cancelar clase
+      </button>
+      <button
+        type="submit"
+        form="clase-form"
+        className="btn-primary"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Guardando...' : 'Guardar'}
+      </button>
+    </>
+  )
 
-        {error && (
-          <div className="form-message error">
-            {error}
+  return (
+    <DialogBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title={clase ? 'Editar Clase' : 'Nueva Clase'}
+      footer={footerButtons}
+    >
+      {error && (
+        <div className="form-message error">
+          {error}
+        </div>
+      )}
+
+      <form id="clase-form" onSubmit={handleSubmit}>
+        <input type="hidden" name="esRecurrente" value={esRecurrente ? 'true' : 'false'} />
+        {esRecurrente && frecuencia && (
+          <input type="hidden" name="frecuenciaSemanal" value={frecuencia} />
+        )}
+
+        <div className="form-group">
+          <label>
+            Alumnos
+            <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
+              ({alumnosSeleccionados.length}/{maxAlumnosPorClase})
+            </span>
+          </label>
+
+          {alumnosSeleccionados.length > 0 && (
+            <div className="alumno-chips">
+              {alumnosSeleccionados.map(id => {
+                const alumno = alumnos.find(a => a.id === id)
+                return alumno ? (
+                  <button
+                    key={id}
+                    type="button"
+                    className="alumno-chip"
+                    onClick={() => handleAlumnoToggle(id)}
+                    disabled={isLoading}
+                  >
+                    {alumno.nombre}
+                    <span className="chip-remove">×</span>
+                  </button>
+                ) : null
+              })}
+            </div>
+          )}
+
+          {alumnosSeleccionados.length < maxAlumnosPorClase && (
+            <SelectInput
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleAlumnoToggle(e.target.value)
+                }
+              }}
+              disabled={isLoading}
+            >
+              <option value="">Agregar alumno...</option>
+              {alumnos
+                .filter(a => !alumnosSeleccionados.includes(a.id))
+                .map(alumno => (
+                  <option key={alumno.id} value={alumno.id}>
+                    {alumno.nombre}
+                  </option>
+                ))}
+            </SelectInput>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label>Fecha</label>
+          <DateInput
+            name="fecha"
+            required
+            defaultValue={defaultFecha}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Hora inicial</label>
+          <TimeInput
+            name="horaInicio"
+            defaultValue={clase?.horaInicio || horarioMananaInicio}
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Tipo de clase</label>
+          <div className="segmented-control">
+            <button
+              type="button"
+              className={`segmented-option ${tipoClase === 'prueba' ? 'active' : ''}`}
+              onClick={() => {
+                setTipoClase('prueba')
+                setFrecuencia(null)
+                setDiasSeleccionados([])
+              }}
+              disabled={isLoading}
+            >
+              Prueba
+            </button>
+            <button
+              type="button"
+              className={`segmented-option ${tipoClase === 'recurrente' ? 'active' : ''}`}
+              onClick={() => setTipoClase('recurrente')}
+              disabled={isLoading}
+            >
+              Recurrente
+            </button>
+          </div>
+        </div>
+
+        {esRecurrente && (
+          <div className="form-group">
+            <label>Frecuencia</label>
+            <SelectInput
+              required
+              disabled={isLoading}
+              value={frecuencia?.toString() || ''}
+              onChange={(e) => {
+                const value = e.target.value ? parseInt(e.target.value) : null
+                setFrecuencia(value)
+                setDiasSeleccionados([])
+              }}
+            >
+              <option value="">Seleccionar frecuencia...</option>
+              <option value="1">1 vez por semana</option>
+              <option value="2">2 veces por semana</option>
+              <option value="3">3 veces por semana</option>
+              <option value="4">4 veces por semana</option>
+              <option value="5">5 veces por semana</option>
+            </SelectInput>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="dialog-body">
-          <input type="hidden" name="esRecurrente" value={esRecurrente ? 'true' : 'false'} />
-          {esRecurrente && frecuencia && (
-            <input type="hidden" name="frecuenciaSemanal" value={frecuencia} />
-          )}
-          
-          <div className="form-group">
-            <label>
-              Alumnos
-              <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
-                ({alumnosSeleccionados.length}/{maxAlumnosPorClase})
-              </span>
-            </label>
-
-            {/* Chips de alumnos seleccionados */}
-            {alumnosSeleccionados.length > 0 && (
-              <div className="alumno-chips">
-                {alumnosSeleccionados.map(id => {
-                  const alumno = alumnos.find(a => a.id === id)
-                  return alumno ? (
-                    <button
-                      key={id}
-                      type="button"
-                      className="alumno-chip"
-                      onClick={() => handleAlumnoToggle(id)}
-                      disabled={isLoading}
-                    >
-                      {alumno.nombre}
-                      <span className="chip-remove">×</span>
-                    </button>
-                  ) : null
-                })}
-              </div>
-            )}
-
-            {/* Select para agregar alumnos */}
-            {alumnosSeleccionados.length < maxAlumnosPorClase && (
-              <SelectInput
-                value=""
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleAlumnoToggle(e.target.value)
-                  }
-                }}
-                disabled={isLoading}
-              >
-                <option value="">Agregar alumno...</option>
-                {alumnos
-                  .filter(a => !alumnosSeleccionados.includes(a.id))
-                  .map(alumno => (
-                    <option key={alumno.id} value={alumno.id}>
-                      {alumno.nombre}
-                    </option>
-                  ))}
-              </SelectInput>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label>Fecha</label>
-            <DateInput
-              name="fecha"
-              required
-              defaultValue={defaultFecha}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Hora inicial</label>
-            <TimeInput
-              name="horaInicio"
-              defaultValue={clase?.horaInicio || horarioMananaInicio}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Tipo de clase</label>
-            <div className="segmented-control">
-              <button
-                type="button"
-                className={`segmented-option ${tipoClase === 'prueba' ? 'active' : ''}`}
-                onClick={() => {
-                  setTipoClase('prueba')
-                  setFrecuencia(null)
-                  setDiasSeleccionados([])
-                }}
-                disabled={isLoading}
-              >
-                Prueba
-              </button>
-              <button
-                type="button"
-                className={`segmented-option ${tipoClase === 'recurrente' ? 'active' : ''}`}
-                onClick={() => setTipoClase('recurrente')}
-                disabled={isLoading}
-              >
-                Recurrente
-              </button>
-            </div>
-          </div>
-
-          {esRecurrente && (
+        {esRecurrente && frecuencia && (
+          <>
             <div className="form-group">
-              <label>Frecuencia</label>
-              <SelectInput
-                required
+              <label>
+                ¿Qué día{frecuencia > 1 ? 's' : ''}?
+                <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
+                  ({diasSeleccionados.length}/{frecuencia} seleccionado{frecuencia > 1 ? 's' : ''})
+                </span>
+              </label>
+              <div className="dias-grid">
+                {DIAS_SEMANA.map((dia) => (
+                  <label key={dia.value} className="dia-option" htmlFor={`dia-${dia.value}`}>
+                    <input
+                      type="checkbox"
+                      id={`dia-${dia.value}`}
+                      checked={diasSeleccionados.includes(dia.value)}
+                      onChange={() => handleDiaToggle(dia.value)}
+                      disabled={isLoading}
+                    />
+                    <span>{dia.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Hora de las clases recurrentes</label>
+              <TimeInput
+                name="horaRecurrente"
+                defaultValue={clase?.horaRecurrente || horarioMananaInicio}
                 disabled={isLoading}
-                value={frecuencia?.toString() || ''}
-                onChange={(e) => {
-                  const value = e.target.value ? parseInt(e.target.value) : null
-                  setFrecuencia(value)
-                  setDiasSeleccionados([])
-                }}
+                required={false}
+              />
+              <small style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>
+                Dejá vacío para usar la misma hora que la clase inicial
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label>Pack del alumno</label>
+              <SelectInput
+                name="packId"
+                disabled={isLoading}
               >
-                <option value="">Seleccionar frecuencia...</option>
-                <option value="1">1 vez por semana</option>
-                <option value="2">2 veces por semana</option>
-                <option value="3">3 veces por semana</option>
-                <option value="4">4 veces por semana</option>
-                <option value="5">5 veces por semana</option>
+                <option value="">Por clase{precioPorClase && precioPorClase !== '0' ? ` - $${precioPorClase}` : ''}</option>
+                {packs.map(pack => (
+                  <option key={pack.id} value={pack.id}>
+                    {pack.nombre} - {pack.clasesPorSemana}x/semana - ${pack.precio}
+                  </option>
+                ))}
               </SelectInput>
             </div>
-          )}
 
-          {esRecurrente && frecuencia && (
-            <>
-              <div className="form-group">
-                <label>
-                  ¿Qué día{frecuencia > 1 ? 's' : ''}?
-                  <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
-                    ({diasSeleccionados.length}/{frecuencia} seleccionado{frecuencia > 1 ? 's' : ''})
-                  </span>
-                </label>
-                <div className="dias-grid">
-                  {DIAS_SEMANA.map((dia) => (
-                    <label key={dia.value} className="dia-option" htmlFor={`dia-${dia.value}`}>
-                      <input
-                        type="checkbox"
-                        id={`dia-${dia.value}`}
-                        checked={diasSeleccionados.includes(dia.value)}
-                        onChange={() => handleDiaToggle(dia.value)}
-                        disabled={isLoading}
-                      />
-                      <span>{dia.label}</span>
-                    </label>
-                  ))}
-                </div>
+            {!clase && diasSeleccionados.length === frecuencia && (
+              <div className="form-hint-info">
+                ℹ️ Se crearán {diasSeleccionados.length} clases por semana durante las próximas 8 semanas (total: {diasSeleccionados.length * 8} clases recurrentes + 1 clase inicial)
               </div>
-
-              <div className="form-group">
-                <label>Hora de las clases recurrentes</label>
-                <TimeInput
-                  name="horaRecurrente"
-                  defaultValue={clase?.horaRecurrente || horarioMananaInicio}
-                  disabled={isLoading}
-                  required={false}
-                />
-                <small style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>
-                  Dejá vacío para usar la misma hora que la clase inicial
-                </small>
-              </div>
-
-              <div className="form-group">
-                <label>Pack del alumno</label>
-                <SelectInput
-                  name="packId"
-                  disabled={isLoading}
-                >
-                  <option value="">Por clase{precioPorClase && precioPorClase !== '0' ? ` - $${precioPorClase}` : ''}</option>
-                  {packs.map(pack => (
-                    <option key={pack.id} value={pack.id}>
-                      {pack.nombre} - {pack.clasesPorSemana}x/semana - ${pack.precio}
-                    </option>
-                  ))}
-                </SelectInput>
-              </div>
-
-              {!clase && diasSeleccionados.length === frecuencia && (
-                <div className="form-hint-info">
-                  ℹ️ Se crearán {diasSeleccionados.length} clases por semana durante las próximas 8 semanas (total: {diasSeleccionados.length * 8} clases recurrentes + 1 clase inicial)
-                </div>
-              )}
-            </>
-          )}
-
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-ghost"
-              disabled={isLoading}
-            >
-              Cancelar clase
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            )}
+          </>
+        )}
+      </form>
+    </DialogBase>
   )
 }

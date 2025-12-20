@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { updateUserRole } from './actions'
+import { getErrorMessage } from '@/lib/utils'
 
 type User = {
   id?: string
@@ -26,8 +27,8 @@ export function OnboardingClient({ user }: { user: User }) {
     try {
       await updateUserRole(selectedRole)
       // La redirección se maneja en el server action
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar el rol')
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al guardar el rol')
       setIsLoading(false)
     }
   }

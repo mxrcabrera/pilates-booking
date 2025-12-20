@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import type { Clase, AlumnoSimple, Pack } from '@/lib/types'
 import { DIAS_SEMANA, DIAS_SEMANA_COMPLETO, MESES } from '@/lib/constants'
-import { getTurno, formatearHora, formatearFechaDia } from '@/lib/utils'
+import { getTurno, formatearHora, formatearFechaDia, getErrorMessage } from '@/lib/utils'
 
 interface CalendarioClientProps {
   clasesIniciales: Clase[]
@@ -30,11 +30,11 @@ type Vista = 'dia' | 'semana'
 
 const HORAS_DIA = Array.from({ length: 16 }, (_, i) => i + 7) // 7:00 a 22:00
 
-export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin, precioPorClase, maxAlumnosPorClase, horasAnticipacionMinima }: CalendarioClientProps) {
+export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserId: _currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin, precioPorClase, maxAlumnosPorClase, horasAnticipacionMinima }: CalendarioClientProps) {
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
-  const [vista, setVista] = useState<Vista>('semana')
+  const [_vista, _setVista] = useState<Vista>('semana')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -190,7 +190,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
   }
 
   // Handler para actualizar estado local cuando se crea/edita una clase
-  const handleClaseSuccess = (data: { clase?: any; clases?: any[]; isNew: boolean }) => {
+  const handleClaseSuccess = (data: { clase?: Clase; clases?: Clase[]; isNew: boolean }) => {
     if (data.clases && data.clases.length > 0) {
       // Múltiples clases creadas
       const clasesConFecha = data.clases.map(c => ({
@@ -239,19 +239,6 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
     setSelectedClases(newSelection)
   }
 
-  const toggleSelectAll = () => {
-    // Seleccionar solo las clases visibles en la vista actual
-    const clasesVisibles = vista === 'dia'
-      ? clasesDelDia
-      : clasesDeLaSemana.flatMap(d => d.clases)
-    console.log('toggleSelectAll:', { vista, clasesVisibles: clasesVisibles.length, clasesDeLaSemana: clasesDeLaSemana.map(d => d.clases.length) })
-    if (selectedClases.size === clasesVisibles.length && selectedClases.size > 0) {
-      setSelectedClases(new Set())
-    } else {
-      setSelectedClases(new Set(clasesVisibles.map(c => c.id)))
-    }
-  }
-
   const handleBulkDelete = async () => {
     if (selectedClases.size === 0) return
     setIsDeleting(true)
@@ -263,8 +250,8 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
       setSelectedClases(new Set())
       setBulkDeleteConfirm(false)
       showSuccess(`${selectedClases.size} clase(s) eliminada(s)`)
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
     } finally {
       setIsDeleting(false)
     }
@@ -276,8 +263,8 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
       await deleteClaseAPI(id)
       setClases(prev => prev.filter(c => c.id !== id))
       showSuccess('Clase eliminada')
-    } catch (err: any) {
-      showError(err.message)
+    } catch (err) {
+      showError(getErrorMessage(err))
       throw err
     }
   }
@@ -291,12 +278,12 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
     try {
       await changeClaseStatusAPI(id, estado)
       showSuccess('Estado actualizado')
-    } catch (err: any) {
+    } catch (err) {
       // Revertir al estado anterior
       if (estadoAnterior) {
         setClases(prev => prev.map(c => c.id === id ? { ...c, estado: estadoAnterior } : c))
       }
-      showError(err.message)
+      showError(getErrorMessage(err))
       throw err
     }
   }
@@ -306,12 +293,6 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
     const num = fecha.getDate()
     const mes = MESES[fecha.getMonth()].substring(0, 3)
     return `${dia}, ${num} ${mes}`
-  }
-
-  const formatearFechaCorta = (fecha: Date) => {
-    const dia = DIAS_SEMANA[fecha.getDay()]
-    const num = fecha.getDate()
-    return `${dia} ${num}`
   }
 
   return (

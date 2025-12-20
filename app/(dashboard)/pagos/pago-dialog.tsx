@@ -3,16 +3,11 @@
 import { useState, useEffect } from 'react'
 import { createPagoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { DialogBase } from '@/components/ui/dialog-base'
 import { SelectInput } from '@/components/select-input'
 import type { Pago, AlumnoPago } from '@/lib/types'
 import { MESES } from '@/lib/constants'
+import { getErrorMessage } from '@/lib/utils'
 
 export function PagoDialog({
   isOpen,
@@ -77,99 +72,101 @@ export function PagoDialog({
       showSuccess('Pago registrado')
       onSuccess?.(result.pago)
       onClose()
-    } catch (err: any) {
-      setError(err.message || 'Error al crear pago')
+    } catch (err) {
+      setError(getErrorMessage(err) || 'Error al crear pago')
     } finally {
       setIsLoading(false)
     }
   }
 
+  const footerButtons = (
+    <>
+      <button
+        type="button"
+        onClick={onClose}
+        className="btn-ghost"
+        disabled={isLoading}
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        form="pago-form"
+        className="btn-primary"
+        disabled={isLoading || !selectedAlumnoId}
+      >
+        {isLoading ? 'Guardando...' : 'Guardar'}
+      </button>
+    </>
+  )
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nuevo Pago</DialogTitle>
-        </DialogHeader>
+    <DialogBase
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Nuevo Pago"
+      footer={footerButtons}
+    >
+      {error && (
+        <div className="form-message error">
+          {error}
+        </div>
+      )}
 
-        {error && (
-          <div className="form-message error">
-            {error}
-          </div>
-        )}
+      <form id="pago-form" onSubmit={handleSubmit} className="dialog-body">
+        <div className="form-group">
+          <label>Alumno</label>
+          <SelectInput
+            name="alumnoId"
+            required
+            value={selectedAlumnoId}
+            onChange={(e) => setSelectedAlumnoId(e.target.value)}
+            disabled={isLoading}
+          >
+            <option value="">Seleccionar alumno...</option>
+            {alumnos.map(alumno => (
+              <option key={alumno.id} value={alumno.id}>
+                {alumno.nombre}
+              </option>
+            ))}
+          </SelectInput>
+        </div>
 
-        <form onSubmit={handleSubmit} className="dialog-body">
+        <div className="form-row">
           <div className="form-group">
-            <label>Alumno</label>
-            <SelectInput
-              name="alumnoId"
-              required
-              value={selectedAlumnoId}
-              onChange={(e) => setSelectedAlumnoId(e.target.value)}
-              disabled={isLoading}
-            >
-              <option value="">Seleccionar alumno...</option>
-              {alumnos.map(alumno => (
-                <option key={alumno.id} value={alumno.id}>
-                  {alumno.nombre}
-                </option>
+            <label>Mes</label>
+            <SelectInput name="mes" required disabled={isLoading} defaultValue={currentMonth.toString()}>
+              {MESES.map((mes, idx) => (
+                <option key={mes} value={idx}>{mes}</option>
               ))}
             </SelectInput>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Mes</label>
-              <SelectInput name="mes" required disabled={isLoading} defaultValue={currentMonth.toString()}>
-                {MESES.map((mes, idx) => (
-                  <option key={mes} value={idx}>{mes}</option>
-                ))}
-              </SelectInput>
-            </div>
-
-            <div className="form-group">
-              <label>Año</label>
-              <SelectInput name="anio" required disabled={isLoading} defaultValue={currentYear.toString()}>
-                <option value={currentYear - 1}>{currentYear - 1}</option>
-                <option value={currentYear}>{currentYear}</option>
-                <option value={currentYear + 1}>{currentYear + 1}</option>
-              </SelectInput>
-            </div>
-          </div>
-
           <div className="form-group">
-            <label>Monto (ARS)</label>
-            <input
-              type="number"
-              name="monto"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="10000"
-              min="0"
-              step="0.01"
-              required
-              disabled={isLoading}
-            />
+            <label>Año</label>
+            <SelectInput name="anio" required disabled={isLoading} defaultValue={currentYear.toString()}>
+              <option value={currentYear - 1}>{currentYear - 1}</option>
+              <option value={currentYear}>{currentYear}</option>
+              <option value={currentYear + 1}>{currentYear + 1}</option>
+            </SelectInput>
           </div>
+        </div>
 
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-ghost"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isLoading || !selectedAlumnoId}
-            >
-              {isLoading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="form-group">
+          <label>Monto (ARS)</label>
+          <input
+            type="number"
+            name="monto"
+            value={monto}
+            onChange={(e) => setMonto(e.target.value)}
+            placeholder="10000"
+            min="0"
+            step="0.01"
+            required
+            disabled={isLoading}
+          />
+        </div>
+      </form>
+    </DialogBase>
   )
 }

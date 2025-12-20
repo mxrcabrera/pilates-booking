@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 
@@ -56,9 +57,9 @@ export async function GET() {
         precio: pack.precio.toString()
       }))
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Config GET error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }
 
@@ -156,9 +157,6 @@ export async function POST(request: NextRequest) {
             }, { status: 400 })
           }
         }
-
-        // Construir keys para los horarios a crear/actualizar
-        const keysToUpsert = horariosData.map(h => `${h.diaSemana}-${h.esManiana}`)
 
         // Una sola transacción: borrar existentes + crear nuevos (bulk operations)
         await prisma.$transaction([
@@ -388,10 +386,10 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Config error:', error)
     return NextResponse.json(
-      { error: error.message || 'Error interno del servidor' },
+      { error: getErrorMessage(error) || 'Error interno del servidor' },
       { status: 500 }
     )
   }

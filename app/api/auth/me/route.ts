@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { getErrorMessage } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 
@@ -25,8 +26,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ user })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Auth me error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

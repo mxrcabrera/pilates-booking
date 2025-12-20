@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { marcarPagadoAPI, marcarPendienteAPI, deletePagoAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
+import { formatMes, diasDiferencia } from '@/lib/dates'
 import type { Pago, AlumnoPago } from '@/lib/types'
 
 type FilterType = 'todos' | 'pendientes' | 'pagados'
@@ -43,29 +44,6 @@ export function PagosClient({
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
 
   const selectionMode = selectedPagos.size > 0
-
-  function formatMes(mesStr: string) {
-    if (/^[A-Za-záéíóú]+ \d{4}$/i.test(mesStr)) {
-      return mesStr.charAt(0).toUpperCase() + mesStr.slice(1)
-    }
-    const match = mesStr.match(/^(\d{4})-(\d{2})$/)
-    if (match) {
-      const [, year, month] = match
-      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-      return `${meses[parseInt(month) - 1]} ${year}`
-    }
-    return mesStr
-  }
-
-  function diasDiferencia(fecha: string) {
-    const target = new Date(fecha)
-    target.setHours(0, 0, 0, 0)
-    const hoy = new Date()
-    hoy.setHours(0, 0, 0, 0)
-    const diff = Math.floor((target.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
-    return diff
-  }
 
   function getEstadoTexto(pago: Pago) {
     if (pago.estado === 'pagado' && pago.fechaPago) {

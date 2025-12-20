@@ -4,11 +4,7 @@ import { X, Edit2, UserX, UserCheck, Trash2 } from 'lucide-react'
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
 import type { Alumno, Pack } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
-
-type PaymentStatus = {
-  texto: string
-  clase: 'al-dia' | 'por-vencer' | 'vencido'
-} | null
+import { getPaymentStatus, getStatusText, getClasesRestantesDetalle } from '@/lib/alumno-utils'
 
 export function AlumnoDetailSheet({
   isOpen,
@@ -44,59 +40,11 @@ export function AlumnoDetailSheet({
     }
   }
 
-  // Pack label
   const getPackLabel = () => PACK_LABELS[alumno.packType] || alumno.packType
 
-  // Status con género
-  const getStatusText = () => {
-    if (alumno.genero === 'M') {
-      return alumno.estaActivo ? 'Activo' : 'Inactivo'
-    }
-    return alumno.estaActivo ? 'Activa' : 'Inactiva'
-  }
-
-  // Estado de pago
-  const getPaymentStatus = (): PaymentStatus => {
-    if (!alumno.estaActivo) return null
-
-    if (!alumno.proximoPagoVencimiento) {
-      return { texto: 'Al día', clase: 'al-dia' }
-    }
-
-    const hoy = new Date()
-    hoy.setHours(0, 0, 0, 0)
-    const vencimiento = new Date(alumno.proximoPagoVencimiento)
-    vencimiento.setHours(0, 0, 0, 0)
-    const dias = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
-
-    if (dias < 0) {
-      const diasAtraso = Math.abs(dias)
-      if (diasAtraso > 60) return { texto: 'Al día', clase: 'al-dia' }
-      return { texto: 'Pago atrasado', clase: 'vencido' }
-    }
-
-    if (dias === 0) {
-      return { texto: 'Vence hoy', clase: 'vencido' }
-    }
-
-    if (dias <= 7) {
-      return { texto: `Vence en ${dias}d`, clase: 'por-vencer' }
-    }
-
-    return { texto: 'Al día', clase: 'al-dia' }
-  }
-
-  // Clases restantes
-  const getClasesRestantes = () => {
-    if (!alumno.clasesPorMes) return null
-    const usadas = alumno.clasesEsteMes || 0
-    const restantes = alumno.clasesPorMes - usadas
-    if (restantes <= 0) return 'Sin clases disponibles'
-    return `${restantes} clase${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}`
-  }
-
-  const paymentStatus = getPaymentStatus()
-  const clasesRestantes = getClasesRestantes()
+  const paymentStatus = getPaymentStatus(alumno)
+  const statusText = getStatusText(alumno.genero, alumno.estaActivo)
+  const clasesRestantes = getClasesRestantesDetalle(alumno)
 
   return (
     <>
@@ -122,7 +70,7 @@ export function AlumnoDetailSheet({
                     </span>
                   )}
                   {!alumno.estaActivo && (
-                    <span className="alumno-status-badge">{getStatusText()}</span>
+                    <span className="alumno-status-badge">{statusText}</span>
                   )}
                 </div>
                 <span className="detail-card-pack">{getPackLabel()}</span>

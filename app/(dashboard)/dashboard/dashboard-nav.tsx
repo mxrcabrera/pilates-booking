@@ -55,7 +55,7 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
           <div className="nav-user">
             <div className="user-info" style={{ cursor: 'pointer' }} onClick={handleAvatarClick}>
               <div className="user-avatar">
-                {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
+                <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
               </div>
               <div className="user-details desktop-only">
                 <p className="user-name">{profesor?.nombre}</p>
@@ -99,7 +99,7 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
                 }}
               >
                 <div className="user-avatar">
-                  {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
+                  <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
                 </div>
                 <div className="user-details">
                   <p className="user-name">{profesor?.nombre}</p>

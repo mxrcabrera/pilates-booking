@@ -47,3 +47,6 @@ nul
 
 # Local config
 .*/
+
+# Local Netlify folder
+.netlify

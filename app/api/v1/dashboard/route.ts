@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { startOfDay } from 'date-fns'
 import { getErrorMessage } from '@/lib/utils'
+import { getCachedProfesorConfig } from '@/lib/server-cache'
 
 export const runtime = 'nodejs'
 
@@ -29,15 +30,12 @@ export async function GET() {
     ))
 
     // Una sola ronda de queries en paralelo (incluye verificación de rol y datos de setup)
-    const [user, totalAlumnos, clasesHoyRaw, clasesMañanaRaw, pagosVencidos, horariosCount, packsCount] = await Promise.all([
+    // Usamos cache para la config del profesor
+    const [profesorConfig, userRole, totalAlumnos, clasesHoyRaw, clasesMañanaRaw, pagosVencidos, horariosCount, packsCount] = await Promise.all([
+      getCachedProfesorConfig(userId),
       prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          nombre: true,
-          role: true,
-          horarioTardeInicio: true,
-          maxAlumnosPorClase: true
-        }
+        select: { role: true }
       }),
       prisma.alumno.count({
         where: {
@@ -105,12 +103,12 @@ export async function GET() {
       })
     ])
 
-    if (user?.role === 'ALUMNO') {
+    if (userRole?.role === 'ALUMNO') {
       return NextResponse.json({ redirect: '/alumno/dashboard' })
     }
 
-    const horarioTardeInicio = user?.horarioTardeInicio || '17:00'
-    const maxAlumnosPorClase = user?.maxAlumnosPorClase || 3
+    const horarioTardeInicio = profesorConfig?.horarioTardeInicio || '17:00'
+    const maxAlumnosPorClase = profesorConfig?.maxAlumnosPorClase || 3
 
     // Normalizar clases para que coincidan con ClaseHoy type
     const clasesHoy = clasesHoyRaw.map(c => ({
@@ -134,7 +132,7 @@ export async function GET() {
       hasHorarios: horariosCount > 0,
       hasPacks: packsCount > 0,
       hasAlumnos: totalAlumnos > 0,
-      userName: user?.nombre || null
+      userName: profesorConfig?.nombre || null
     }
 
     return NextResponse.json({

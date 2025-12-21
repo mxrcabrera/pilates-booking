@@ -9,19 +9,21 @@ import type { CalendarioData, CalendarioDataCached, PreferencesIncompleteRespons
 
 function parseCalendarioData(data: unknown): CalendarioData {
   const cached = data as CalendarioDataCached
+  const clasesTransformadas = cached.clases.map(c => ({
+    ...c,
+    fecha: new Date(c.fecha)
+  }))
   return {
     ...cached,
-    clases: cached.clases.map(c => ({
-      ...c,
-      fecha: new Date(c.fecha)
-    }))
+    clases: clasesTransformadas,
+    data: clasesTransformadas
   }
 }
 
 export default function CalendarioPage() {
   const { data, error, isLoading } = usePageData<CalendarioData>({
     cacheKey: CACHE_KEYS.CALENDARIO,
-    apiUrl: '/api/clases',
+    apiUrl: '/api/v1/clases',
     transform: parseCalendarioData
   })
 

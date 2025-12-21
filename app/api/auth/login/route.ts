@@ -3,12 +3,30 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword, verifyPassword, createToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { getErrorMessage } from '@/lib/utils'
+import { rateLimit, getClientIP, rateLimitExceeded } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
+
+// Rate limits: login=5/min, signup=3/min
+const LOGIN_LIMIT = 5
+const SIGNUP_LIMIT = 3
+const WINDOW_MS = 60 * 1000 // 1 minuto
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const ip = getClientIP(request)
+    const isSignup = body.action === 'signup'
+
+    // Rate limiting
+    const rateLimitKey = isSignup ? `signup:${ip}` : `login:${ip}`
+    const limit = isSignup ? SIGNUP_LIMIT : LOGIN_LIMIT
+    const { success, resetIn } = rateLimit(rateLimitKey, limit, WINDOW_MS)
+
+    if (!success) {
+      const { error, status, headers } = rateLimitExceeded(resetIn)
+      return NextResponse.json({ error }, { status, headers })
+    }
     const { email, password, action, nombre } = body
 
     if (action === 'signup') {

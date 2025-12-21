@@ -4,20 +4,29 @@ import { getCurrentUser } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
 import { auth } from '@/lib/auth'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
-import { getErrorMessage } from '@/lib/utils'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
+import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
+import { getCachedPacks, getCachedAlumnosSimple } from '@/lib/server-cache'
+import { unauthorized, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
 
 // Google Calendar API responses don't have proper TypeScript types
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+// Rate limit: 30 requests por minuto para POST
+const POST_LIMIT = 30
+const WINDOW_MS = 60 * 1000
+
+export async function GET(request: NextRequest) {
   try {
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
+
+    const { page, limit, skip } = getPaginationParams(request)
 
     const hoy = new Date()
     const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
@@ -47,7 +56,7 @@ export async function GET() {
 
     // Check preferences inline (sin query adicional)
     if (!user) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+      return notFound('Usuario no encontrado')
     }
 
     const missingFields: string[] = []
@@ -72,13 +81,19 @@ export async function GET() {
       profesorIds = usuariosEnEspacio.map(p => p.id)
     }
 
-    // Queries de datos en paralelo
-    const [clases, alumnos, packs] = await Promise.all([
+    // Where para clases
+    const clasesWhere = {
+      profesorId: { in: profesorIds },
+      fecha: { gte: inicioRango, lte: finRango },
+      deletedAt: null
+    }
+
+    // Queries de datos en paralelo (usando cache para packs y alumnos)
+    const [clases, total, alumnos, packs] = await Promise.all([
       prisma.clase.findMany({
-        where: {
-          profesorId: { in: profesorIds },
-          fecha: { gte: inicioRango, lte: finRango }
-        },
+        where: clasesWhere,
+        skip,
+        take: limit,
         select: {
           id: true,
           fecha: true,
@@ -102,18 +117,11 @@ export async function GET() {
           },
           profesor: { select: { id: true, nombre: true } }
         },
-        orderBy: { horaInicio: 'asc' }
+        orderBy: [{ fecha: 'asc' }, { horaInicio: 'asc' }]
       }),
-      prisma.alumno.findMany({
-        where: { profesorId: userId, estaActivo: true },
-        select: { id: true, nombre: true },
-        orderBy: { nombre: 'asc' }
-      }),
-      prisma.pack.findMany({
-        where: { profesorId: userId },
-        select: { id: true, nombre: true, clasesPorSemana: true, precio: true },
-        orderBy: { clasesPorSemana: 'asc' }
-      })
+      prisma.clase.count({ where: clasesWhere }),
+      getCachedAlumnosSimple(userId),
+      getCachedPacks(userId)
     ])
 
     // Calcular clases usadas por alumno usando su ciclo de facturación personalizado
@@ -145,7 +153,12 @@ export async function GET() {
       clasesUsadasEsteMes: clase.alumnoId ? clasesUsadasPorAlumno[clase.alumnoId] || 0 : 0
     }))
 
+    const paginatedData = paginatedResponse(clasesNormalizadas, total, { page, limit, skip })
+
     return NextResponse.json({
+      // Nuevo formato paginado
+      ...paginatedData,
+      // Compatibilidad con formato anterior
       clases: clasesNormalizadas,
       alumnos,
       packs,
@@ -159,16 +172,22 @@ export async function GET() {
       horasAnticipacionMinima: user.horasAnticipacionMinima || 1
     })
   } catch (error) {
-    console.error('Clases GET error:', error)
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    return serverError(error)
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`clases:${ip}`, POST_LIMIT, WINDOW_MS)
+    if (!success) {
+      return tooManyRequests()
+    }
+
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const body = await request.json()
@@ -249,7 +268,8 @@ export async function POST(request: NextRequest) {
               profesorId: userId,
               diaSemana,
               esManiana,
-              estaActivo: true
+              estaActivo: true,
+              deletedAt: null
             }
           })
 
@@ -272,7 +292,8 @@ export async function POST(request: NextRequest) {
             profesorId: userId,
             fecha,
             horaInicio,
-            estado: { not: 'cancelada' }
+            estado: { not: 'cancelada' },
+            deletedAt: null
           }
         })
 
@@ -290,7 +311,8 @@ export async function POST(request: NextRequest) {
           const alumnosValidos = await prisma.alumno.count({
             where: {
               id: { in: alumnosArray },
-              profesorId: userId
+              profesorId: userId,
+              deletedAt: null
             }
           })
           if (alumnosValidos !== alumnosArray.length) {
@@ -452,7 +474,8 @@ export async function POST(request: NextRequest) {
               profesorId: userId,
               diaSemana,
               esManiana,
-              estaActivo: true
+              estaActivo: true,
+              deletedAt: null
             }
           })
 
@@ -476,7 +499,8 @@ export async function POST(request: NextRequest) {
             fecha,
             horaInicio,
             estado: { not: 'cancelada' },
-            id: { not: id }
+            id: { not: id },
+            deletedAt: null
           }
         })
 
@@ -486,7 +510,7 @@ export async function POST(request: NextRequest) {
 
         // Validar que la clase pertenece al profesor
         const claseExistente = await prisma.clase.findFirst({
-          where: { id, profesorId: userId }
+          where: { id, profesorId: userId, deletedAt: null }
         })
         if (!claseExistente) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
@@ -495,7 +519,7 @@ export async function POST(request: NextRequest) {
         // Validar que el alumno pertenece al profesor (si se especifica)
         if (alumnoId) {
           const alumnoValido = await prisma.alumno.findFirst({
-            where: { id: alumnoId, profesorId: userId }
+            where: { id: alumnoId, profesorId: userId, deletedAt: null }
           })
           if (!alumnoValido) {
             return NextResponse.json({ error: 'Alumno no válido' }, { status: 400 })
@@ -559,7 +583,7 @@ export async function POST(request: NextRequest) {
         // Validar que la clase pertenece al profesor y obtener datos para sync
         const [clase, user] = await Promise.all([
           prisma.clase.findFirst({
-            where: { id, profesorId: userId },
+            where: { id, profesorId: userId, deletedAt: null },
             select: { id: true, googleEventId: true }
           }),
           prisma.user.findUnique({
@@ -572,7 +596,11 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
         }
 
-        await prisma.clase.delete({ where: { id } })
+        // Soft delete: marcar como eliminado en lugar de borrar
+        await prisma.clase.update({
+          where: { id },
+          data: { deletedAt: new Date() }
+        })
 
         // Sincronizar con Google Calendar en background (fire-and-forget)
         if (user?.syncGoogleCalendar && clase?.googleEventId) {
@@ -595,7 +623,7 @@ export async function POST(request: NextRequest) {
 
         // Validar que la clase pertenece al profesor
         const clase = await prisma.clase.findFirst({
-          where: { id, profesorId: userId }
+          where: { id, profesorId: userId, deletedAt: null }
         })
         if (!clase) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
@@ -620,7 +648,7 @@ export async function POST(request: NextRequest) {
 
         // Validar que la clase pertenece al profesor
         const clase = await prisma.clase.findFirst({
-          where: { id, profesorId: userId }
+          where: { id, profesorId: userId, deletedAt: null }
         })
         if (!clase) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
@@ -650,10 +678,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
     }
   } catch (error) {
-    console.error('Clases API error:', error)
-    return NextResponse.json(
-      { error: getErrorMessage(error) || 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

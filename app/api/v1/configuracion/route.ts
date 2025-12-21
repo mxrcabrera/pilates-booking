@@ -1,73 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
-import { getErrorMessage } from '@/lib/utils'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
+import { getCachedPacks, getCachedHorarios, getCachedProfesorConfig } from '@/lib/server-cache'
+import { invalidatePacks, invalidateHorarios, invalidateConfig } from '@/lib/cache-utils'
+import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
+
+// Rate limit: 20 requests por minuto para POST
+const POST_LIMIT = 20
+const WINDOW_MS = 60 * 1000
 
 export async function GET() {
   try {
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        horariosDisponibles: {
-          orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }]
-        },
-        packs: {
-          orderBy: { createdAt: 'desc' }
-        },
-        accounts: {
-          select: { provider: true }
-        }
-      }
-    })
+    // Usar cache para datos que cambian poco
+    const [profesor, horarios, packs, accounts] = await Promise.all([
+      getCachedProfesorConfig(userId),
+      getCachedHorarios(userId),
+      getCachedPacks(userId),
+      prisma.account.findMany({
+        where: { userId },
+        select: { provider: true }
+      })
+    ])
 
-    if (!user) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+    if (!profesor) {
+      return notFound('Usuario no encontrado')
     }
 
-    const hasGoogleAccount = user.accounts.some(account => account.provider === 'google')
+    const hasGoogleAccount = accounts.some(account => account.provider === 'google')
 
     return NextResponse.json({
       profesor: {
-        id: user.id,
-        horasAnticipacionMinima: user.horasAnticipacionMinima,
-        maxAlumnosPorClase: user.maxAlumnosPorClase,
-        horarioMananaInicio: user.horarioMananaInicio,
-        horarioMananaFin: user.horarioMananaFin,
-        turnoMananaActivo: user.turnoMananaActivo,
-        horarioTardeInicio: user.horarioTardeInicio,
-        horarioTardeFin: user.horarioTardeFin,
-        turnoTardeActivo: user.turnoTardeActivo,
-        espacioCompartidoId: user.espacioCompartidoId,
-        syncGoogleCalendar: user.syncGoogleCalendar,
-        precioPorClase: user.precioPorClase?.toString() || '0',
+        ...profesor,
         hasGoogleAccount
       },
-      horarios: user.horariosDisponibles,
-      packs: user.packs.map(pack => ({
-        id: pack.id,
-        nombre: pack.nombre,
-        clasesPorSemana: pack.clasesPorSemana,
-        precio: pack.precio.toString()
-      }))
+      horarios,
+      packs
     })
   } catch (error) {
-    console.error('Config GET error:', error)
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    return serverError(error)
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`config:${ip}`, POST_LIMIT, WINDOW_MS)
+    if (!success) {
+      return tooManyRequests()
+    }
+
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const body = await request.json()
@@ -122,7 +115,7 @@ export async function POST(request: NextRequest) {
           })
         } else {
           const existente = await prisma.horarioDisponible.findFirst({
-            where: { profesorId: userId, diaSemana, esManiana }
+            where: { profesorId: userId, diaSemana, esManiana, deletedAt: null }
           })
 
           if (existente) {
@@ -137,6 +130,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        invalidateHorarios()
         return NextResponse.json({ success: true, horario })
       }
 
@@ -193,6 +187,7 @@ export async function POST(request: NextRequest) {
           }
         })
 
+        invalidateHorarios()
         return NextResponse.json({ success: true, horarios: resultados })
       }
 
@@ -201,13 +196,18 @@ export async function POST(request: NextRequest) {
 
         // Validar que el horario pertenece al profesor
         const horario = await prisma.horarioDisponible.findFirst({
-          where: { id, profesorId: userId }
+          where: { id, profesorId: userId, deletedAt: null }
         })
         if (!horario) {
           return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
         }
 
-        await prisma.horarioDisponible.delete({ where: { id } })
+        // Soft delete: marcar como eliminado en lugar de borrar
+        await prisma.horarioDisponible.update({
+          where: { id },
+          data: { deletedAt: new Date() }
+        })
+        invalidateHorarios()
         return NextResponse.json({ success: true })
       }
 
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
 
         // Validar que el horario pertenece al profesor
         const horario = await prisma.horarioDisponible.findFirst({
-          where: { id, profesorId: userId }
+          where: { id, profesorId: userId, deletedAt: null }
         })
         if (!horario) {
           return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
@@ -226,6 +226,7 @@ export async function POST(request: NextRequest) {
           where: { id },
           data: { estaActivo: !horario.estaActivo }
         })
+        invalidateHorarios()
         return NextResponse.json({ success: true })
       }
 
@@ -251,7 +252,7 @@ export async function POST(request: NextRequest) {
         if (id) {
           // Validar que el pack pertenece al profesor
           const packExistente = await prisma.pack.findFirst({
-            where: { id, profesorId: userId }
+            where: { id, profesorId: userId, deletedAt: null }
           })
           if (!packExistente) {
             return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
@@ -266,16 +267,24 @@ export async function POST(request: NextRequest) {
             data: { profesorId: userId, nombre, clasesPorSemana: clasesPorSemanaNum, precio: precioNum }
           })
         }
+        invalidatePacks()
         return NextResponse.json({ success: true, pack })
       }
 
       case 'deletePack': {
         const { id } = data
-        const pack = await prisma.pack.findUnique({ where: { id } })
-        if (!pack || pack.profesorId !== userId) {
+        const pack = await prisma.pack.findFirst({
+          where: { id, profesorId: userId, deletedAt: null }
+        })
+        if (!pack) {
           return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
         }
-        await prisma.pack.delete({ where: { id } })
+        // Soft delete: marcar como eliminado en lugar de borrar
+        await prisma.pack.update({
+          where: { id },
+          data: { deletedAt: new Date() }
+        })
+        invalidatePacks()
         return NextResponse.json({ success: true })
       }
 
@@ -285,6 +294,7 @@ export async function POST(request: NextRequest) {
           where: { id: userId },
           data: { nombre, telefono }
         })
+        invalidateConfig()
         return NextResponse.json({ success: true })
       }
 
@@ -380,17 +390,14 @@ export async function POST(request: NextRequest) {
             ...(precioPorClase !== undefined && { precioPorClase: parseFloat(precioPorClase) || 0 })
           }
         })
+        invalidateConfig()
         return NextResponse.json({ success: true })
       }
 
       default:
-        return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
+        return badRequest('Acción no válida')
     }
   } catch (error) {
-    console.error('Config error:', error)
-    return NextResponse.json(
-      { error: getErrorMessage(error) || 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

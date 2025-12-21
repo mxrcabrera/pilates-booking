@@ -15,7 +15,7 @@ const CACHE_KEY = 'dashboard-data'
 export default function DashboardPage() {
   const { data, error, isLoading } = usePageData<DashboardData>({
     cacheKey: CACHE_KEY,
-    apiUrl: '/api/dashboard'
+    apiUrl: '/api/v1/dashboard'
   })
 
   if (error) {

@@ -1,34 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
-import { getErrorMessage } from '@/lib/utils'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
+import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
+import { pagoActionSchema } from '@/lib/schemas/pago.schema'
+import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
+
+// Rate limit: 20 requests por minuto para POST
+const POST_LIMIT = 20
+const WINDOW_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const alumnoId = searchParams.get('alumnoId')
+  const estado = searchParams.get('estado')
 
   try {
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
+
+    const { page, limit, skip } = getPaginationParams(request)
 
     // Si se pide pagos de un alumno específico
     if (alumnoId) {
       const alumno = await prisma.alumno.findFirst({
-        where: { id: alumnoId, profesorId: userId }
+        where: { id: alumnoId, profesorId: userId, deletedAt: null }
       })
 
       if (!alumno) {
-        return NextResponse.json({ error: 'Alumno no encontrado' }, { status: 404 })
+        return notFound('Alumno no encontrado')
       }
 
-      const pagosRaw = await prisma.pago.findMany({
-        where: { alumnoId },
-        orderBy: { fechaVencimiento: 'desc' }
-      })
+      const whereAlumno = {
+        alumnoId,
+        deletedAt: null,
+        ...(estado && { estado })
+      }
+
+      const [pagosRaw, total] = await Promise.all([
+        prisma.pago.findMany({
+          where: whereAlumno,
+          skip,
+          take: limit,
+          orderBy: { fechaVencimiento: 'desc' }
+        }),
+        prisma.pago.count({ where: whereAlumno })
+      ])
 
       const pagos = pagosRaw.map(p => ({
         id: p.id,
@@ -39,39 +60,51 @@ export async function GET(request: NextRequest) {
         mesCorrespondiente: p.mesCorrespondiente
       }))
 
-      return NextResponse.json({ pagos })
+      const paginatedData = paginatedResponse(pagos, total, { page, limit, skip })
+
+      return NextResponse.json({
+        ...paginatedData,
+        pagos
+      })
     }
 
-    // Obtener todos los pagos de los alumnos del profesor
-    const pagosRaw = await prisma.pago.findMany({
-      where: {
-        alumno: {
-          profesorId: userId
-        }
+    // Construir where para todos los pagos
+    const where = {
+      alumno: {
+        profesorId: userId,
+        deletedAt: null
       },
-      include: {
-        alumno: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true
+      deletedAt: null,
+      ...(estado && { estado })
+    }
+
+    // Obtener pagos paginados y total
+    const [pagosRaw, total] = await Promise.all([
+      prisma.pago.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          alumno: {
+            select: {
+              id: true,
+              nombre: true,
+              email: true
+            }
           }
-        }
-      },
-      orderBy: { fechaVencimiento: 'desc' }
-    })
+        },
+        orderBy: { fechaVencimiento: 'desc' }
+      }),
+      prisma.pago.count({ where })
+    ])
 
     // Obtener clases completadas por alumno/mes para calcular progreso
-    // Optimizado: una sola query en lugar de N queries
     const clasesCompletadasMap = new Map<string, number>()
-
-    // Recolectar todos los alumnoIds y rangos de fechas necesarios
     const pagosMensuales = pagosRaw.filter(p => p.tipoPago === 'mensual' && p.clasesEsperadas)
 
     if (pagosMensuales.length > 0) {
       const alumnoIds = [...new Set(pagosMensuales.map(p => p.alumnoId))]
 
-      // Encontrar el rango de fechas más amplio
       let minDate: Date | null = null
       let maxDate: Date | null = null
 
@@ -99,12 +132,12 @@ export async function GET(request: NextRequest) {
       }
 
       if (minDate && maxDate) {
-        // Una sola query para todas las clases completadas
         const clasesCompletadas = await prisma.clase.findMany({
           where: {
             alumnoId: { in: alumnoIds },
             fecha: { gte: minDate, lte: maxDate },
-            estado: 'completada'
+            estado: 'completada',
+            deletedAt: null
           },
           select: {
             alumnoId: true,
@@ -112,14 +145,12 @@ export async function GET(request: NextRequest) {
           }
         })
 
-        // Agrupar por alumno y mes
         for (const clase of clasesCompletadas) {
           const year = clase.fecha.getFullYear()
           const month = clase.fecha.getMonth() + 1
           const mesKey1 = `${year}-${month.toString().padStart(2, '0')}`
           const mesKey2 = `${mesesNombres[month - 1]} ${year}`
 
-          // Incrementar contadores para ambos formatos de mes
           for (const pago of pagosMensuales) {
             if (pago.alumnoId === clase.alumnoId) {
               const key = `${pago.alumnoId}-${pago.mesCorrespondiente}`
@@ -144,7 +175,8 @@ export async function GET(request: NextRequest) {
     const alumnos = await prisma.alumno.findMany({
       where: {
         profesorId: userId,
-        estaActivo: true
+        estaActivo: true,
+        deletedAt: null
       },
       select: {
         id: true,
@@ -166,61 +198,57 @@ export async function GET(request: NextRequest) {
       saldoAFavor: a.saldoAFavor.toString()
     }))
 
-    return NextResponse.json({ pagos, alumnos: alumnosSerializados })
+    const paginatedData = paginatedResponse(pagos, total, { page, limit, skip })
+
+    return NextResponse.json({
+      ...paginatedData,
+      pagos,
+      alumnos: alumnosSerializados
+    })
   } catch (error) {
-    console.error('Error fetching pagos:', error)
-    return NextResponse.json({ error: 'Error al obtener pagos' }, { status: 500 })
+    return serverError(error)
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCurrentUser()
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`pagos:${ip}`, POST_LIMIT, WINDOW_MS)
+    if (!success) {
+      return tooManyRequests()
     }
 
+    const userId = await getCurrentUser()
+    if (!userId) {
+      return unauthorized()
+    }
+
+    // Validar con Zod schema
     const body = await request.json()
-    const { action, ...data } = body
+    const parsed = pagoActionSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return badRequest('Datos inválidos', parsed.error.flatten())
+    }
+
+    const { action } = parsed.data
 
     switch (action) {
       case 'create': {
-        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas } = data
-
-        // Validar campos obligatorios
-        if (!alumnoId) {
-          return NextResponse.json({ error: 'El alumno es obligatorio' }, { status: 400 })
-        }
-        if (!mesCorrespondiente?.trim()) {
-          return NextResponse.json({ error: 'El mes correspondiente es obligatorio' }, { status: 400 })
-        }
-
-        // Validar monto
-        const montoNum = parseFloat(monto)
-        if (isNaN(montoNum) || montoNum <= 0) {
-          return NextResponse.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
-        }
-
-        // Validar que la fecha de vencimiento no sea en el pasado
-        const fechaVenc = new Date(fechaVencimiento)
-        const hoy = new Date()
-        hoy.setHours(0, 0, 0, 0)
-        if (fechaVenc < hoy) {
-          return NextResponse.json({ error: 'La fecha de vencimiento no puede ser en el pasado' }, { status: 400 })
-        }
+        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas } = parsed.data
 
         // Verificar que el alumno pertenece al profesor
         const alumno = await prisma.alumno.findFirst({
-          where: { id: alumnoId, profesorId: userId }
+          where: { id: alumnoId, profesorId: userId, deletedAt: null }
         })
 
         if (!alumno) {
-          return NextResponse.json({ error: 'Alumno no encontrado' }, { status: 404 })
+          return notFound('Alumno no encontrado')
         }
 
         // Si no se especifica tipoPago, determinar basado en packType del alumno
         const finalTipoPago = tipoPago || (alumno.packType === 'clase' ? 'clase' : 'mensual')
-        // Si es mensual y no se pasan clasesEsperadas, usar clasesPorMes del alumno
         const finalClasesEsperadas = finalTipoPago === 'mensual'
           ? (clasesEsperadas || alumno.clasesPorMes)
           : null
@@ -250,8 +278,6 @@ export async function POST(request: NextRequest) {
           })
         ]
 
-        // Si tenía saldo a favor (positivo), limpiarlo
-        // El saldo ya fue aplicado en el cálculo del monto en el frontend
         if (saldoAnterior !== 0) {
           operaciones.push(
             prisma.alumno.update({
@@ -276,18 +302,18 @@ export async function POST(request: NextRequest) {
       }
 
       case 'marcarPagado': {
-        const { id } = data
+        const { id } = parsed.data
 
-        // Verificar que el pago pertenece a un alumno del profesor
         const pagoExistente = await prisma.pago.findFirst({
           where: {
             id,
-            alumno: { profesorId: userId }
+            alumno: { profesorId: userId },
+            deletedAt: null
           }
         })
 
         if (!pagoExistente) {
-          return NextResponse.json({ error: 'Pago no encontrado' }, { status: 404 })
+          return notFound('Pago no encontrado')
         }
 
         const pago = await prisma.pago.update({
@@ -311,17 +337,18 @@ export async function POST(request: NextRequest) {
       }
 
       case 'marcarPendiente': {
-        const { id } = data
+        const { id } = parsed.data
 
         const pagoExistente = await prisma.pago.findFirst({
           where: {
             id,
-            alumno: { profesorId: userId }
+            alumno: { profesorId: userId },
+            deletedAt: null
           }
         })
 
         if (!pagoExistente) {
-          return NextResponse.json({ error: 'Pago no encontrado' }, { status: 404 })
+          return notFound('Pago no encontrado')
         }
 
         const pago = await prisma.pago.update({
@@ -345,31 +372,32 @@ export async function POST(request: NextRequest) {
       }
 
       case 'delete': {
-        const { id } = data
+        const { id } = parsed.data
 
         const pagoExistente = await prisma.pago.findFirst({
           where: {
             id,
-            alumno: { profesorId: userId }
+            alumno: { profesorId: userId },
+            deletedAt: null
           }
         })
 
         if (!pagoExistente) {
-          return NextResponse.json({ error: 'Pago no encontrado' }, { status: 404 })
+          return notFound('Pago no encontrado')
         }
 
-        await prisma.pago.delete({
-          where: { id }
+        await prisma.pago.update({
+          where: { id },
+          data: { deletedAt: new Date() }
         })
 
         return NextResponse.json({ success: true })
       }
 
       default:
-        return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
+        return badRequest('Acción no válida')
     }
   } catch (error) {
-    console.error('Error en pagos:', error)
-    return NextResponse.json({ error: getErrorMessage(error) || 'Error al procesar' }, { status: 500 })
+    return serverError(error)
   }
 }

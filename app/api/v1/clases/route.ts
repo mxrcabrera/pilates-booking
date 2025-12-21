@@ -9,6 +9,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { getCachedPacks, getCachedAlumnosSimple } from '@/lib/server-cache'
 import { unauthorized, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { logger } from '@/lib/logger'
 
 // Google Calendar API responses don't have proper TypeScript types
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -355,10 +356,10 @@ export async function POST(request: NextRequest) {
                   prisma.clase.update({
                     where: { id: claseCreada.id },
                     data: { googleEventId: eventId }
-                  }).catch(err => console.error('Error guardando eventId:', err))
-                }).catch(err => console.error('Error creando evento en Google Calendar:', err))
+                  }).catch(err => logger.error('Error guardando eventId', err))
+                }).catch(err => logger.error('Error creando evento en Google Calendar', err))
               }
-            }).catch(err => console.error('Error obteniendo sesión:', err))
+            }).catch(err => logger.error('Error obteniendo sesión', err))
           }
 
           // Crear clases recurrentes para este alumno
@@ -554,9 +555,9 @@ export async function POST(request: NextRequest) {
                 claseActualizada.googleEventId!,
                 (session as any).accessToken,
                 (session as any).refreshToken
-              ).catch(err => console.error('Error actualizando evento en Google Calendar:', err))
+              ).catch(err => logger.error('Error actualizando evento en Google Calendar', err))
             }
-          }).catch(err => console.error('Error obteniendo sesión:', err))
+          }).catch(err => logger.error('Error obteniendo sesión', err))
         } else if (user.syncGoogleCalendar && !claseActualizada.googleEventId) {
           auth().then(session => {
             if (session && (session as any).accessToken) {
@@ -568,10 +569,10 @@ export async function POST(request: NextRequest) {
                 prisma.clase.update({
                   where: { id: claseActualizada.id },
                   data: { googleEventId: eventId }
-                }).catch(err => console.error('Error guardando eventId:', err))
-              }).catch(err => console.error('Error creando evento en Google Calendar:', err))
+                }).catch(err => logger.error('Error guardando eventId', err))
+              }).catch(err => logger.error('Error creando evento en Google Calendar', err))
             }
-          }).catch(err => console.error('Error obteniendo sesión:', err))
+          }).catch(err => logger.error('Error obteniendo sesión', err))
         }
 
         return NextResponse.json({ success: true, clase: claseActualizada })
@@ -610,9 +611,9 @@ export async function POST(request: NextRequest) {
                 clase.googleEventId!,
                 (session as any).accessToken,
                 (session as any).refreshToken
-              ).catch(err => console.error('Error eliminando evento de Google Calendar:', err))
+              ).catch(err => logger.error('Error eliminando evento de Google Calendar', err))
             }
-          }).catch(err => console.error('Error obteniendo sesión:', err))
+          }).catch(err => logger.error('Error obteniendo sesión', err))
         }
 
         return NextResponse.json({ success: true })

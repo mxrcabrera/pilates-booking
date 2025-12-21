@@ -279,6 +279,17 @@ export async function POST(request: NextRequest) {
         if (!pack) {
           return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
         }
+
+        // Verificar si hay alumnos usando este pack
+        const alumnosConPack = await prisma.alumno.count({
+          where: { packType: id, profesorId: userId, deletedAt: null }
+        })
+        if (alumnosConPack > 0) {
+          return NextResponse.json({
+            error: `No podés eliminar este pack porque ${alumnosConPack} alumno${alumnosConPack > 1 ? 's lo usan' : ' lo usa'}. Cambiá su pack primero.`
+          }, { status: 400 })
+        }
+
         // Soft delete: marcar como eliminado en lugar de borrar
         await prisma.pack.update({
           where: { id },

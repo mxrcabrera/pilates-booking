@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { addWeeks } from 'date-fns'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
+import { logger } from '@/lib/logger'
 import type { Prisma } from '@prisma/client'
 
 export async function createClase(formData: FormData) {
@@ -158,7 +159,7 @@ export async function createClase(formData: FormData) {
         })
       }
     } catch (error) {
-      console.error('Error al sincronizar con Google Calendar:', error)
+      logger.error('Error al sincronizar con Google Calendar', error)
       // No fallar la creación de la clase si falla la sincronización
     }
   }
@@ -430,7 +431,7 @@ export async function deleteClase(id: string) {
         )
       }
     } catch (error) {
-      console.error('Error al eliminar de Google Calendar:', error)
+      logger.error('Error al eliminar de Google Calendar', error)
     }
   }
 

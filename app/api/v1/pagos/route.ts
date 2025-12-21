@@ -247,6 +247,11 @@ export async function POST(request: NextRequest) {
           return notFound('Alumno no encontrado')
         }
 
+        // Advertir si el alumno está inactivo
+        if (!alumno.estaActivo) {
+          return badRequest('Este alumno está inactivo. Activalo antes de crear un pago.')
+        }
+
         // Si no se especifica tipoPago, determinar basado en packType del alumno
         const finalTipoPago = tipoPago || (alumno.packType === 'clase' ? 'clase' : 'mensual')
         const finalClasesEsperadas = finalTipoPago === 'mensual'

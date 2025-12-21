@@ -12,10 +12,14 @@ export async function updateUserRole(role: UserRole) {
     throw new Error('No autenticado')
   }
 
-  await prisma.user.update({
-    where: { email: session.user.email },
-    data: { role }
-  })
+  try {
+    await prisma.user.update({
+      where: { email: session.user.email },
+      data: { role }
+    })
+  } catch {
+    throw new Error('Error al guardar el rol')
+  }
 
   // Redirigir según el rol seleccionado
   if (role === 'PROFESOR') {

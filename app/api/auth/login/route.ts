@@ -4,6 +4,7 @@ import { hashPassword, verifyPassword, createToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { getErrorMessage } from '@/lib/utils'
 import { rateLimit, getClientIP, rateLimitExceeded } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, redirectTo: '/dashboard' })
     }
   } catch (error) {
-    console.error('Auth error:', error)
+    logger.error('Auth login error', error)
     return NextResponse.json(
       { error: getErrorMessage(error) || 'Error interno del servidor' },
       { status: 500 }

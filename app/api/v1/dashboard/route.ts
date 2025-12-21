@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { startOfDay } from 'date-fns'
 import { getErrorMessage } from '@/lib/utils'
 import { getCachedProfesorConfig } from '@/lib/server-cache'
+import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 
@@ -145,7 +146,7 @@ export async function GET() {
       setupStatus
     })
   } catch (error) {
-    console.error('Dashboard GET error:', error)
+    logger.error('Dashboard GET error', error)
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

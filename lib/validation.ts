@@ -3,16 +3,19 @@
  * Centralizan la lógica de validación para evitar duplicación
  */
 
-// Regex para validar formato de email
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// RFC 5322 simplified email regex - más preciso que el anterior
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
 
 // Regex para validar formato de hora HH:MM
 const TIME_REGEX = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
 
 /**
  * Valida si un email tiene formato válido
+ * - Máximo 254 caracteres (RFC 5321)
+ * - Formato RFC 5322 simplificado
  */
 export function validateEmail(email: string): boolean {
+  if (!email || email.length > 254) return false
   return EMAIL_REGEX.test(email)
 }
 

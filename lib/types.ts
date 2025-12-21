@@ -138,6 +138,21 @@ export type ProfesorConfig = {
   hasGoogleAccount: boolean
 }
 
+// ----- PAGINACIÓN -----
+export type Pagination = {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+export type PaginatedResponse<T> = {
+  data: T[]
+  pagination: Pagination
+}
+
 // ----- API RESPONSE TYPES -----
 export type PreferencesIncompleteResponse = {
   preferencesIncomplete: true
@@ -145,13 +160,22 @@ export type PreferencesIncompleteResponse = {
 }
 
 // ----- DATA TYPES (para páginas) -----
+// Incluyen formato legacy (alumnos, pagos, clases) y nuevo formato paginado (data, pagination)
 export type AlumnosData = {
+  // Nuevo formato paginado
+  data: Alumno[]
+  pagination: Pagination
+  // Compatibilidad con formato anterior
   alumnos: Alumno[]
   packs: Pack[]
   precioPorClase: string
 }
 
 export type CalendarioData = {
+  // Nuevo formato paginado
+  data: Clase[]
+  pagination: Pagination
+  // Compatibilidad con formato anterior
   clases: Clase[]
   alumnos: AlumnoSimple[]
   packs: Pack[]
@@ -165,8 +189,9 @@ export type CalendarioData = {
   horasAnticipacionMinima: number
 }
 
-export type CalendarioDataCached = Omit<CalendarioData, 'clases'> & {
+export type CalendarioDataCached = Omit<CalendarioData, 'clases' | 'data'> & {
   clases: ClaseAPI[]
+  data: ClaseAPI[]
 }
 
 export type ConfigData = {
@@ -176,6 +201,10 @@ export type ConfigData = {
 }
 
 export type PagosData = {
+  // Nuevo formato paginado
+  data: Pago[]
+  pagination: Pagination
+  // Compatibilidad con formato anterior
   pagos: Pago[]
   alumnos: AlumnoPago[]
 }

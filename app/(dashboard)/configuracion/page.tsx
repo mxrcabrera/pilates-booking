@@ -9,7 +9,7 @@ import type { ConfigData } from '@/lib/types'
 export default function ConfiguracionPage() {
   const { data, error, isLoading } = usePageData<ConfigData>({
     cacheKey: CACHE_KEYS.CONFIGURACION,
-    apiUrl: '/api/configuracion'
+    apiUrl: '/api/v1/configuracion'
   })
 
   if (error) {

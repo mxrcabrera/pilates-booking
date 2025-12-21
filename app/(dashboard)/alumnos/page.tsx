@@ -9,7 +9,7 @@ import type { AlumnosData } from '@/lib/types'
 export default function AlumnosPage() {
   const { data, error, isLoading } = usePageData<AlumnosData>({
     cacheKey: CACHE_KEYS.ALUMNOS,
-    apiUrl: '/api/alumnos'
+    apiUrl: '/api/v1/alumnos'
   })
 
   if (error) {

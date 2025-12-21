@@ -9,7 +9,7 @@ import type { PagosData } from '@/lib/types'
 export default function PagosPage() {
   const { data, error, isLoading } = usePageData<PagosData>({
     cacheKey: CACHE_KEYS.PAGOS,
-    apiUrl: '/api/pagos'
+    apiUrl: '/api/v1/pagos'
   })
 
   if (error) {

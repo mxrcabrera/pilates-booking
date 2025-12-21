@@ -3,9 +3,11 @@ import { cookies } from 'next/headers'
 import bcrypt from 'bcrypt'
 import { auth } from './auth'
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo-en-produccion'
-)
+// JWT_SECRET es requerido - no usar fallback inseguro
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required')
+}
+const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10)

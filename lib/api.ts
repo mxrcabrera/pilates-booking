@@ -1,7 +1,7 @@
 // Helper functions for API calls
 
 export async function apiCall(action: string, data: Record<string, unknown> = {}) {
-  const response = await fetch('/api/configuracion', {
+  const response = await fetch('/api/v1/configuracion', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ export async function createAlumnoAPI(data: {
   precio: number
   diaInicioCiclo?: number
 }) {
-  return apiCallTo('/api/alumnos', 'create', data)
+  return apiCallTo('/api/v1/alumnos', 'create', data)
 }
 
 export async function updateAlumnoAPI(data: {
@@ -136,15 +136,15 @@ export async function updateAlumnoAPI(data: {
   precio: number
   diaInicioCiclo?: number
 }) {
-  return apiCallTo('/api/alumnos', 'update', data)
+  return apiCallTo('/api/v1/alumnos', 'update', data)
 }
 
 export async function toggleAlumnoStatusAPI(id: string) {
-  return apiCallTo('/api/alumnos', 'toggleStatus', { id })
+  return apiCallTo('/api/v1/alumnos', 'toggleStatus', { id })
 }
 
 export async function deleteAlumnoAPI(id: string) {
-  return apiCallTo('/api/alumnos', 'delete', { id })
+  return apiCallTo('/api/v1/alumnos', 'delete', { id })
 }
 
 // Clases
@@ -158,7 +158,7 @@ export async function createClaseAPI(data: {
   diasSemana?: number[]
   fecha: string
 }) {
-  return apiCallTo('/api/clases', 'create', data)
+  return apiCallTo('/api/v1/clases', 'create', data)
 }
 
 export async function updateClaseAPI(data: {
@@ -173,19 +173,19 @@ export async function updateClaseAPI(data: {
   diasSemana?: number[]
   fecha: string
 }) {
-  return apiCallTo('/api/clases', 'update', data)
+  return apiCallTo('/api/v1/clases', 'update', data)
 }
 
 export async function deleteClaseAPI(id: string) {
-  return apiCallTo('/api/clases', 'delete', { id })
+  return apiCallTo('/api/v1/clases', 'delete', { id })
 }
 
 export async function changeClaseStatusAPI(id: string, estado: string) {
-  return apiCallTo('/api/clases', 'changeStatus', { id, estado })
+  return apiCallTo('/api/v1/clases', 'changeStatus', { id, estado })
 }
 
 export async function changeAsistenciaAPI(id: string, asistencia: string) {
-  return apiCallTo('/api/clases', 'changeAsistencia', { id, asistencia })
+  return apiCallTo('/api/v1/clases', 'changeAsistencia', { id, asistencia })
 }
 
 // Pagos
@@ -195,17 +195,17 @@ export async function createPagoAPI(data: {
   fechaVencimiento: string
   mesCorrespondiente: string
 }) {
-  return apiCallTo('/api/pagos', 'create', data)
+  return apiCallTo('/api/v1/pagos', 'create', data)
 }
 
 export async function marcarPagadoAPI(id: string) {
-  return apiCallTo('/api/pagos', 'marcarPagado', { id })
+  return apiCallTo('/api/v1/pagos', 'marcarPagado', { id })
 }
 
 export async function marcarPendienteAPI(id: string) {
-  return apiCallTo('/api/pagos', 'marcarPendiente', { id })
+  return apiCallTo('/api/v1/pagos', 'marcarPendiente', { id })
 }
 
 export async function deletePagoAPI(id: string) {
-  return apiCallTo('/api/pagos', 'delete', { id })
+  return apiCallTo('/api/v1/pagos', 'delete', { id })
 }

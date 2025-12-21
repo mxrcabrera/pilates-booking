@@ -19,19 +19,23 @@ export async function createAlumno(formData: FormData) {
   const clasesPorMes = formData.get('clasesPorMes') ? parseInt(formData.get('clasesPorMes') as string) : null
   const precio = parseFloat(formData.get('precio') as string)
 
-  await prisma.alumno.create({
-    data: {
-      profesorId: userId,
-      nombre,
-      email,
-      telefono,
-      cumpleanos,
-      patologias,
-      packType,
-      clasesPorMes,
-      precio: new Decimal(precio)
-    }
-  })
+  try {
+    await prisma.alumno.create({
+      data: {
+        profesorId: userId,
+        nombre,
+        email,
+        telefono,
+        cumpleanos,
+        patologias,
+        packType,
+        clasesPorMes,
+        precio: new Decimal(precio)
+      }
+    })
+  } catch {
+    throw new Error('Error al crear alumno')
+  }
 
   revalidatePath('/alumnos')
   return { success: true }
@@ -52,19 +56,23 @@ export async function updateAlumno(formData: FormData) {
   const clasesPorMes = formData.get('clasesPorMes') ? parseInt(formData.get('clasesPorMes') as string) : null
   const precio = parseFloat(formData.get('precio') as string)
 
-  await prisma.alumno.update({
-    where: { id },
-    data: {
-      nombre,
-      email,
-      telefono,
-      cumpleanos,
-      patologias,
-      packType,
-      clasesPorMes,
-      precio: new Decimal(precio)
-    }
-  })
+  try {
+    await prisma.alumno.update({
+      where: { id },
+      data: {
+        nombre,
+        email,
+        telefono,
+        cumpleanos,
+        patologias,
+        packType,
+        clasesPorMes,
+        precio: new Decimal(precio)
+      }
+    })
+  } catch {
+    throw new Error('Error al actualizar alumno')
+  }
 
   revalidatePath('/alumnos')
   return { success: true }
@@ -74,16 +82,23 @@ export async function toggleAlumnoStatus(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  const alumno = await prisma.alumno.findUnique({
-    where: { id }
-  })
+  try {
+    const alumno = await prisma.alumno.findUnique({
+      where: { id }
+    })
 
-  if (!alumno) throw new Error('Alumno no encontrado')
+    if (!alumno) throw new Error('Alumno no encontrado')
 
-  await prisma.alumno.update({
-    where: { id },
-    data: { estaActivo: !alumno.estaActivo }
-  })
+    await prisma.alumno.update({
+      where: { id },
+      data: { estaActivo: !alumno.estaActivo }
+    })
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Alumno no encontrado') {
+      throw error
+    }
+    throw new Error('Error al cambiar estado')
+  }
 
   revalidatePath('/alumnos')
   return { success: true }
@@ -93,9 +108,13 @@ export async function deleteAlumno(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  await prisma.alumno.delete({
-    where: { id }
-  })
+  try {
+    await prisma.alumno.delete({
+      where: { id }
+    })
+  } catch {
+    throw new Error('Error al eliminar alumno')
+  }
 
   revalidatePath('/alumnos')
   return { success: true }

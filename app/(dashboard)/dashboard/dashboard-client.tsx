@@ -284,23 +284,32 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
         )}
       </div>
 
-      {/* Clase actual/próxima */}
+      {/* Clase actual/próxima de HOY */}
       {horasAgrupadas.length > 0 && currentGroupIndex < horasAgrupadas.length && (() => {
         const grupo = horasAgrupadas[currentGroupIndex]
         const minutosHasta = getMinutosHasta(grupo.hora)
         const { isNow, isSoon } = getTimeStatus(minutosHasta)
 
+        // Verificar si esta es la última clase del día y ya pasó
+        const esUltimaClase = currentGroupIndex === horasAgrupadas.length - 1
+        const nextGroupIndex = currentGroupIndex + 1
+        const hayMasHoy = nextGroupIndex < horasAgrupadas.length
+        const mostrarSeccionHoy = esUltimaClase && !hayMasHoy && siguienteClase
+
         return (
-          <div className={`dash-hora-group current ${isNow ? 'now' : ''} ${isSoon ? 'soon' : ''}`}>
-            <div className="dash-hora-header">
-              <span className="dash-hora-time">{formatearHora(grupo.hora)}</span>
-              {isNow && <span className="dash-hora-badge now">En curso</span>}
-              {isSoon && !isNow && <span className="dash-hora-badge soon">Próxima</span>}
+          <>
+            {mostrarSeccionHoy && <div className="dash-section-header">Hoy</div>}
+            <div className={`dash-hora-group current ${isNow ? 'now' : ''} ${isSoon ? 'soon' : ''}`}>
+              <div className="dash-hora-header">
+                <span className="dash-hora-time">{formatearHora(grupo.hora)}</span>
+                {isNow && <span className="dash-hora-badge now">En curso</span>}
+                {isSoon && !isNow && <span className="dash-hora-badge soon">Próxima</span>}
+              </div>
+              <div className="dash-hora-clases">
+                {grupo.clases.map(clase => renderClaseItem(clase, false))}
+              </div>
             </div>
-            <div className="dash-hora-clases">
-              {grupo.clases.map(clase => renderClaseItem(clase, false))}
-            </div>
-          </div>
+          </>
         )
       })()}
 
@@ -327,12 +336,11 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
         } else if (siguienteClase) {
           return (
             <>
-              <div className="dash-section-header">Siguiente</div>
+              <div className="dash-section-header">Mañana</div>
               <div className="dash-siguiente-card tomorrow">
                 <div className="dash-siguiente-info">
                   <span className="dash-siguiente-hora">{formatearHora(siguienteClase.hora)}</span>
                   <span className="dash-siguiente-alumnos">{siguienteClase.cantAlumnos} {siguienteClase.cantAlumnos === 1 ? 'alumno' : 'alumnos'}</span>
-                  <span className="dash-siguiente-dia">Mañana</span>
                 </div>
               </div>
             </>

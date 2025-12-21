@@ -207,6 +207,10 @@ export async function deleteCalendarEvent(
       const newAccessToken = await refreshAccessToken(refreshToken)
       return deleteCalendarEvent(eventId, newAccessToken!, refreshToken)
     }
+    // Si el evento ya no existe (404/410), no es un error - ya fue eliminado
+    if (error.code === 404 || error.code === 410) {
+      return
+    }
     throw error
   }
 }

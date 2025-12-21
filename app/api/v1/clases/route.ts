@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
-import { auth } from '@/lib/auth'
-import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
+// TODO: Google Calendar sync - Próximamente
+// import { auth } from '@/lib/auth'
+// import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { getCachedPacks, getCachedAlumnosSimple } from '@/lib/server-cache'
 import { unauthorized, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
-import { logger } from '@/lib/logger'
+// import { logger } from '@/lib/logger'  // Comentado junto con Google Calendar sync
 
 // Google Calendar API responses don't have proper TypeScript types
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -344,23 +345,23 @@ export async function POST(request: NextRequest) {
           })
           clasesCreadas.push(claseCreada)
 
-          // Sincronizar con Google Calendar en background (fire-and-forget)
-          if (user.syncGoogleCalendar) {
-            auth().then(session => {
-              if (session && (session as any).accessToken) {
-                createCalendarEvent(
-                  claseCreada.id,
-                  (session as any).accessToken,
-                  (session as any).refreshToken
-                ).then(eventId => {
-                  prisma.clase.update({
-                    where: { id: claseCreada.id },
-                    data: { googleEventId: eventId }
-                  }).catch(err => logger.error('Error guardando eventId', err))
-                }).catch(err => logger.error('Error creando evento en Google Calendar', err))
-              }
-            }).catch(err => logger.error('Error obteniendo sesión', err))
-          }
+          // TODO: Google Calendar sync - Próximamente
+          // if (user.syncGoogleCalendar) {
+          //   auth().then(session => {
+          //     if (session && (session as any).accessToken) {
+          //       createCalendarEvent(
+          //         claseCreada.id,
+          //         (session as any).accessToken,
+          //         (session as any).refreshToken
+          //       ).then(eventId => {
+          //         prisma.clase.update({
+          //           where: { id: claseCreada.id },
+          //           data: { googleEventId: eventId }
+          //         }).catch(err => logger.error('Error guardando eventId', err))
+          //       }).catch(err => logger.error('Error creando evento en Google Calendar', err))
+          //     }
+          //   }).catch(err => logger.error('Error obteniendo sesión', err))
+          // }
 
           // Crear clases recurrentes para este alumno
           if (esRecurrente && diasSemana.length > 0) {
@@ -546,34 +547,34 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        // Sincronizar con Google Calendar en background (fire-and-forget)
-        if (user.syncGoogleCalendar && claseActualizada.googleEventId) {
-          auth().then(session => {
-            if (session && (session as any).accessToken) {
-              updateCalendarEvent(
-                claseActualizada.id,
-                claseActualizada.googleEventId!,
-                (session as any).accessToken,
-                (session as any).refreshToken
-              ).catch(err => logger.error('Error actualizando evento en Google Calendar', err))
-            }
-          }).catch(err => logger.error('Error obteniendo sesión', err))
-        } else if (user.syncGoogleCalendar && !claseActualizada.googleEventId) {
-          auth().then(session => {
-            if (session && (session as any).accessToken) {
-              createCalendarEvent(
-                claseActualizada.id,
-                (session as any).accessToken,
-                (session as any).refreshToken
-              ).then(eventId => {
-                prisma.clase.update({
-                  where: { id: claseActualizada.id },
-                  data: { googleEventId: eventId }
-                }).catch(err => logger.error('Error guardando eventId', err))
-              }).catch(err => logger.error('Error creando evento en Google Calendar', err))
-            }
-          }).catch(err => logger.error('Error obteniendo sesión', err))
-        }
+        // TODO: Google Calendar sync - Próximamente
+        // if (user.syncGoogleCalendar && claseActualizada.googleEventId) {
+        //   auth().then(session => {
+        //     if (session && (session as any).accessToken) {
+        //       updateCalendarEvent(
+        //         claseActualizada.id,
+        //         claseActualizada.googleEventId!,
+        //         (session as any).accessToken,
+        //         (session as any).refreshToken
+        //       ).catch(err => logger.error('Error actualizando evento en Google Calendar', err))
+        //     }
+        //   }).catch(err => logger.error('Error obteniendo sesión', err))
+        // } else if (user.syncGoogleCalendar && !claseActualizada.googleEventId) {
+        //   auth().then(session => {
+        //     if (session && (session as any).accessToken) {
+        //       createCalendarEvent(
+        //         claseActualizada.id,
+        //         (session as any).accessToken,
+        //         (session as any).refreshToken
+        //       ).then(eventId => {
+        //         prisma.clase.update({
+        //           where: { id: claseActualizada.id },
+        //           data: { googleEventId: eventId }
+        //         }).catch(err => logger.error('Error guardando eventId', err))
+        //       }).catch(err => logger.error('Error creando evento en Google Calendar', err))
+        //     }
+        //   }).catch(err => logger.error('Error obteniendo sesión', err))
+        // }
 
         return NextResponse.json({ success: true, clase: claseActualizada })
       }
@@ -581,17 +582,12 @@ export async function POST(request: NextRequest) {
       case 'delete': {
         const { id } = data
 
-        // Validar que la clase pertenece al profesor y obtener datos para sync
-        const [clase, user] = await Promise.all([
-          prisma.clase.findFirst({
-            where: { id, profesorId: userId, deletedAt: null },
-            select: { id: true, googleEventId: true }
-          }),
-          prisma.user.findUnique({
-            where: { id: userId },
-            select: { syncGoogleCalendar: true }
-          })
-        ])
+        // Validar que la clase pertenece al profesor
+        // (user no se usa actualmente - Google Calendar sync deshabilitado)
+        const clase = await prisma.clase.findFirst({
+          where: { id, profesorId: userId, deletedAt: null },
+          select: { id: true, googleEventId: true }
+        })
 
         if (!clase) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
@@ -603,18 +599,18 @@ export async function POST(request: NextRequest) {
           data: { deletedAt: new Date() }
         })
 
-        // Sincronizar con Google Calendar en background (fire-and-forget)
-        if (user?.syncGoogleCalendar && clase?.googleEventId) {
-          auth().then(session => {
-            if (session && (session as any).accessToken) {
-              deleteCalendarEvent(
-                clase.googleEventId!,
-                (session as any).accessToken,
-                (session as any).refreshToken
-              ).catch(err => logger.error('Error eliminando evento de Google Calendar', err))
-            }
-          }).catch(err => logger.error('Error obteniendo sesión', err))
-        }
+        // TODO: Google Calendar sync - Próximamente
+        // if (user?.syncGoogleCalendar && clase?.googleEventId) {
+        //   auth().then(session => {
+        //     if (session && (session as any).accessToken) {
+        //       deleteCalendarEvent(
+        //         clase.googleEventId!,
+        //         (session as any).accessToken,
+        //         (session as any).refreshToken
+        //       ).catch(err => logger.error('Error eliminando evento de Google Calendar', err))
+        //     }
+        //   }).catch(err => logger.error('Error obteniendo sesión', err))
+        // }
 
         return NextResponse.json({ success: true })
       }

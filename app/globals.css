@@ -716,6 +716,26 @@ body::before {
   letter-spacing: 0.02em;
 }
 
+.label-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.label-with-badge .coming-soon-badge {
+  position: static;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+}
+
+.form-group-disabled {
+  opacity: 0.6;
+}
+
+.sync-label-disabled {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }

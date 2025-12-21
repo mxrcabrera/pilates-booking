@@ -1,7 +1,9 @@
 'use client'
 
-import { X, Edit2, UserX, UserCheck, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { X, Edit2, UserX, UserCheck, Trash2, Loader2 } from 'lucide-react'
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
+import { useToast } from '@/components/ui/toast'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
 import { getPaymentStatus, getStatusText, getClasesRestantesDetalle } from '@/lib/alumno-utils'
@@ -18,24 +20,35 @@ export function AlumnoDetailSheet({
   alumno: Alumno | null
   onEdit: () => void
 }) {
+  const [isLoading, setIsLoading] = useState<'toggle' | 'delete' | null>(null)
+  const { showSuccess, showError } = useToast()
+
   if (!isOpen || !alumno) return null
 
   const handleToggleStatus = async () => {
+    setIsLoading('toggle')
     try {
       await toggleAlumnoStatus(alumno.id)
+      showSuccess(alumno.estaActivo ? 'Alumno desactivado' : 'Alumno activado')
       onClose()
     } catch (err) {
-      alert(err instanceof Error ? getErrorMessage(err) : 'Error al cambiar estado')
+      showError(getErrorMessage(err) || 'Error al cambiar estado')
+    } finally {
+      setIsLoading(null)
     }
   }
 
   const handleDelete = async () => {
     if (!confirm(`¿Estás segura de eliminar a ${alumno.nombre}? Esta acción no se puede deshacer.`)) return
+    setIsLoading('delete')
     try {
       await deleteAlumno(alumno.id)
+      showSuccess('Alumno eliminado')
       onClose()
     } catch (err) {
-      alert(err instanceof Error ? getErrorMessage(err) : 'Error al eliminar')
+      showError(getErrorMessage(err) || 'Error al eliminar')
+    } finally {
+      setIsLoading(null)
     }
   }
 
@@ -112,17 +125,17 @@ export function AlumnoDetailSheet({
 
           {/* Acciones */}
           <div className="detail-secondary-actions">
-            <button onClick={onEdit} className="detail-action-btn">
+            <button onClick={onEdit} className="detail-action-btn" disabled={isLoading !== null}>
               <Edit2 size={16} />
               <span>Editar</span>
             </button>
-            <button onClick={handleToggleStatus} className="detail-action-btn">
-              {alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
-              <span>{alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
+            <button onClick={handleToggleStatus} className="detail-action-btn" disabled={isLoading !== null}>
+              {isLoading === 'toggle' ? <Loader2 size={16} className="spin" /> : alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
+              <span>{isLoading === 'toggle' ? 'Procesando...' : alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
             </button>
-            <button onClick={handleDelete} className="detail-action-btn danger">
-              <Trash2 size={16} />
-              <span>Eliminar</span>
+            <button onClick={handleDelete} className="detail-action-btn danger" disabled={isLoading !== null}>
+              {isLoading === 'delete' ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
+              <span>{isLoading === 'delete' ? 'Eliminando...' : 'Eliminar'}</span>
             </button>
           </div>
         </div>

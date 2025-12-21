@@ -63,7 +63,7 @@ export function HorarioDialog({
   onBatchCreate
 }: HorarioDialogProps) {
   const { showSuccess, showError } = useToast()
-  const [isLoading, _setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rangoSeleccionado, setRangoSeleccionado] = useState('single')
   const [turnoSeleccionado, setTurnoSeleccionado] = useState('maniana')
@@ -184,6 +184,7 @@ export function HorarioDialog({
   }
 
   async function procesarHorarios(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false): Promise<Horario[]> {
+    setIsLoading(true)
     const horariosToCreate = buildHorariosToCreate(formData, excluirSabadoTarde, excluirDomingo)
 
     // Crear horarios optimistas con IDs temporales
@@ -210,6 +211,9 @@ export function HorarioDialog({
       })
       .catch(err => {
         showError(getErrorMessage(err) || 'Error al guardar horarios')
+      })
+      .finally(() => {
+        setIsLoading(false)
       })
 
     return optimisticHorarios
@@ -239,6 +243,7 @@ export function HorarioDialog({
 
     if (horario) {
       // Edición - optimistic update
+      setIsLoading(true)
       const updatedHorario: Horario = {
         ...horario,
         horaInicio: formData.get('horaInicio') as string,
@@ -258,6 +263,8 @@ export function HorarioDialog({
         esManiana: turnoSeleccionado === 'maniana'
       }).catch(err => {
         showError(getErrorMessage(err) || 'Error al guardar horario')
+      }).finally(() => {
+        setIsLoading(false)
       })
     } else {
       // Creación batch - procesarHorarios ya hace optimistic update

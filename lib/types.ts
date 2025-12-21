@@ -16,6 +16,8 @@ export type Alumno = {
   precio: string
   estaActivo: boolean
   consentimientoTutor?: boolean
+  diaInicioCiclo: number
+  saldoAFavor: string
   proximoPagoVencimiento: string | null
   clasesEsteMes: number
   _count: {
@@ -43,6 +45,8 @@ export type AlumnoPago = {
   nombre: string
   precio: string
   packType: string
+  diaInicioCiclo: number
+  saldoAFavor: string
 }
 
 // ----- CLASE -----

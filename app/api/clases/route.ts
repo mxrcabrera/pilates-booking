@@ -5,6 +5,7 @@ import { addWeeks } from 'date-fns'
 import { auth } from '@/lib/auth'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
 import { getErrorMessage } from '@/lib/utils'
+import { calcularRangoCiclo } from '@/lib/alumno-utils'
 
 // Google Calendar API responses don't have proper TypeScript types
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -95,7 +96,8 @@ export async function GET() {
             select: {
               id: true,
               nombre: true,
-              clasesPorMes: true
+              clasesPorMes: true,
+              diaInicioCiclo: true
             }
           },
           profesor: { select: { id: true, nombre: true } }
@@ -114,16 +116,26 @@ export async function GET() {
       })
     ])
 
-    // Calcular clases usadas este mes por alumno
+    // Calcular clases usadas por alumno usando su ciclo de facturación personalizado
     const now = new Date()
-    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
-    const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+
+    // Agrupar clases por alumno con su día de ciclo
+    const alumnosCiclos = new Map<string, number>()
+    clases.forEach(clase => {
+      if (clase.alumnoId && clase.alumno?.diaInicioCiclo) {
+        alumnosCiclos.set(clase.alumnoId, clase.alumno.diaInicioCiclo)
+      }
+    })
 
     const clasesUsadasPorAlumno: Record<string, number> = {}
     clases.forEach(clase => {
-      if (clase.alumnoId && clase.fecha >= inicioMes && clase.fecha <= finMes &&
-          (clase.estado === 'completada' || clase.estado === 'reservada')) {
-        clasesUsadasPorAlumno[clase.alumnoId] = (clasesUsadasPorAlumno[clase.alumnoId] || 0) + 1
+      if (clase.alumnoId && (clase.estado === 'completada' || clase.estado === 'reservada')) {
+        const diaInicioCiclo = alumnosCiclos.get(clase.alumnoId) || 1
+        const { inicio, fin } = calcularRangoCiclo(diaInicioCiclo, now)
+
+        if (clase.fecha >= inicio && clase.fecha <= fin) {
+          clasesUsadasPorAlumno[clase.alumnoId] = (clasesUsadasPorAlumno[clase.alumnoId] || 0) + 1
+        }
       }
     })
 

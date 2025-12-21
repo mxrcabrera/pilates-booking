@@ -150,36 +150,27 @@ export function PreferenciasSection({
             </p>
           </div>
 
-          {/* Google Calendar sync temporalmente deshabilitado
           <div className="form-divider"></div>
 
-          <div className="form-group">
-            <label>Sincronizar con Google Calendar</label>
+          <div className="form-group form-group-disabled">
+            <label className="label-with-badge">
+              Sincronizar con Google Calendar
+              <span className="coming-soon-badge">Próximamente</span>
+            </label>
             <div className="sync-checkbox-group">
               <input
                 type="checkbox"
-                name="syncGoogleCalendar"
-                defaultChecked={syncGoogleCalendar}
-                disabled={isLoading || !hasGoogleAccount}
+                disabled={true}
                 className="sync-checkbox-input"
               />
-              <span className="sync-checkbox-label">
+              <span className="sync-checkbox-label sync-label-disabled">
                 Agregar mis clases automáticamente a Google Calendar
               </span>
             </div>
-            {!hasGoogleAccount && (
-              <p className="form-hint sync-warning-hint">
-                Para usar esta función, primero debes iniciar sesión con Google. Cerrá sesión y volvé a iniciar con tu cuenta de Google.
-              </p>
-            )}
-            {hasGoogleAccount && (
-              <p className="form-hint">
-                Cuando esta opción está activada, todas tus clases se agregarán automáticamente a tu Google Calendar.
-                Tus alumnos recibirán invitaciones por email con la información de la clase.
-              </p>
-            )}
+            <p className="form-hint">
+              Estamos trabajando en esta función. Próximamente podrás sincronizar tus clases con Google Calendar.
+            </p>
           </div>
-          */}
 
           <div className="form-actions">
             <button type="submit" className="btn-primary" disabled={isLoading}>

@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/utils'
 import { DialogBase } from '@/components/ui/dialog-base'
 import { DateInput } from '@/components/date-input'
+import { SelectInput } from '@/components/select-input'
 import type { Alumno, Pack } from '@/lib/types'
 
 export function AlumnoDialog({
@@ -38,6 +39,7 @@ export function AlumnoDialog({
   const [selectedGenero, setSelectedGenero] = useState(alumno?.genero || 'F')
   const [consentimientoTutor, setConsentimientoTutor] = useState(alumno?.consentimientoTutor || false)
   const [esMenor, setEsMenor] = useState(false)
+  const [diaInicioCiclo, setDiaInicioCiclo] = useState(alumno?.diaInicioCiclo?.toString() || '1')
 
   useEffect(() => {
     if (!isOpen) {
@@ -47,6 +49,7 @@ export function AlumnoDialog({
       setSelectedGenero('F')
       setConsentimientoTutor(false)
       setEsMenor(false)
+      setDiaInicioCiclo('1')
     } else if (alumno) {
       // Determinar si es por_clase o mensual
       if (alumno.packType === 'por_clase') {
@@ -62,6 +65,7 @@ export function AlumnoDialog({
         }
       }
       setSelectedGenero(alumno.genero || 'F')
+      setDiaInicioCiclo(alumno.diaInicioCiclo?.toString() || '1')
     }
   }, [isOpen, alumno, packs])
 
@@ -128,6 +132,7 @@ export function AlumnoDialog({
       packType: finalPackType,
       precio: finalPrecio,
       consentimientoTutor,
+      diaInicioCiclo: packType === 'mensual' ? parseInt(diaInicioCiclo) : undefined,
     }
 
     try {
@@ -346,38 +351,56 @@ export function AlumnoDialog({
         </div>
 
         {packType === 'mensual' && (
-          <div className="form-group">
-            <label>Pack Mensual</label>
-            {packs.length === 0 ? (
-              <p className="form-warning-text">
-                No tenés packs configurados. Crealos en Configuracion &gt; Packs y Precios
-              </p>
-            ) : (
-              <div className="pack-list">
-                {packs.map(pack => (
-                  <button
-                    key={pack.id}
-                    type="button"
-                    onClick={() => setSelectedPackId(pack.id)}
-                    disabled={isLoading}
-                    className={`pack-option pack-option-detailed ${selectedPackId === pack.id ? 'selected' : ''}`}
-                  >
-                    <div className="pack-option-content">
-                      <div className="pack-option-info">
-                        <div className="pack-option-label">{pack.nombre}</div>
-                        <div className="pack-option-description">
-                          {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''} por semana
+          <>
+            <div className="form-group">
+              <label>Pack Mensual</label>
+              {packs.length === 0 ? (
+                <p className="form-warning-text">
+                  No tenés packs configurados. Crealos en Configuracion &gt; Packs y Precios
+                </p>
+              ) : (
+                <div className="pack-list">
+                  {packs.map(pack => (
+                    <button
+                      key={pack.id}
+                      type="button"
+                      onClick={() => setSelectedPackId(pack.id)}
+                      disabled={isLoading}
+                      className={`pack-option pack-option-detailed ${selectedPackId === pack.id ? 'selected' : ''}`}
+                    >
+                      <div className="pack-option-content">
+                        <div className="pack-option-info">
+                          <div className="pack-option-label">{pack.nombre}</div>
+                          <div className="pack-option-description">
+                            {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''} por semana
+                          </div>
+                        </div>
+                        <div className="pack-option-price">
+                          ${parseFloat(pack.precio).toLocaleString('es-AR')}
                         </div>
                       </div>
-                      <div className="pack-option-price">
-                        ${parseFloat(pack.precio).toLocaleString('es-AR')}
-                      </div>
-                    </div>
-                  </button>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>Día de inicio de ciclo</label>
+              <SelectInput
+                value={diaInicioCiclo}
+                onChange={(e) => setDiaInicioCiclo(e.target.value)}
+                disabled={isLoading}
+              >
+                {Array.from({ length: 28 }, (_, i) => i + 1).map(dia => (
+                  <option key={dia} value={dia}>{dia}</option>
                 ))}
-              </div>
-            )}
-          </div>
+              </SelectInput>
+              <small style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>
+                Día del mes en que comienza el ciclo de facturación
+              </small>
+            </div>
+          </>
         )}
 
         {packType === 'por_clase' && (

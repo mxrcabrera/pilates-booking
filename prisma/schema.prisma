@@ -74,6 +74,8 @@ model Alumno {
   createdAt          DateTime  @default(now()) @map("created_at")
   genero             String    @default("F") @map("genero")
   consentimientoTutor Boolean  @default(false) @map("consentimiento_tutor")
+  diaInicioCiclo      Int      @default(1) @map("dia_inicio_ciclo")
+  saldoAFavor         Decimal  @default(0) @db.Decimal(10, 2) @map("saldo_a_favor")
   profesor           User      @relation(fields: [profesorId], references: [id], onDelete: Cascade)
   clases             Clase[]
   pagos              Pago[]

@@ -150,7 +150,9 @@ export async function GET(request: NextRequest) {
         id: true,
         nombre: true,
         precio: true,
-        packType: true
+        packType: true,
+        diaInicioCiclo: true,
+        saldoAFavor: true
       },
       orderBy: { nombre: 'asc' }
     })
@@ -159,7 +161,9 @@ export async function GET(request: NextRequest) {
       id: a.id,
       nombre: a.nombre,
       precio: a.precio.toString(),
-      packType: a.packType
+      packType: a.packType,
+      diaInicioCiclo: a.diaInicioCiclo,
+      saldoAFavor: a.saldoAFavor.toString()
     }))
 
     return NextResponse.json({ pagos, alumnos: alumnosSerializados })
@@ -221,26 +225,43 @@ export async function POST(request: NextRequest) {
           ? (clasesEsperadas || alumno.clasesPorMes)
           : null
 
-        const pago = await prisma.pago.create({
-          data: {
-            alumnoId,
-            monto,
-            fechaVencimiento: new Date(fechaVencimiento),
-            mesCorrespondiente,
-            estado: 'pendiente',
-            tipoPago: finalTipoPago,
-            clasesEsperadas: finalClasesEsperadas
-          },
-          include: {
-            alumno: {
-              select: {
-                id: true,
-                nombre: true,
-                email: true
+        // Si el alumno tiene saldo a favor, limpiar el saldo al crear el pago
+        const saldoAnterior = Number(alumno.saldoAFavor) || 0
+        const operaciones = [
+          prisma.pago.create({
+            data: {
+              alumnoId,
+              monto,
+              fechaVencimiento: new Date(fechaVencimiento),
+              mesCorrespondiente,
+              estado: 'pendiente',
+              tipoPago: finalTipoPago,
+              clasesEsperadas: finalClasesEsperadas
+            },
+            include: {
+              alumno: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  email: true
+                }
               }
             }
-          }
-        })
+          })
+        ]
+
+        // Si tenía saldo a favor (positivo), limpiarlo
+        // El saldo ya fue aplicado en el cálculo del monto en el frontend
+        if (saldoAnterior !== 0) {
+          operaciones.push(
+            prisma.alumno.update({
+              where: { id: alumnoId },
+              data: { saldoAFavor: 0 }
+            }) as never
+          )
+        }
+
+        const [pago] = await prisma.$transaction(operaciones)
 
         return NextResponse.json({
           pago: {
@@ -249,7 +270,8 @@ export async function POST(request: NextRequest) {
             fechaPago: null,
             fechaVencimiento: pago.fechaVencimiento.toISOString(),
             clasesCompletadas: 0
-          }
+          },
+          saldoAplicado: saldoAnterior
         })
       }
 

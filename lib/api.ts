@@ -119,6 +119,7 @@ export async function createAlumnoAPI(data: {
   packType: string
   clasesPorMes?: number
   precio: number
+  diaInicioCiclo?: number
 }) {
   return apiCallTo('/api/alumnos', 'create', data)
 }
@@ -133,6 +134,7 @@ export async function updateAlumnoAPI(data: {
   packType: string
   clasesPorMes?: number
   precio: number
+  diaInicioCiclo?: number
 }) {
   return apiCallTo('/api/alumnos', 'update', data)
 }

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { Decimal } from '@prisma/client/runtime/library'
 import { getErrorMessage } from '@/lib/utils'
 import { validateRequired, validateEmail, validatePrice, validateAll } from '@/lib/validation'
+import { calcularRangoCiclo, calcularPrecioImplicitoPorClase } from '@/lib/alumno-utils'
 
 export const runtime = 'nodejs'
 
@@ -55,6 +56,7 @@ export async function GET() {
     const alumnosSerializados = alumnos.map(alumno => ({
       ...alumno,
       precio: alumno.precio.toString(),
+      saldoAFavor: alumno.saldoAFavor.toString(),
       cumpleanos: alumno.cumpleanos ? alumno.cumpleanos.toISOString() : null,
       proximoPagoVencimiento: alumno.pagos[0]?.fechaVencimiento?.toISOString() || null,
       clasesEsteMes: alumno.clases.length,
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'create': {
-        const { nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor } = data
+        const { nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor, diaInicioCiclo } = data
 
         // Validar campos usando funciones centralizadas
         const validationError = validateAll(
@@ -106,6 +108,9 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: validationError }, { status: 400 })
         }
 
+        // Validar diaInicioCiclo
+        const diaCiclo = diaInicioCiclo ? Math.min(Math.max(1, parseInt(diaInicioCiclo)), 28) : 1
+
         const alumno = await prisma.alumno.create({
           data: {
             profesorId: userId,
@@ -117,7 +122,8 @@ export async function POST(request: NextRequest) {
             patologias: patologias || null,
             packType,
             precio: new Decimal(precio || 0),
-            consentimientoTutor: consentimientoTutor || false
+            consentimientoTutor: consentimientoTutor || false,
+            diaInicioCiclo: diaCiclo
           },
           include: {
             _count: { select: { clases: true, pagos: true } }
@@ -128,7 +134,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'update': {
-        const { id, nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor } = data
+        const { id, nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor, diaInicioCiclo } = data
 
         // Validar que el alumno pertenece al profesor
         const alumnoExistente = await prisma.alumno.findFirst({
@@ -150,6 +156,59 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: validationError }, { status: 400 })
         }
 
+        // Validar diaInicioCiclo
+        const diaCiclo = diaInicioCiclo ? Math.min(Math.max(1, parseInt(diaInicioCiclo)), 28) : alumnoExistente.diaInicioCiclo
+
+        // Detectar cambio de pack para calcular prorrateo
+        let nuevoSaldoAFavor = alumnoExistente.saldoAFavor
+        const packCambio = packType !== alumnoExistente.packType && alumnoExistente.packType !== 'por_clase' && packType !== 'por_clase'
+
+        if (packCambio) {
+          // Obtener el pack anterior
+          const packAnterior = await prisma.pack.findUnique({
+            where: { id: alumnoExistente.packType }
+          })
+
+          if (packAnterior) {
+            // Calcular rango del ciclo actual
+            const { inicio, fin } = calcularRangoCiclo(alumnoExistente.diaInicioCiclo)
+
+            // Contar clases tomadas en el ciclo actual
+            const clasesTomadas = await prisma.clase.count({
+              where: {
+                alumnoId: id,
+                fecha: { gte: inicio, lte: fin },
+                estado: { in: ['completada', 'reservada'] }
+              }
+            })
+
+            // Calcular precio implícito por clase del pack anterior
+            const precioImplicitoPorClase = calcularPrecioImplicitoPorClase(
+              Number(packAnterior.precio),
+              packAnterior.clasesPorSemana
+            )
+
+            // Calcular valor consumido
+            const valorConsumido = clasesTomadas * precioImplicitoPorClase
+
+            // Buscar último pago del ciclo actual
+            const ultimoPago = await prisma.pago.findFirst({
+              where: {
+                alumnoId: id,
+                estado: 'pagado',
+                fechaPago: { gte: inicio, lte: fin }
+              },
+              orderBy: { fechaPago: 'desc' }
+            })
+            const montoPagado = ultimoPago ? Number(ultimoPago.monto) : 0
+
+            // Calcular saldo: lo que pagó - lo que consumió
+            // Positivo = a favor del alumno, negativo = debe
+            const saldoCalculado = montoPagado - valorConsumido
+            nuevoSaldoAFavor = new Decimal(Number(alumnoExistente.saldoAFavor) + saldoCalculado)
+          }
+        }
+
         const alumno = await prisma.alumno.update({
           where: { id },
           data: {
@@ -161,14 +220,21 @@ export async function POST(request: NextRequest) {
             patologias: patologias || null,
             packType,
             precio: new Decimal(precio || 0),
-            consentimientoTutor: consentimientoTutor !== undefined ? consentimientoTutor : false
+            consentimientoTutor: consentimientoTutor !== undefined ? consentimientoTutor : false,
+            diaInicioCiclo: diaCiclo,
+            saldoAFavor: nuevoSaldoAFavor
           },
           include: {
             _count: { select: { clases: true, pagos: true } }
           }
         })
 
-        return NextResponse.json({ success: true, alumno })
+        return NextResponse.json({
+          success: true,
+          alumno,
+          prorrateoAplicado: packCambio,
+          nuevoSaldo: nuevoSaldoAFavor.toString()
+        })
       }
 
       case 'toggleStatus': {

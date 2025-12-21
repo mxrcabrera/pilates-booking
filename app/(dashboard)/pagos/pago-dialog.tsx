@@ -25,27 +25,44 @@ export function PagoDialog({
   const [error, setError] = useState<string | null>(null)
   const [selectedAlumnoId, setSelectedAlumnoId] = useState('')
   const [monto, setMonto] = useState('')
+  const [diaVencimiento, setDiaVencimiento] = useState('10')
 
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
+
+  // Generar array de días del 1 al 28
+  const diasDelMes = Array.from({ length: 28 }, (_, i) => i + 1)
 
   useEffect(() => {
     if (!isOpen) {
       setError(null)
       setSelectedAlumnoId('')
       setMonto('')
+      setDiaVencimiento('10')
     }
   }, [isOpen])
 
-  // Actualizar monto cuando cambia el alumno
+  // Actualizar monto y día de vencimiento cuando cambia el alumno
   useEffect(() => {
     if (selectedAlumnoId) {
       const alumno = alumnos.find(a => a.id === selectedAlumnoId)
       if (alumno) {
-        setMonto(alumno.precio)
+        // Precargar día de ciclo del alumno
+        setDiaVencimiento(alumno.diaInicioCiclo?.toString() || '10')
+
+        // Calcular monto considerando saldo a favor
+        const precioBase = parseFloat(alumno.precio) || 0
+        const saldo = parseFloat(alumno.saldoAFavor) || 0
+        const montoFinal = Math.max(0, precioBase - saldo)
+        setMonto(montoFinal.toString())
       }
     }
   }, [selectedAlumnoId, alumnos])
+
+  // Obtener alumno seleccionado para mostrar info
+  const alumnoSeleccionado = alumnos.find(a => a.id === selectedAlumnoId)
+  const saldoAFavor = alumnoSeleccionado ? parseFloat(alumnoSeleccionado.saldoAFavor) || 0 : 0
+  const precioBase = alumnoSeleccionado ? parseFloat(alumnoSeleccionado.precio) || 0 : 0
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -55,9 +72,10 @@ export function PagoDialog({
     const formData = new FormData(e.currentTarget)
     const mesIndex = parseInt(formData.get('mes') as string)
     const anio = parseInt(formData.get('anio') as string)
+    const dia = parseInt(diaVencimiento)
 
-    // Fecha de vencimiento: dia 10 del mes
-    const fechaVencimiento = new Date(anio, mesIndex, 10)
+    // Fecha de vencimiento con el día seleccionado
+    const fechaVencimiento = new Date(anio, mesIndex, dia)
 
     const mesCorrespondiente = `${MESES[mesIndex]} ${anio}`
 
@@ -153,6 +171,21 @@ export function PagoDialog({
         </div>
 
         <div className="form-group">
+          <label>Día de vencimiento</label>
+          <SelectInput
+            name="diaVencimiento"
+            required
+            value={diaVencimiento}
+            onChange={(e) => setDiaVencimiento(e.target.value)}
+            disabled={isLoading}
+          >
+            {diasDelMes.map(dia => (
+              <option key={dia} value={dia}>{dia}</option>
+            ))}
+          </SelectInput>
+        </div>
+
+        <div className="form-group">
           <label>Monto (ARS)</label>
           <input
             type="number"
@@ -165,6 +198,35 @@ export function PagoDialog({
             required
             disabled={isLoading}
           />
+          {saldoAFavor !== 0 && alumnoSeleccionado && (
+            <div style={{
+              marginTop: '0.5rem',
+              padding: '0.75rem',
+              backgroundColor: saldoAFavor > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '0.5rem',
+              fontSize: '0.875rem'
+            }}>
+              {saldoAFavor > 0 ? (
+                <>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Pack ${precioBase.toLocaleString('es-AR')} - Saldo ${saldoAFavor.toLocaleString('es-AR')} = <strong style={{ color: '#22c55e' }}>${parseFloat(monto).toLocaleString('es-AR')}</strong>
+                  </div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem' }}>
+                    Saldo a favor aplicado
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Pack ${precioBase.toLocaleString('es-AR')} + Debe ${Math.abs(saldoAFavor).toLocaleString('es-AR')} = <strong style={{ color: '#ef4444' }}>${parseFloat(monto).toLocaleString('es-AR')}</strong>
+                  </div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem' }}>
+                    Deuda de ciclo anterior
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </form>
     </DialogBase>

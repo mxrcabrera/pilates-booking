@@ -40,45 +40,39 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
     <>
       <nav className="dashboard-nav">
         <div className="nav-container">
-          <div className="nav-content">
-            <Link href="/dashboard" className="nav-logo">
-              Pilates Booking
-            </Link>
-            
-            {/* Desktop nav */}
-            <div className="nav-links desktop-only">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`nav-link ${isActive ? 'active' : ''}`}
-                  >
-                    <Icon size={18} />
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
+          <Link href="/dashboard" className="nav-logo">
+            Pilates Booking
+          </Link>
+
+          {/* Desktop nav - centrado */}
+          <div className="nav-links desktop-only">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`nav-link ${isActive ? 'active' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
           </div>
-          
+
           <div className="nav-user">
             <div className="user-menu-container desktop-only" ref={userMenuRef}>
-              <button className="user-menu-trigger" onClick={handleAvatarClick}>
-                <div className="user-avatar">
-                  <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
-                </div>
-                <div className="user-details">
-                  <p className="user-name">{profesor?.nombre}</p>
-                  <p className="user-email">{profesor?.email}</p>
-                </div>
-                <ChevronDown size={16} className={`user-menu-chevron ${userMenuOpen ? 'open' : ''}`} />
+              <button className="user-avatar-btn" onClick={handleAvatarClick}>
+                {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
               </button>
 
               {userMenuOpen && (
                 <div className="user-dropdown">
+                  <div className="user-dropdown-header">
+                    <span className="user-dropdown-name">{profesor?.nombre}</span>
+                    <span className="user-dropdown-email">{profesor?.email}</span>
+                  </div>
+                  <div className="user-dropdown-divider" />
                   <div className="user-dropdown-plan">
                     <div className="plan-badge-row">
                       <Crown size={14} />

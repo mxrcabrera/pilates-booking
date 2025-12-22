@@ -5,16 +5,18 @@ import { Providers } from "./providers";
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
   display: "swap",
   variable: "--font-inter",
+  preload: true,
 });
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500"],
   display: "swap",
   variable: "--font-serif",
+  preload: false,
 });
 
 const raleway = Raleway({
@@ -22,6 +24,7 @@ const raleway = Raleway({
   weight: ["300", "400", "500"],
   display: "swap",
   variable: "--font-body",
+  preload: false,
 });
 
 export const metadata: Metadata = {

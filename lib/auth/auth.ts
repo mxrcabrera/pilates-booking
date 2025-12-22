@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '../prisma'
 import { authConfig } from './auth.config'
+import { getTrialEndDate } from '../plans'
 
 // NextAuth types don't include custom fields like role, accessToken, refreshToken
 // These are added via type augmentation in types/next-auth.d.ts but callbacks need explicit casting
@@ -18,13 +19,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!existingUser) {
-          // Crear nuevo usuario
+          // Crear nuevo usuario con trial de 14 días
           const newUser = await prisma.user.create({
             data: {
               email: profile.email,
               nombre: profile.name || profile.email.split('@')[0],
               image: (profile as any).picture || null,
               role: 'PROFESOR',
+              plan: 'FREE',
+              trialEndsAt: getTrialEndDate(),
+              planStartedAt: new Date(),
             },
           })
           // Asignar el id al objeto user para que se use en el JWT

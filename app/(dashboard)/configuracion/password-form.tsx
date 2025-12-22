@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { changePassword } from './actions'
 import { getErrorMessage } from '@/lib/utils'
-import { SectionWrapper } from '@/components/ui/section-wrapper'
 import { FormField, FormMessage } from '@/components/ui/form-field'
 
 export function PasswordForm() {
@@ -29,10 +28,10 @@ export function PasswordForm() {
   }
 
   return (
-    <SectionWrapper>
+    <>
       {message && <FormMessage type={message.type} message={message.text} />}
 
-      <form onSubmit={handleSubmit} className="form-content">
+      <form onSubmit={handleSubmit} className="accordion-form">
         <FormField label="Contraseña Actual" required>
           <input
             type="password"
@@ -66,12 +65,12 @@ export function PasswordForm() {
           />
         </FormField>
 
-        <div className="form-actions">
+        <div className="accordion-form-actions">
           <button type="submit" className="btn-primary" disabled={isLoading}>
             {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
           </button>
         </div>
       </form>
-    </SectionWrapper>
+    </>
   )
 }

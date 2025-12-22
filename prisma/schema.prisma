@@ -18,6 +18,9 @@ model User {
   emailVerified           DateTime?           @map("email_verified")
   image                   String?
   role                    UserRole            @default(PROFESOR)
+  plan                    PlanType            @default(FREE) @map("plan")
+  trialEndsAt             DateTime?           @map("trial_ends_at")
+  planStartedAt           DateTime?           @map("plan_started_at")
   horasAnticipacionMinima Int                 @default(1) @map("horas_anticipacion_minima")
   maxAlumnosPorClase      Int                 @default(4) @map("max_alumnos_por_clase")
   horarioMananaInicio     String              @default("08:00") @map("horario_manana_inicio")
@@ -40,6 +43,7 @@ model User {
   reservasComoAlumno      Reserva[]           @relation("AlumnoReservas")
   reservasComoProfesor    Reserva[]           @relation("ProfesorReservas")
   sessions                Session[]
+  pagosRecibidos          Pago[]
 
   @@map("users")
 }
@@ -125,6 +129,7 @@ model Clase {
 model Pago {
   id                 String    @id @default(uuid())
   alumnoId           String    @map("alumno_id")
+  profesorId         String?   @map("profesor_id")
   monto              Decimal   @db.Decimal(10, 2)
   fechaPago          DateTime? @map("fecha_pago") @db.Date
   fechaVencimiento   DateTime  @map("fecha_vencimiento") @db.Date
@@ -135,6 +140,7 @@ model Pago {
   createdAt          DateTime  @default(now()) @map("created_at")
   deletedAt          DateTime? @map("deleted_at")
   alumno             Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  profesor           User?     @relation(fields: [profesorId], references: [id])
 
   @@map("pagos")
 }
@@ -214,6 +220,13 @@ model Notificacion {
 enum UserRole {
   PROFESOR
   ALUMNO
+}
+
+enum PlanType {
+  FREE
+  STARTER
+  PRO
+  ESTUDIO
 }
 
 enum NotificationType {

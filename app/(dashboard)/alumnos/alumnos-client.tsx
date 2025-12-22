@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Plus, Grid, List, Users, Pencil, Trash2, UserX, UserCheck, X } from 'lucide-react'
+import { Search, Plus, Grid, List, Users, Pencil, Trash2, UserX, UserCheck, X, Crown } from 'lucide-react'
 import { AlumnoCard } from './alumno-card'
 import { AlumnoDialog } from './alumno-dialog'
 import { AlumnoDetailSheet } from './alumno-detail-sheet'
@@ -10,13 +10,21 @@ import { useToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/utils'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { EmptyState } from '@/components/ui/empty-state'
-import type { Alumno, Pack } from '@/lib/types'
+import type { Alumno, Pack, PlanInfo } from '@/lib/types'
 
 type FilterType = 'todos' | 'activos' | 'inactivos'
 
-export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string }) {
+const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Estudio'
+}
+
+export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, planInfo }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string, planInfo: PlanInfo }) {
   const { showSuccess, showError } = useToast()
   const [alumnos, setAlumnos] = useState(initialAlumnos)
+  const [currentPlanInfo, setCurrentPlanInfo] = useState(planInfo)
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<FilterType>('activos')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -61,6 +69,10 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
   }
 
   const handleNew = () => {
+    if (!currentPlanInfo.canAddMore) {
+      showError(`Alcanzaste el límite de ${currentPlanInfo.maxAlumnos} alumnos en el plan ${PLAN_NAMES[currentPlanInfo.plan]}. Actualizá tu plan para agregar más.`)
+      return
+    }
     setEditingAlumno(null)
     setIsDialogOpen(true)
   }
@@ -70,6 +82,11 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
       setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, ...alumno } : a))
     } else {
       setAlumnos(prev => [...prev, { ...alumno, _count: { clases: 0, pagos: 0 } }])
+      setCurrentPlanInfo(prev => ({
+        ...prev,
+        currentAlumnos: prev.currentAlumnos + 1,
+        canAddMore: prev.currentAlumnos + 1 < prev.maxAlumnos
+      }))
     }
   }
 
@@ -94,6 +111,11 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
     try {
       await deleteAlumnoAPI(deleteConfirm.alumno.id)
       setAlumnos(prev => prev.filter(a => a.id !== deleteConfirm.alumno?.id))
+      setCurrentPlanInfo(prev => ({
+        ...prev,
+        currentAlumnos: Math.max(0, prev.currentAlumnos - 1),
+        canAddMore: true
+      }))
       showSuccess('Alumno eliminado')
       setDeleteConfirm({ isOpen: false, alumno: null })
       if (selectedAlumno?.id === deleteConfirm.alumno.id) {
@@ -130,6 +152,11 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
       const idsToDelete = Array.from(selectedAlumnos)
       await Promise.all(idsToDelete.map(id => deleteAlumnoAPI(id)))
       setAlumnos(prev => prev.filter(a => !selectedAlumnos.has(a.id)))
+      setCurrentPlanInfo(prev => ({
+        ...prev,
+        currentAlumnos: Math.max(0, prev.currentAlumnos - idsToDelete.length),
+        canAddMore: true
+      }))
       showSuccess(`${idsToDelete.length} alumno(s) eliminado(s)`)
       setBulkDeleteConfirm(false)
       setSelectedAlumnos(new Set())
@@ -169,17 +196,40 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase }
     }
   }
 
+  const isNearLimit = currentPlanInfo.currentAlumnos >= currentPlanInfo.maxAlumnos - 2 && currentPlanInfo.currentAlumnos < currentPlanInfo.maxAlumnos
+  const isAtLimit = !currentPlanInfo.canAddMore
+
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h1>Alumnos</h1>
         </div>
-        <button onClick={handleNew} className="btn-primary">
+        <button onClick={handleNew} className="btn-primary" disabled={isAtLimit}>
           <Plus size={20} />
           <span>Nuevo Alumno</span>
         </button>
       </div>
+
+      {/* Banner de límite de plan */}
+      {isAtLimit && (
+        <div className="plan-limit-banner danger">
+          <Crown size={18} />
+          <span>
+            Alcanzaste el límite de {currentPlanInfo.maxAlumnos} alumnos del plan {PLAN_NAMES[currentPlanInfo.plan]}.{' '}
+            <a href="/planes" className="plan-limit-link">Actualizá tu plan</a>
+          </span>
+        </div>
+      )}
+      {isNearLimit && !isAtLimit && (
+        <div className="plan-limit-banner warning">
+          <Crown size={18} />
+          <span>
+            Tenés {currentPlanInfo.currentAlumnos} de {currentPlanInfo.maxAlumnos} alumnos.{' '}
+            <a href="/planes" className="plan-limit-link">Ver planes</a>
+          </span>
+        </div>
+      )}
 
       {/* Buscador y vista */}
       <div className="pagos-toolbar">

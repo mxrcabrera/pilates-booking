@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
+import { PLAN_CONFIGS, getDaysLeftInTrial, isTrialActive } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -19,6 +20,8 @@ export async function GET() {
         id: true,
         nombre: true,
         email: true,
+        plan: true,
+        trialEndsAt: true,
       }
     })
 
@@ -26,7 +29,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json({ user })
+    const planConfig = PLAN_CONFIGS[user.plan]
+    const inTrial = isTrialActive(user.trialEndsAt)
+    const daysLeft = getDaysLeftInTrial(user.trialEndsAt)
+
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email,
+        plan: user.plan,
+        planName: planConfig.name,
+        inTrial,
+        trialDaysLeft: daysLeft,
+      }
+    })
   } catch (error) {
     logger.error('Auth me error', error)
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })

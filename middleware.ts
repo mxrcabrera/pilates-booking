@@ -25,8 +25,8 @@ export function middleware(request: NextRequest) {
   // Verificar si es una ruta pública
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
 
-  // También la página raíz es pública
-  if (pathname === '/' || isPublicPath) {
+  // Permitir rutas públicas
+  if (isPublicPath) {
     return NextResponse.next()
   }
 
@@ -37,6 +37,15 @@ export function middleware(request: NextRequest) {
     request.cookies.get('__Secure-next-auth.session-token')
 
   const hasValidSession = authToken || nextAuthSession
+
+  // Página raíz: redirigir según estado de auth (evita doble round-trip)
+  if (pathname === '/') {
+    if (hasValidSession) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    } else {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
 
   if (!hasValidSession) {
     // Para APIs, retornar 401

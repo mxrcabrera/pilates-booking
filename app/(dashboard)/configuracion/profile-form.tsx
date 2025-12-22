@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { updateProfile } from './actions'
 import { getErrorMessage } from '@/lib/utils'
-import { SectionWrapper } from '@/components/ui/section-wrapper'
 import { FormField, FormMessage } from '@/components/ui/form-field'
 
 type Profesor = {
@@ -34,10 +33,10 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
   }
 
   return (
-    <SectionWrapper>
+    <>
       {message && <FormMessage type={message.type} message={message.text} />}
 
-      <form onSubmit={handleSubmit} className="form-content">
+      <form onSubmit={handleSubmit} className="accordion-form">
         <FormField label="Nombre" required>
           <input
             type="text"
@@ -66,12 +65,12 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
           />
         </FormField>
 
-        <div className="form-actions">
+        <div className="accordion-form-actions">
           <button type="submit" className="btn-primary" disabled={isLoading}>
             {isLoading ? 'Guardando...' : 'Guardar Cambios'}
           </button>
         </div>
       </form>
-    </SectionWrapper>
+    </>
   )
 }

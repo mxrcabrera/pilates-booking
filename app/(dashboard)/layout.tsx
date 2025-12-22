@@ -64,7 +64,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav profesor={user} />
-      <main>{children}</main>
+      <main style={{ paddingTop: '5rem' }}>{children}</main>
     </div>
   )
 }

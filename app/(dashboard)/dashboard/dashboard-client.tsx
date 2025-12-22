@@ -284,21 +284,15 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
         )}
       </div>
 
-      {/* Clase actual/próxima de HOY */}
+      {/* Clase actual/próxima - SIEMPRE mostrar esta expandida */}
       {horasAgrupadas.length > 0 && currentGroupIndex < horasAgrupadas.length && (() => {
         const grupo = horasAgrupadas[currentGroupIndex]
         const minutosHasta = getMinutosHasta(grupo.hora)
         const { isNow, isSoon } = getTimeStatus(minutosHasta)
 
-        // Verificar si esta es la última clase del día y ya pasó
-        const esUltimaClase = currentGroupIndex === horasAgrupadas.length - 1
-        const nextGroupIndex = currentGroupIndex + 1
-        const hayMasHoy = nextGroupIndex < horasAgrupadas.length
-        const mostrarSeccionHoy = esUltimaClase && !hayMasHoy && siguienteClase
-
         return (
           <>
-            {mostrarSeccionHoy && <div className="dash-section-header">Hoy</div>}
+            <div className="dash-section-header">Hoy</div>
             <div className={`dash-hora-group current ${isNow ? 'now' : ''} ${isSoon ? 'soon' : ''}`}>
               <div className="dash-hora-header">
                 <span className="dash-hora-time">{formatearHora(grupo.hora)}</span>
@@ -313,13 +307,13 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
         )
       })()}
 
-      {/* Siguiente clase (hoy o mañana) */}
+      {/* Segunda clase - SIEMPRE mostrar (hoy o mañana) */}
       {(() => {
-        // Buscar siguiente clase de hoy (después de la actual)
         const nextGroupIndex = currentGroupIndex + 1
         const hayMasHoy = nextGroupIndex < horasAgrupadas.length
 
         if (hayMasHoy) {
+          // Mostrar siguiente clase de hoy
           const grupo = horasAgrupadas[nextGroupIndex]
           const cantAlumnos = grupo.clases.filter(c => c.alumno !== null).length
           return (
@@ -334,6 +328,7 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
             </>
           )
         } else if (siguienteClase) {
+          // No hay más clases hoy, mostrar la primera de mañana
           return (
             <>
               <div className="dash-section-header">Mañana</div>

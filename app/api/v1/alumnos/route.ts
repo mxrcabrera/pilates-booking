@@ -8,6 +8,7 @@ import { alumnoActionSchema } from '@/lib/schemas/alumno.schema'
 import { calcularRangoCiclo, calcularPrecioImplicitoPorClase } from '@/lib/alumno-utils'
 import { invalidateAlumnos } from '@/lib/cache-utils'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { getEffectiveMaxAlumnos, getSuggestedUpgrade, PLAN_CONFIGS } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -78,6 +79,8 @@ export async function GET(request: NextRequest) {
         where: { id: userId },
         select: {
           precioPorClase: true,
+          plan: true,
+          trialEndsAt: true,
           packs: {
             where: { deletedAt: null },
             orderBy: { clasesPorSemana: 'asc' }
@@ -106,11 +109,21 @@ export async function GET(request: NextRequest) {
 
     const paginatedData = paginatedResponse(alumnosSerializados, total, { page, limit, skip })
 
+    // Calcular info del plan
+    const maxAlumnos = user ? getEffectiveMaxAlumnos(user.plan, user.trialEndsAt) : 5
+
     return NextResponse.json({
       ...paginatedData,
       alumnos: alumnosSerializados,
       packs: packsSerializados,
-      precioPorClase: user?.precioPorClase?.toString() || '0'
+      precioPorClase: user?.precioPorClase?.toString() || '0',
+      planInfo: {
+        plan: user?.plan || 'FREE',
+        trialEndsAt: user?.trialEndsAt?.toISOString() || null,
+        maxAlumnos,
+        currentAlumnos: total,
+        canAddMore: total < maxAlumnos
+      }
     })
   } catch (error) {
     return serverError(error)
@@ -144,6 +157,35 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'create': {
         const { nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor, diaInicioCiclo } = parsed.data
+
+        // Verificar límite de alumnos según plan
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { plan: true, trialEndsAt: true }
+        })
+
+        if (!user) {
+          return unauthorized()
+        }
+
+        const maxAlumnos = getEffectiveMaxAlumnos(user.plan, user.trialEndsAt)
+        const alumnosActuales = await prisma.alumno.count({
+          where: { profesorId: userId, deletedAt: null }
+        })
+
+        if (alumnosActuales >= maxAlumnos) {
+          const suggestedPlan = getSuggestedUpgrade(user.plan, 'alumnos')
+          return NextResponse.json({
+            error: 'Límite de alumnos alcanzado',
+            code: 'PLAN_LIMIT_REACHED',
+            currentPlan: user.plan,
+            maxAlumnos,
+            currentAlumnos: alumnosActuales,
+            suggestedPlan,
+            suggestedPlanName: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].name : null,
+            suggestedPlanMaxAlumnos: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].features.maxAlumnos : null
+          }, { status: 403 })
+        }
 
         const alumno = await prisma.alumno.create({
           data: {

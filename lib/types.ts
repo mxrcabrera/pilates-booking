@@ -120,6 +120,10 @@ export type Profesor = {
   id: string
   nombre: string
   email: string
+  plan?: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
+  planName?: string
+  inTrial?: boolean
+  trialDaysLeft?: number
 }
 
 export type ProfesorConfig = {
@@ -161,6 +165,14 @@ export type PreferencesIncompleteResponse = {
 
 // ----- DATA TYPES (para páginas) -----
 // Incluyen formato legacy (alumnos, pagos, clases) y nuevo formato paginado (data, pagination)
+export type PlanInfo = {
+  plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
+  trialEndsAt: string | null
+  maxAlumnos: number
+  currentAlumnos: number
+  canAddMore: boolean
+}
+
 export type AlumnosData = {
   // Nuevo formato paginado
   data: Alumno[]
@@ -169,6 +181,7 @@ export type AlumnosData = {
   alumnos: Alumno[]
   packs: Pack[]
   precioPorClase: string
+  planInfo: PlanInfo
 }
 
 export type CalendarioData = {

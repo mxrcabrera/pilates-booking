@@ -10,6 +10,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { getCachedPacks, getCachedAlumnosSimple } from '@/lib/server-cache'
 import { unauthorized, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { canUseFeature, PLAN_CONFIGS, getSuggestedUpgrade } from '@/lib/plans'
 // import { logger } from '@/lib/logger'  // Comentado junto con Google Calendar sync
 
 // Google Calendar API responses don't have proper TypeScript types
@@ -206,7 +207,9 @@ export async function POST(request: NextRequest) {
             horarioMananaInicio: true,
             horarioMananaFin: true,
             horarioTardeInicio: true,
-            horarioTardeFin: true
+            horarioTardeFin: true,
+            plan: true,
+            trialEndsAt: true
           }
         })
 
@@ -215,6 +218,19 @@ export async function POST(request: NextRequest) {
         }
 
         const { alumnoIds, horaInicio, horaRecurrente: horaRecurrenteInput, esClasePrueba, esRecurrente, frecuenciaSemanal: frecuenciaSemanalStr, diasSemana: diasSemanaStr, fecha: fechaStr } = data
+
+        // Verificar que el plan permita clases recurrentes
+        if (esRecurrente && !canUseFeature('clasesRecurrentes', user.plan, user.trialEndsAt)) {
+          const suggestedPlan = getSuggestedUpgrade(user.plan, 'feature')
+          return NextResponse.json({
+            error: 'Las clases recurrentes no están disponibles en tu plan',
+            code: 'FEATURE_NOT_AVAILABLE',
+            feature: 'clasesRecurrentes',
+            currentPlan: user.plan,
+            suggestedPlan,
+            suggestedPlanName: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].name : null
+          }, { status: 403 })
+        }
         const horaRecurrente = horaRecurrenteInput || horaInicio
         const frecuenciaSemanal = esRecurrente ? parseInt(frecuenciaSemanalStr) : null
         const diasSemana = diasSemanaStr ? (typeof diasSemanaStr === 'string' ? JSON.parse(diasSemanaStr) : diasSemanaStr) : []

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, DollarSign } from 'lucide-react'
+import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, DollarSign, Crown, ChevronDown, User } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 import type { Profesor } from '@/lib/types'
 
@@ -19,9 +19,21 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleAvatarClick = () => {
-    router.push('/perfil')
+    setUserMenuOpen(!userMenuOpen)
   }
 
   return (
@@ -53,24 +65,59 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
           </div>
           
           <div className="nav-user">
-            <div className="user-info" style={{ cursor: 'pointer' }} onClick={handleAvatarClick}>
-              <div className="user-avatar">
+            <div className="user-menu-container desktop-only" ref={userMenuRef}>
+              <button className="user-menu-trigger" onClick={handleAvatarClick}>
+                <div className="user-avatar">
+                  <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
+                </div>
+                <div className="user-details">
+                  <p className="user-name">{profesor?.nombre}</p>
+                  <p className="user-email">{profesor?.email}</p>
+                </div>
+                <ChevronDown size={16} className={`user-menu-chevron ${userMenuOpen ? 'open' : ''}`} />
+              </button>
+
+              {userMenuOpen && (
+                <div className="user-dropdown">
+                  <div className="user-dropdown-plan">
+                    <div className="plan-badge-row">
+                      <Crown size={14} />
+                      <span className="plan-name">{profesor?.planName || 'Free'}</span>
+                      {profesor?.inTrial && (
+                        <span className="trial-badge">Trial</span>
+                      )}
+                    </div>
+                    {profesor?.inTrial && profesor.trialDaysLeft !== undefined && profesor.trialDaysLeft > 0 && (
+                      <p className="trial-days">{profesor.trialDaysLeft} días restantes</p>
+                    )}
+                    <Link href="/planes" className="upgrade-link" onClick={() => setUserMenuOpen(false)}>
+                      Ver planes
+                    </Link>
+                  </div>
+                  <div className="user-dropdown-divider" />
+                  <Link href="/perfil" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                    <User size={16} />
+                    <span>Mi Perfil</span>
+                  </Link>
+                  <form action={logout}>
+                    <button type="submit" className="user-dropdown-item logout">
+                      <LogOut size={16} />
+                      <span>Cerrar sesión</span>
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile: solo avatar sin dropdown */}
+            <div className="mobile-only" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="user-avatar" style={{ cursor: 'pointer' }} onClick={() => router.push('/perfil')}>
                 <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
               </div>
-              <div className="user-details desktop-only">
-                <p className="user-name">{profesor?.nombre}</p>
-                <p className="user-email">{profesor?.email}</p>
-              </div>
             </div>
-            
-            <form action={logout} className="desktop-only">
-              <button type="submit" className="logout-btn" title="Cerrar sesión">
-                <LogOut size={18} />
-              </button>
-            </form>
 
             {/* Mobile menu button */}
-            <button 
+            <button
               className="mobile-menu-btn mobile-only"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
@@ -94,7 +141,7 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
                 className="user-info"
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
-                  handleAvatarClick()
+                  router.push('/perfil')
                   setMobileMenuOpen(false)
                 }}
               >
@@ -105,6 +152,19 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
                   <p className="user-name">{profesor?.nombre}</p>
                   <p className="user-email">{profesor?.email}</p>
                 </div>
+              </div>
+              <div className="mobile-plan-info">
+                <div className="plan-badge-row">
+                  <Crown size={14} />
+                  <span className="plan-name">{profesor?.planName || 'Free'}</span>
+                  {profesor?.inTrial && <span className="trial-badge">Trial</span>}
+                </div>
+                {profesor?.inTrial && profesor.trialDaysLeft !== undefined && profesor.trialDaysLeft > 0 && (
+                  <p className="trial-days">{profesor.trialDaysLeft} días restantes</p>
+                )}
+                <Link href="/planes" className="upgrade-link" onClick={() => setMobileMenuOpen(false)}>
+                  Ver planes
+                </Link>
               </div>
             </div>
 

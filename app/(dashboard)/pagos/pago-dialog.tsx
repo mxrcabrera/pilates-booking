@@ -202,14 +202,14 @@ export function PagoDialog({
             <div style={{
               marginTop: '0.5rem',
               padding: '0.75rem',
-              backgroundColor: saldoAFavor > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              backgroundColor: saldoAFavor > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
               borderRadius: '0.5rem',
               fontSize: '0.875rem'
             }}>
               {saldoAFavor > 0 ? (
                 <>
                   <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Pack ${precioBase.toLocaleString('es-AR')} - Saldo ${saldoAFavor.toLocaleString('es-AR')} = <strong style={{ color: '#22c55e' }}>${parseFloat(monto).toLocaleString('es-AR')}</strong>
+                    Pack ${precioBase.toLocaleString('es-AR')} - Saldo ${saldoAFavor.toLocaleString('es-AR')} = <strong style={{ color: '#10b981' }}>${parseFloat(monto).toLocaleString('es-AR')}</strong>
                   </div>
                   <div style={{ color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem' }}>
                     Saldo a favor aplicado

@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
         fechaPago: p.fechaPago?.toISOString() || null,
         fechaVencimiento: p.fechaVencimiento.toISOString(),
         estado: p.estado,
-        mesCorrespondiente: p.mesCorrespondiente
+        mesCorrespondiente: p.mesCorrespondiente,
+        profesorId: p.profesorId
       }))
 
       const paginatedData = paginatedResponse(pagos, total, { page, limit, skip })
@@ -236,11 +237,12 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'create': {
-        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas } = parsed.data
+        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas, profesorId: profesorIdParam } = parsed.data
 
-        // Verificar que el alumno pertenece al profesor
+        // Verificar que el alumno pertenece al profesor o a un espacio compartido
         const alumno = await prisma.alumno.findFirst({
-          where: { id: alumnoId, profesorId: userId, deletedAt: null }
+          where: { id: alumnoId, profesorId: userId, deletedAt: null },
+          include: { profesor: { select: { espacioCompartidoId: true } } }
         })
 
         if (!alumno) {
@@ -260,10 +262,15 @@ export async function POST(request: NextRequest) {
 
         // Si el alumno tiene saldo a favor, limpiar el saldo al crear el pago
         const saldoAnterior = Number(alumno.saldoAFavor) || 0
+
+        // El pago va al profesor que lo crea (userId), o se puede especificar otro
+        const profesorDelPago = profesorIdParam || userId
+
         const operaciones = [
           prisma.pago.create({
             data: {
               alumnoId,
+              profesorId: profesorDelPago,
               monto,
               fechaVencimiento: new Date(fechaVencimiento),
               mesCorrespondiente,
@@ -325,7 +332,8 @@ export async function POST(request: NextRequest) {
           where: { id },
           data: {
             estado: 'pagado',
-            fechaPago: new Date()
+            fechaPago: new Date(),
+            profesorId: pagoExistente.profesorId || userId
           },
           include: {
             alumno: {

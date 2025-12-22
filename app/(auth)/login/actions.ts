@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, verifyPassword, createToken, setAuthCookie, removeAuthCookie } from '@/lib/auth'
 import { signIn } from '@/lib/auth'
+import { getTrialEndDate } from '@/lib/plans'
 
 export async function login(formData: FormData) {
   const email = formData.get('email') as string
@@ -76,6 +77,9 @@ export async function signup(formData: FormData) {
         email,
         nombre,
         password: hashedPassword,
+        plan: 'FREE',
+        trialEndsAt: getTrialEndDate(),
+        planStartedAt: new Date(),
       }
     })
 

@@ -1676,6 +1676,97 @@ button span {
    FIN NUEVO DISEÑO ALUMNOS
    ======================================== */
 
+/* ========================================
+   ALUMNOS DIALOG & FORMS
+   ======================================== */
+
+.genero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.tipo-pago-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.pack-option-note {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.form-warning-box {
+  padding: 1rem;
+  background: rgba(255, 180, 100, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 180, 100, 0.3);
+}
+
+.form-warning-text {
+  color: rgba(255, 180, 100, 0.9);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pack-option-detailed {
+  text-align: left;
+  padding: 0.75rem 1rem;
+}
+
+.pack-option-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pack-option-info {
+  flex: 1;
+}
+
+.pack-option-description {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+.pack-option-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(80, 120, 200, 0.9);
+}
+
+.precio-info-box {
+  padding: 1rem;
+  background: rgba(80, 120, 200, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(80, 120, 200, 0.3);
+}
+
+.precio-info-amount {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgba(80, 120, 200, 0.9);
+}
+
+.precio-info-note {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.25rem;
+}
+
+.empty-state-icon-primary {
+  color: rgba(80, 120, 200, 0.9);
+}
+
 /* Bottom Sheet */
 .sheet-overlay {
   position: fixed;
@@ -3323,11 +3414,6 @@ input[type="checkbox"]:disabled {
   }
 }
 
-.modal-mobile {
-  max-width: 440px;
-}
-
-
 .dialog-header {
   display: flex;
   align-items: center;
@@ -3344,9 +3430,6 @@ input[type="checkbox"]:disabled {
   margin: 0;
   line-height: 1.5;
 }
-
-/* .modal-close, .dialog-close usan .close-btn .close-btn-lg */
-
 
 .dialog-body {
   padding: var(--space-3xl);
@@ -5471,16 +5554,6 @@ input[type="checkbox"]:disabled {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.dash-siguiente-dia {
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  padding: 0.25rem 0.5rem;
-  background: rgba(147, 155, 245, 0.2);
-  color: rgba(147, 155, 245, 0.9);
-  border-radius: var(--radius-sm);
-}
-
 /* ========================================
    LOADING SKELETONS
    ======================================== */
@@ -5819,55 +5892,6 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   line-height: 1.5;
 }
 
-.confirm-modal-actions {
-  display: flex;
-  gap: 0.75rem;
-  width: 100%;
-  justify-content: center;
-}
-
-.confirm-modal-actions button {
-  flex: 1;
-  max-width: 140px;
-  padding: 0.625rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-}
-
-.confirm-modal-actions .btn-ghost {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.confirm-modal-actions .btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.confirm-modal-actions .btn-primary {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-}
-
-.confirm-modal-actions .btn-primary:hover:not(:disabled) {
-  background: var(--primary-color-hover);
-}
-
-.confirm-modal-actions button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* ========================================
    PAGOS - Diseño minimalista
    ======================================== */
@@ -6172,101 +6196,6 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 }
 
 /* ========================================
-   ALUMNOS DIALOG & FORMS
-   ======================================== */
-
-.genero-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.tipo-pago-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.pack-option-note {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.form-warning-box {
-  padding: 1rem;
-  background: rgba(255, 180, 100, 0.1);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 180, 100, 0.3);
-}
-
-.form-warning-text {
-  color: rgba(255, 180, 100, 0.9);
-  font-size: 0.875rem;
-  margin: 0;
-}
-
-.pack-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.pack-option-detailed {
-  text-align: left;
-  padding: 0.75rem 1rem;
-}
-
-.pack-option-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pack-option-info {
-  flex: 1;
-}
-
-.pack-option-description {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 0.25rem;
-  letter-spacing: 0.02em;
-}
-
-.pack-option-price {
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(80, 120, 200, 0.9);
-}
-
-.precio-info-box {
-  padding: 1rem;
-  background: rgba(80, 120, 200, 0.1);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(80, 120, 200, 0.3);
-}
-
-.precio-info-amount {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: rgba(80, 120, 200, 0.9);
-}
-
-.precio-info-note {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 0.25rem;
-}
-
-.empty-state-icon-primary {
-  color: rgba(80, 120, 200, 0.9);
-}
-
-/* ========================================
-   CALENDARIO
-   ======================================== */
-
-/* ========================================
    EMPTY STATE COMPONENT
    ======================================== */
 .empty-state-wrapper {
@@ -6344,10 +6273,6 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 }
 
 /* ========================================
-   HORARIOS DISPONIBLES
-   ======================================== */
-
-/* ========================================
    CONFIGURACION SECTIONS
    ======================================== */
 
@@ -6368,11 +6293,6 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 
 .sync-checkbox-label {
   color: rgba(255, 255, 255, 0.8);
-}
-
-.sync-warning-hint {
-  color: rgba(255, 180, 100, 0.9);
-  margin-top: 0.5rem;
 }
 
 .subsection-title {

@@ -276,40 +276,46 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Nebulosas galaxia - lila frío (azulado, sin rosa) */
-body::before {
-  content: '';
+/* Fondo galaxia */
+.galaxy-bg {
   position: fixed;
   inset: 0;
-  background:
-    /* Nebulosa LILA FRÍO izquierda - más azul, menos rojo */
-    radial-gradient(ellipse 75% 60% at 5% 25%, rgba(75, 70, 200, 0.4) 0%, rgba(60, 55, 180, 0.2) 40%, transparent 70%),
-    radial-gradient(ellipse 55% 70% at 20% 45%, rgba(85, 80, 195, 0.3) 0%, transparent 55%),
-    /* Lila frío arriba derecha */
-    radial-gradient(ellipse 65% 55% at 92% 10%, rgba(70, 65, 195, 0.35) 0%, rgba(55, 50, 175, 0.15) 45%, transparent 70%),
-    /* Cyan/turquesa abajo izquierda */
-    radial-gradient(ellipse 70% 55% at 3% 90%, rgba(50, 180, 210, 0.35) 0%, rgba(45, 160, 190, 0.15) 40%, transparent 65%),
-    radial-gradient(ellipse 50% 45% at 18% 82%, rgba(60, 175, 200, 0.25) 0%, transparent 55%),
-    /* Cyan derecha */
-    radial-gradient(ellipse 55% 50% at 97% 60%, rgba(55, 170, 195, 0.3) 0%, transparent 55%),
-    /* Banda lila frío abajo */
-    radial-gradient(ellipse 130% 40% at 50% 100%, rgba(55, 50, 160, 0.4) 0%, rgba(45, 40, 140, 0.2) 50%, transparent 75%),
-    /* Lila frío centro */
-    radial-gradient(ellipse 75% 60% at 50% 25%, rgba(80, 75, 190, 0.25) 0%, transparent 55%),
-    /* Cyan arriba */
-    radial-gradient(ellipse 50% 40% at 75% 5%, rgba(65, 165, 190, 0.28) 0%, transparent 50%),
-    /* Base oscura */
-    radial-gradient(ellipse 100% 90% at 50% 50%, rgba(12, 10, 35, 0.25) 0%, transparent 65%);
-  filter: blur(50px);
   z-index: -2;
   pointer-events: none;
+  background: #080a18;
+}
+
+/* Nebulosas con CSS - colores fríos índigo/cyan sin rosa */
+.nebula-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    /* Nebulosa ÍNDIGO izquierda */
+    radial-gradient(ellipse 65% 55% at 8% 30%, rgba(60, 55, 180, 0.14) 0%, rgba(45, 42, 155, 0.07) 35%, transparent 65%),
+    radial-gradient(ellipse 40% 45% at 20% 40%, rgba(70, 65, 190, 0.1) 0%, transparent 50%),
+    /* Índigo arriba derecha */
+    radial-gradient(ellipse 55% 45% at 90% 15%, rgba(55, 52, 175, 0.13) 0%, rgba(45, 42, 155, 0.06) 40%, transparent 65%),
+    radial-gradient(ellipse 35% 30% at 82% 22%, rgba(65, 62, 185, 0.09) 0%, transparent 50%),
+    /* Cyan/turquesa abajo izquierda */
+    radial-gradient(ellipse 60% 50% at 5% 88%, rgba(25, 160, 195, 0.14) 0%, rgba(20, 140, 170, 0.07) 35%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 18% 78%, rgba(35, 175, 205, 0.1) 0%, transparent 50%),
+    /* Cyan derecha */
+    radial-gradient(ellipse 50% 40% at 95% 55%, rgba(30, 155, 190, 0.12) 0%, rgba(22, 135, 165, 0.055) 40%, transparent 55%),
+    /* Índigo central tenue */
+    radial-gradient(ellipse 75% 50% at 50% 32%, rgba(50, 47, 165, 0.08) 0%, transparent 55%),
+    /* Cyan arriba */
+    radial-gradient(ellipse 35% 25% at 70% 8%, rgba(35, 155, 185, 0.1) 0%, transparent 50%),
+    /* Banda inferior azul profundo */
+    radial-gradient(ellipse 130% 40% at 50% 102%, rgba(15, 30, 100, 0.14) 0%, rgba(10, 22, 75, 0.07) 50%, transparent 75%);
+  filter: blur(28px);
 }
 
 /* Estrellas con variación de brillo */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
+.stars-layer {
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
   background-image:
     /* Estrellas BRILLANTES (2px) */
     radial-gradient(2px 2px at 47px 23px, #fff, transparent),
@@ -404,7 +410,7 @@ body::after {
     radial-gradient(1px 1px at 712px 123px, rgba(190,215,255,0.6), transparent);
   background-repeat: repeat;
   background-size: 780px 420px;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
   animation: starsRotate 600s linear infinite;
 }
@@ -1025,22 +1031,15 @@ h1, h2, h3 {
   backdrop-filter: blur(40px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
-  padding: 0.625rem 2rem;
+  padding: 0.5rem 1.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .nav-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 2.5rem;
-  height: 48px;
-}
-
-.nav-content {
-  display: flex;
-  align-items: center;
   gap: 2rem;
+  height: 44px;
 }
 
 .nav-logo {
@@ -1061,38 +1060,43 @@ h1, h2, h3 {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.125rem;
+}
+
+.nav-user {
+  margin-left: auto;
 }
 
 .nav-link {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
+  position: relative;
+  padding: 0.4rem 0.75rem;
   font-family: var(--font-body), 'Raleway', sans-serif;
   font-size: 0.875rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.6);
-  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.01em;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .nav-link:hover {
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .nav-link.active {
   color: rgba(255, 255, 255, 0.95);
-  background: rgba(120, 120, 255, 0.15);
 }
 
-.nav-link svg {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: rgba(147, 155, 245, 0.7);
+  border-radius: 1px;
 }
 
 /* Mobile navbar - más compacto */
@@ -1232,37 +1236,35 @@ h1, h2, h3 {
   position: relative;
 }
 
-.user-menu-trigger {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.375rem 0.5rem;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
+.user-avatar-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(110, 120, 200, 0.4) 0%, rgba(90, 100, 180, 0.25) 100%);
+  border: 1px solid rgba(140, 150, 220, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.user-menu-trigger:hover {
-  background: rgba(100, 120, 180, 0.1);
-  border-color: rgba(120, 140, 220, 0.2);
-}
-
-.user-menu-chevron {
-  color: rgba(255, 255, 255, 0.5);
-  transition: transform 0.2s ease;
-}
-
-.user-menu-chevron.open {
-  transform: rotate(180deg);
+.user-avatar-btn:hover {
+  background: linear-gradient(135deg, rgba(120, 130, 210, 0.5) 0%, rgba(100, 110, 190, 0.35) 100%);
+  border-color: rgba(150, 160, 230, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .user-dropdown {
   position: absolute;
   top: calc(100% + 0.75rem);
   right: 0;
-  min-width: 260px;
+  min-width: 240px;
   background: rgba(30, 35, 50, 0.85);
   -webkit-backdrop-filter: blur(40px);
   backdrop-filter: blur(40px);
@@ -1273,10 +1275,27 @@ h1, h2, h3 {
   overflow: hidden;
 }
 
+.user-dropdown-header {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.user-dropdown-name {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.user-dropdown-email {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .user-dropdown-plan {
-  padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .plan-badge-row {

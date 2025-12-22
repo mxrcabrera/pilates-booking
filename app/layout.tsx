@@ -13,16 +13,16 @@ const inter = Inter({
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
+  weight: ["400"],
+  display: "optional",
   variable: "--font-serif",
   preload: false,
 });
 
 const raleway = Raleway({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  display: "swap",
+  weight: ["400"],
+  display: "optional",
   variable: "--font-body",
   preload: false,
 });

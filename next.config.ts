@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     },
   },
   serverExternalPackages: ['@prisma/client', 'bcrypt'],
+
   async headers() {
     return [
       {

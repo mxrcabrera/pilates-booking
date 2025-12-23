@@ -11,6 +11,8 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
+  let redirectTo = '/dashboard'
+
   try {
     // Buscar usuario por email
     const user = await prisma.user.findUnique({
@@ -27,9 +29,12 @@ export async function login(formData: FormData) {
       throw new Error('Credenciales inválidas')
     }
 
-    // Crear token y guardar en cookie
-    const token = await createToken(user.id)
+    // Crear token con rol y guardar en cookie
+    const token = await createToken(user.id, user.role)
     await setAuthCookie(token)
+
+    // Redirigir según rol
+    redirectTo = user.role === 'ALUMNO' ? '/alumno' : '/dashboard'
 
     revalidatePath('/', 'layout')
   } catch (error) {
@@ -39,15 +44,23 @@ export async function login(formData: FormData) {
     throw new Error('Error al iniciar sesión')
   }
 
-  redirect('/dashboard')
+  redirect(redirectTo)
 }
 
 export async function signup(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const nombre = formData.get('nombre') as string
+  const rol = formData.get('rol') as string
+
+  let redirectTo = '/dashboard'
 
   try {
+    // Validar rol
+    if (!rol || (rol !== 'profesor' && rol !== 'alumno')) {
+      throw new Error('Seleccioná si sos profesor/a o alumno/a')
+    }
+
     // Verificar si ya existe
     const existente = await prisma.user.findUnique({
       where: { email },
@@ -71,38 +84,45 @@ export async function signup(formData: FormData) {
 
     // Hashear password y crear usuario
     const hashedPassword = await hashPassword(password)
+    const userRole = rol === 'alumno' ? 'ALUMNO' : 'PROFESOR'
 
     const user = await prisma.user.create({
       data: {
         email,
         nombre,
         password: hashedPassword,
+        role: userRole,
         plan: 'FREE',
         trialEndsAt: getTrialEndDate(),
         planStartedAt: new Date(),
       }
     })
 
-    // Crear token y guardar en cookie
-    const token = await createToken(user.id)
+    // Crear token con rol y guardar en cookie
+    const token = await createToken(user.id, userRole)
     await setAuthCookie(token)
+
+    // Redirigir según rol
+    redirectTo = userRole === 'ALUMNO' ? '/alumno' : '/dashboard'
 
     revalidatePath('/', 'layout')
   } catch (error) {
     if (error instanceof Error && (
       error.message.includes('ya está registrado') ||
-      error.message.includes('Google')
+      error.message.includes('Google') ||
+      error.message.includes('Seleccioná')
     )) {
       throw error
     }
     throw new Error('Error al crear la cuenta')
   }
 
-  redirect('/dashboard')
+  redirect(redirectTo)
 }
 
 export async function logout() {
   await removeAuthCookie()
+  revalidatePath('/', 'layout')
   redirect('/login')
 }
 

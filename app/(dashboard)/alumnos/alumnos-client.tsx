@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Plus, Grid, List, Users, Pencil, Trash2, UserX, UserCheck, X, Crown } from 'lucide-react'
+import { Search, Plus, Grid, List, Users, Pencil, Trash2, UserX, UserCheck, X, Crown, Download, Lock, Share2 } from 'lucide-react'
 import { AlumnoCard } from './alumno-card'
 import { AlumnoDialog } from './alumno-dialog'
 import { AlumnoDetailSheet } from './alumno-detail-sheet'
@@ -10,7 +10,8 @@ import { useToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/utils'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { EmptyState } from '@/components/ui/empty-state'
-import type { Alumno, Pack, PlanInfo } from '@/lib/types'
+import { exportToCSV, ALUMNOS_COLUMNS } from '@/lib/export'
+import type { Alumno, Pack, PlanInfo, AlumnosFeatures } from '@/lib/types'
 
 type FilterType = 'todos' | 'activos' | 'inactivos'
 
@@ -21,7 +22,7 @@ const PLAN_NAMES: Record<string, string> = {
   ESTUDIO: 'Estudio'
 }
 
-export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, planInfo }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string, planInfo: PlanInfo }) {
+export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, planInfo, features }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string, planInfo: PlanInfo, features: AlumnosFeatures }) {
   const { showSuccess, showError } = useToast()
   const [alumnos, setAlumnos] = useState(initialAlumnos)
   const [currentPlanInfo, setCurrentPlanInfo] = useState(planInfo)
@@ -243,21 +244,60 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
             className="pagos-search-input"
           />
         </div>
-        <div className="view-toggle">
+        <div className="toolbar-actions">
           <button
-            className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
-            title="Vista lista"
+            className={`toolbar-btn ${!features.portalAlumnos ? 'btn-locked' : ''}`}
+            onClick={() => {
+              if (!features.portalAlumnos) {
+                showError(`El portal de alumnos está disponible desde el plan ${PLAN_NAMES['STARTER']}`)
+                return
+              }
+              showSuccess('Próximamente: Portal para compartir con tus alumnos')
+            }}
+            title={features.portalAlumnos ? 'Compartir portal con alumnos' : `Disponible en plan ${PLAN_NAMES['STARTER']}`}
           >
-            <List size={18} />
+            {!features.portalAlumnos ? <Lock size={16} /> : <Share2 size={16} />}
           </button>
           <button
-            className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setViewMode('grid')}
-            title="Vista tarjetas"
+            className={`toolbar-btn ${!features.exportarExcel ? 'btn-locked' : ''}`}
+            onClick={() => {
+              if (!features.exportarExcel) {
+                showError(`Exportar está disponible desde el plan ${PLAN_NAMES['PRO']}`)
+                return
+              }
+              const dataToExport = filteredAlumnos.map(a => ({
+                nombre: a.nombre,
+                email: a.email,
+                telefono: a.telefono,
+                genero: a.genero === 'F' ? 'Mujer' : 'Hombre',
+                packType: a.packType,
+                precio: a.precio,
+                estaActivo: a.estaActivo ? 'Sí' : 'No',
+                clasesEsteMes: a.clasesEsteMes
+              }))
+              exportToCSV(dataToExport, ALUMNOS_COLUMNS, `alumnos-${new Date().toISOString().split('T')[0]}`)
+              showSuccess('Archivo exportado correctamente')
+            }}
+            title={features.exportarExcel ? 'Exportar a CSV' : `Disponible en plan ${PLAN_NAMES['PRO']}`}
           >
-            <Grid size={18} />
+            {!features.exportarExcel ? <Lock size={16} /> : <Download size={16} />}
           </button>
+          <div className="view-toggle">
+            <button
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="Vista lista"
+            >
+              <List size={18} />
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+              title="Vista tarjetas"
+            >
+              <Grid size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -359,6 +399,8 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
         onSuccess={handleAlumnoSuccess}
         packs={packs}
         precioPorClase={precioPorClase}
+        canUseProrrateo={features.prorrateoAutomatico}
+        currentPlan={features.plan}
       />
 
       <AlumnoDetailSheet

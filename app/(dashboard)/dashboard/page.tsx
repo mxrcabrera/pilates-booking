@@ -66,6 +66,7 @@ export default function DashboardPage() {
             horarioTardeInicio={data.horarioTardeInicio}
             maxAlumnosPorClase={data.maxAlumnosPorClase}
             siguienteClase={data.siguienteClase}
+            features={data.features}
           />
         )}
       </div>
@@ -90,6 +91,7 @@ export default function DashboardPage() {
           horarioTardeInicio={data.horarioTardeInicio}
           maxAlumnosPorClase={data.maxAlumnosPorClase}
           siguienteClase={data.siguienteClase}
+          features={data.features}
         />
       ) : (
         <div className="agenda-card">

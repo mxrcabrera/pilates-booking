@@ -4,16 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginWithGoogle } from './actions'
 import { getErrorMessage } from '@/lib/utils'
-import { FormField } from '@/components/ui/form-field'
 
-type Rol = 'profesor' | 'alumno'
+type Rol = 'profesor' | 'alumno' | null
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSignup, setIsSignup] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
-  const [rol, setRol] = useState<Rol>('profesor')
+  const [rol, setRol] = useState<Rol>(null)
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -26,12 +25,36 @@ export function LoginForm() {
     const password = formData.get('password') as string
     const nombre = formData.get('nombre') as string
 
+    if (isSignup) {
+      if (!rol) {
+        setError('Seleccioná si sos profesor/a o alumno/a')
+        setIsLoading(false)
+        return
+      }
+
+      if (!nombre || nombre.trim().length < 2) {
+        setError('El nombre debe tener al menos 2 caracteres')
+        setIsLoading(false)
+        return
+      }
+    }
+
+    if (!email || !email.includes('@')) {
+      setError('Ingresá un email válido')
+      setIsLoading(false)
+      return
+    }
+
+    if (!password || password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
           password,
@@ -58,147 +81,134 @@ export function LoginForm() {
   }
 
   return (
-    <div className="login-card animate-fade-in-up">
-      <div className="login-header">
-        <h1>Pilates Booking</h1>
-        <p>{isSignup ? 'Crear una cuenta nueva' : 'Bienvenido de vuelta'}</p>
-      </div>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1 className="auth-title">Pilates Booking</h1>
+        <p className="auth-subtitle">
+          {isSignup ? 'Creá tu cuenta' : 'Iniciá sesión en tu cuenta'}
+        </p>
 
-      {error && (
-        <div className="error-banner">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        {isSignup && (
-          <>
-            <div className="rol-selector">
-              <label className="rol-label">Soy...</label>
-              <div className="rol-options">
-                <button
-                  type="button"
-                  className={`rol-option ${rol === 'profesor' ? 'active' : ''}`}
-                  onClick={() => setRol('profesor')}
-                  disabled={isLoading}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  <span>Profesor/a</span>
-                </button>
-                <button
-                  type="button"
-                  className={`rol-option disabled ${rol === 'alumno' ? 'active' : ''}`}
-                  onClick={() => {}}
-                  disabled={true}
-                  title="Próximamente disponible"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  <span>Alumno/a</span>
-                  <span className="coming-soon-badge">Próximamente</span>
-                </button>
-              </div>
-            </div>
-
-            <FormField label="Nombre completo" htmlFor="nombre" required>
-              <input
-                id="nombre"
-                name="nombre"
-                type="text"
-                placeholder="María García"
-                required
-                disabled={isLoading}
-              />
-            </FormField>
-          </>
+        {error && (
+          <div className="auth-error">{error}</div>
         )}
 
-        <FormField label="Email" htmlFor="email" required>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="email@ejemplo.com"
-            required
-            disabled={isLoading}
-          />
-        </FormField>
+        <form onSubmit={handleSubmit} className="auth-form">
+          {isSignup && (
+            <>
+              <div className="auth-field">
+                <label className="auth-label">Soy...</label>
+                <div className="auth-rol-grid">
+                  <button
+                    type="button"
+                    className={`auth-rol-option ${rol === 'profesor' ? 'selected' : ''}`}
+                    onClick={() => setRol('profesor')}
+                    disabled={isLoading}
+                  >
+                    Profesor/a
+                  </button>
+                  <button
+                    type="button"
+                    className={`auth-rol-option ${rol === 'alumno' ? 'selected' : ''}`}
+                    onClick={() => setRol('alumno')}
+                    disabled={isLoading}
+                  >
+                    Alumno/a
+                  </button>
+                </div>
+              </div>
 
-        <FormField label="Contraseña" htmlFor="password" required className="password-field">
-          <div className="password-input-wrapper">
+              <div className="auth-field">
+                <label htmlFor="nombre" className="auth-label">Nombre</label>
+                <input
+                  id="nombre"
+                  name="nombre"
+                  type="text"
+                  className="auth-input"
+                  placeholder="Tu nombre completo"
+                  disabled={isLoading}
+                  autoComplete="name"
+                />
+              </div>
+            </>
+          )}
+
+          <div className="auth-field">
+            <label htmlFor="email" className="auth-label">Email</label>
             <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              required
-              minLength={6}
+              id="email"
+              name="email"
+              type="email"
+              className="auth-input"
+              placeholder="tu@email.com"
               disabled={isLoading}
+              autoComplete="email"
             />
-            <button
-              type="button"
-              className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={isLoading}
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-            >
-              {showPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              )}
-            </button>
           </div>
-        </FormField>
 
-        <button type="submit" disabled={isLoading || (isSignup && rol === 'alumno')}>
-          {isLoading ? 'Cargando...' : (isSignup ? 'Crear cuenta' : 'Ingresar')}
-        </button>
+          <div className="auth-field">
+            <label htmlFor="password" className="auth-label">Contraseña</label>
+            <div className="auth-password-wrapper">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                className="auth-input"
+                placeholder="Min. 6 caracteres"
+                disabled={isLoading}
+                autoComplete={isSignup ? 'new-password' : 'current-password'}
+              />
+              <button
+                type="button"
+                className="auth-eye"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
 
-        <div className="divider">
-          <span>O continuar con</span>
-        </div>
+          <button type="submit" className="auth-submit" disabled={isLoading}>
+            {isLoading ? 'Cargando...' : (isSignup ? 'Crear cuenta' : 'Iniciar sesión')}
+          </button>
+        </form>
+
+        <div className="auth-divider"><span>o</span></div>
 
         <button
           type="button"
           onClick={() => loginWithGoogle()}
           disabled={isLoading}
-          className="btn-google"
+          className="auth-google"
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-            <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
-            <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-            <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
           Google
         </button>
 
         <button
           type="button"
-          onClick={() => {
-            setIsSignup(!isSignup)
-            setError(null)
-          }}
-          disabled={isLoading}
-          className="btn-secondary"
+          className="auth-switch"
+          onClick={() => { setIsSignup(!isSignup); setError(null); setRol(null) }}
         >
           {isSignup ? '¿Ya tenés cuenta? Iniciá sesión' : '¿No tenés cuenta? Registrate'}
         </button>
-      </form>
+      </div>
     </div>
   )
 }

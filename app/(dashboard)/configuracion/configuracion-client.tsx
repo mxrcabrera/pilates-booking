@@ -3,24 +3,33 @@
 import { HorariosDisponibles } from './horarios-disponibles'
 import { HorarioDialog } from './horario-dialog'
 import { PacksSection } from './packs-section'
+import { PortalSection } from './portal-section'
 import { updatePreferencias } from './actions'
 import { useState, useMemo } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Lock } from 'lucide-react'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { TimeInput } from '@/components/time-input'
 import { SelectInput } from '@/components/select-input'
-import type { Horario, Pack, ProfesorConfig } from '@/lib/types'
+import type { Horario, Pack, ProfesorConfig, ConfigFeatures } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
 
 const DIAS_NOMBRES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+
+const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Max'
+}
 
 interface ConfiguracionClientProps {
   profesor: ProfesorConfig
   horarios: Horario[]
   packs: Pack[]
+  features: ConfigFeatures
 }
 
-export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs }: ConfiguracionClientProps) {
+export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs, features }: ConfiguracionClientProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [horarios, setHorarios] = useState<Horario[]>(initialHorarios)
@@ -203,6 +212,8 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
             setHorarioToEdit(null)
             setHorarioDialogOpen(true)
           }}
+          canConfigureHorarios={features.configuracionHorarios}
+          currentPlan={features.plan}
         />
       </div>
 
@@ -363,8 +374,17 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
       </div>
     </div>
 
+    {/* Sección 4: Portal de Reservas */}
+    <PortalSection
+      slug={profesor.slug}
+      portalActivo={profesor.portalActivo}
+      portalDescripcion={profesor.portalDescripcion}
+      canUsePortal={features.portalAlumnos}
+      currentPlan={features.plan}
+    />
+
     <form onSubmit={handleSubmit}>
-      {/* Sección 4: Avanzado */}
+      {/* Sección 5: Avanzado */}
       <div className="settings-section">
         <div className="section-content">
           <div className="section-header">

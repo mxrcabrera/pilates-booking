@@ -28,9 +28,37 @@ export async function POST(request: NextRequest) {
       const { error, status, headers } = rateLimitExceeded(resetIn)
       return NextResponse.json({ error }, { status, headers })
     }
-    const { email, password, action, nombre } = body
+    const { email, password, action, nombre, rol } = body
+
+    // Validaciones básicas
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return NextResponse.json(
+        { error: 'Email inválido' },
+        { status: 400 }
+      )
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return NextResponse.json(
+        { error: 'La contraseña debe tener al menos 6 caracteres' },
+        { status: 400 }
+      )
+    }
 
     if (action === 'signup') {
+      if (!rol || (rol !== 'profesor' && rol !== 'alumno')) {
+        return NextResponse.json(
+          { error: 'Seleccioná si sos profesor/a o alumno/a' },
+          { status: 400 }
+        )
+      }
+
+      if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2) {
+        return NextResponse.json(
+          { error: 'El nombre debe tener al menos 2 caracteres' },
+          { status: 400 }
+        )
+      }
       // Verificar si ya existe
       const existente = await prisma.user.findUnique({
         where: { email },
@@ -59,17 +87,19 @@ export async function POST(request: NextRequest) {
 
       // Hashear password y crear usuario
       const hashedPassword = await hashPassword(password)
+      const userRole = rol === 'alumno' ? 'ALUMNO' : 'PROFESOR'
 
       const user = await prisma.user.create({
         data: {
           email,
           nombre,
           password: hashedPassword,
+          role: userRole,
         }
       })
 
-      // Crear token y guardar en cookie
-      const token = await createToken(user.id)
+      // Crear token con rol y guardar en cookie
+      const token = await createToken(user.id, userRole)
       const cookieStore = await cookies()
       cookieStore.set('auth-token', token, {
         httpOnly: true,
@@ -79,7 +109,9 @@ export async function POST(request: NextRequest) {
         path: '/',
       })
 
-      return NextResponse.json({ success: true, redirectTo: '/dashboard' })
+      // Redirigir según rol
+      const redirectTo = userRole === 'ALUMNO' ? '/alumno' : '/dashboard'
+      return NextResponse.json({ success: true, redirectTo })
     } else {
       // Login
       const user = await prisma.user.findUnique({
@@ -101,8 +133,8 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Crear token y guardar en cookie
-      const token = await createToken(user.id)
+      // Crear token con rol y guardar en cookie
+      const token = await createToken(user.id, user.role)
       const cookieStore = await cookies()
       cookieStore.set('auth-token', token, {
         httpOnly: true,
@@ -112,7 +144,9 @@ export async function POST(request: NextRequest) {
         path: '/',
       })
 
-      return NextResponse.json({ success: true, redirectTo: '/dashboard' })
+      // Redirigir según rol
+      const redirectTo = user.role === 'ALUMNO' ? '/alumno' : '/dashboard'
+      return NextResponse.json({ success: true, redirectTo })
     }
   } catch (error) {
     logger.error('Auth login error', error)

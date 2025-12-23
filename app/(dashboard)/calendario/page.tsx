@@ -58,6 +58,7 @@ export default function CalendarioPage() {
       precioPorClase={data.precioPorClase}
       maxAlumnosPorClase={data.maxAlumnosPorClase}
       horasAnticipacionMinima={data.horasAnticipacionMinima}
+      features={data.features}
     />
   )
 }

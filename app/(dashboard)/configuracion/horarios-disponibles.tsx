@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, ChevronDown, ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { Plus, ChevronDown, ChevronRight, Pencil, Trash2, Lock } from 'lucide-react'
 
 interface HorarioGrupo {
   id: string
@@ -18,6 +18,15 @@ interface Props {
   onEditar: (id: string) => void
   onEliminar: (id: string) => void
   onAgregarDisponibilidad: (dia: string) => void
+  canConfigureHorarios?: boolean
+  currentPlan?: string
+}
+
+const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Max'
 }
 
 export function HorariosDisponibles({
@@ -25,7 +34,9 @@ export function HorariosDisponibles({
   onAgregarHorario,
   onEditar,
   onEliminar,
-  onAgregarDisponibilidad
+  onAgregarDisponibilidad,
+  canConfigureHorarios = true,
+  currentPlan = 'STARTER'
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
 
@@ -45,11 +56,21 @@ export function HorariosDisponibles({
           <h2 className="horarios-header-title">Horarios Disponibles</h2>
           <p className="horarios-header-subtitle">Configurá tus días y horarios de atención</p>
         </div>
-        <button onClick={onAgregarHorario} className="btn-primary btn-sm">
-          <Plus size={16} />
+        <button
+          onClick={() => canConfigureHorarios && onAgregarHorario()}
+          className={`btn-primary btn-sm ${!canConfigureHorarios ? 'btn-locked' : ''}`}
+          disabled={!canConfigureHorarios}
+          title={!canConfigureHorarios ? `Disponible en plan ${PLAN_NAMES['STARTER']}` : undefined}
+        >
+          {!canConfigureHorarios ? <Lock size={14} /> : <Plus size={16} />}
           <span>Nuevo</span>
         </button>
       </div>
+      {!canConfigureHorarios && (
+        <p className="feature-locked-hint" style={{ marginBottom: '1rem' }}>
+          La configuración de horarios está disponible desde el plan {PLAN_NAMES['STARTER']}
+        </p>
+      )}
 
       {/* Lista simple de horarios */}
       <div className="horarios-lista">

@@ -5,6 +5,7 @@ import { startOfDay } from 'date-fns'
 import { getErrorMessage } from '@/lib/utils'
 import { getCachedProfesorConfig } from '@/lib/server-cache'
 import { logger } from '@/lib/logger'
+import { getEffectiveFeatures } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -36,7 +37,7 @@ export async function GET() {
       getCachedProfesorConfig(userId),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { role: true }
+        select: { role: true, plan: true, trialEndsAt: true }
       }),
       prisma.alumno.count({
         where: {
@@ -136,6 +137,9 @@ export async function GET() {
       userName: profesorConfig?.nombre || null
     }
 
+    // Calcular features según plan
+    const features = userRole ? getEffectiveFeatures(userRole.plan, userRole.trialEndsAt) : null
+
     return NextResponse.json({
       totalAlumnos,
       clasesHoy,
@@ -143,7 +147,11 @@ export async function GET() {
       horarioTardeInicio,
       maxAlumnosPorClase,
       siguienteClase,
-      setupStatus
+      setupStatus,
+      features: {
+        reportesBasicos: features?.reportesBasicos ?? false,
+        plan: userRole?.plan || 'FREE'
+      }
     })
   } catch (error) {
     logger.error('Dashboard GET error', error)

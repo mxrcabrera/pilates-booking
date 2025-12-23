@@ -51,13 +51,19 @@ export const getCachedProfesorConfig = unstable_cache(
         turnoTardeActivo: true,
         espacioCompartidoId: true,
         syncGoogleCalendar: true,
-        precioPorClase: true
+        precioPorClase: true,
+        plan: true,
+        trialEndsAt: true,
+        slug: true,
+        portalActivo: true,
+        portalDescripcion: true
       }
     })
     if (!user) return null
     return {
       ...user,
-      precioPorClase: user.precioPorClase.toString()
+      precioPorClase: user.precioPorClase.toString(),
+      trialEndsAt: user.trialEndsAt?.toISOString() || null
     }
   },
   ['profesor-config'],

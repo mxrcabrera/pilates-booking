@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
-import { PLAN_CONFIGS, getDaysLeftInTrial, isTrialActive } from '@/lib/plans'
+import { PLAN_CONFIGS, getDaysLeftInTrial, isTrialActive, getEffectiveFeatures, getEffectiveMaxAlumnos } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -22,6 +22,7 @@ export async function GET() {
         email: true,
         plan: true,
         trialEndsAt: true,
+        role: true,
       }
     })
 
@@ -32,16 +33,23 @@ export async function GET() {
     const planConfig = PLAN_CONFIGS[user.plan]
     const inTrial = isTrialActive(user.trialEndsAt)
     const daysLeft = getDaysLeftInTrial(user.trialEndsAt)
+    const features = getEffectiveFeatures(user.plan, user.trialEndsAt)
+    const maxAlumnos = getEffectiveMaxAlumnos(user.plan, user.trialEndsAt)
 
     return NextResponse.json({
       user: {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
+        role: user.role,
         plan: user.plan,
         planName: planConfig.name,
         inTrial,
         trialDaysLeft: daysLeft,
+        features: {
+          ...features,
+          maxAlumnos,
+        },
       }
     })
   } catch (error) {

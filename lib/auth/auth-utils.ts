@@ -17,8 +17,8 @@ export async function verifyPassword(password: string, hashedPassword: string) {
   return bcrypt.compare(password, hashedPassword)
 }
 
-export async function createToken(userId: string) {
-  return new SignJWT({ userId })
+export async function createToken(userId: string, role: string = 'PROFESOR') {
+  return new SignJWT({ userId, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
@@ -28,7 +28,7 @@ export async function createToken(userId: string) {
 export async function verifyToken(token: string) {
   try {
     const verified = await jwtVerify(token, secret)
-    return verified.payload as { userId: string }
+    return verified.payload as { userId: string; role?: string }
   } catch {
     return null
   }
@@ -51,20 +51,30 @@ export async function removeAuthCookie() {
 }
 
 export async function getCurrentUser() {
+  const result = await getCurrentUserWithRole()
+  return result?.userId || null
+}
+
+export async function getCurrentUserWithRole(): Promise<{ userId: string; role: string } | null> {
   const cookieStore = await cookies()
 
   // 1. Primero intentar con JWT personalizado (credentials login)
   const customToken = cookieStore.get('auth-token')?.value
   if (customToken) {
     const payload = await verifyToken(customToken)
-    if (payload) return payload.userId
+    if (payload) {
+      return { userId: payload.userId, role: payload.role || 'PROFESOR' }
+    }
   }
 
   // 2. Usar NextAuth auth() para JWT sessions (Google OAuth)
   try {
     const session = await auth()
     if (session?.user?.id) {
-      return session.user.id
+      return {
+        userId: session.user.id,
+        role: (session.user as { role?: string }).role || 'PROFESOR'
+      }
     }
   } catch {
     // Ignore errors

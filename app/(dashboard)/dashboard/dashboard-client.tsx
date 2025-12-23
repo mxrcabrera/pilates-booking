@@ -2,11 +2,11 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { RotateCcw, Users, Calendar, ChevronRight } from 'lucide-react'
+import { RotateCcw, Users, Calendar, ChevronRight, BarChart3, Lock } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { changeAsistenciaAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
-import type { ClaseHoy, SiguienteClase } from '@/lib/types'
+import type { ClaseHoy, SiguienteClase, DashboardFeatures } from '@/lib/types'
 import { formatearHora, getErrorMessage } from '@/lib/utils'
 
 interface DashboardClientProps {
@@ -15,6 +15,7 @@ interface DashboardClientProps {
   horarioTardeInicio: string
   maxAlumnosPorClase: number
   siguienteClase: SiguienteClase | null
+  features: DashboardFeatures
 }
 
 function getMinutosHasta(horaClase: string): number {
@@ -37,7 +38,14 @@ function getTimeStatus(minutosHasta: number): { isPast: boolean; isNow: boolean;
   return { isPast: false, isNow: false, isSoon: false }
 }
 
-export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, maxAlumnosPorClase, siguienteClase }: DashboardClientProps) {
+const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Estudio'
+}
+
+export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, maxAlumnosPorClase, siguienteClase, features }: DashboardClientProps) {
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState(clasesHoy)
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -356,6 +364,20 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
           <span>Ver calendario completo</span>
           <ChevronRight size={16} />
         </Link>
+        <button
+          className={`dash-quick-link ${!features.reportesBasicos ? 'locked' : ''}`}
+          onClick={() => {
+            if (!features.reportesBasicos) {
+              showError(`Reportes disponibles desde el plan ${PLAN_NAMES['PRO']}`)
+              return
+            }
+            showSuccess('Próximamente: Reportes y estadísticas')
+          }}
+        >
+          {features.reportesBasicos ? <BarChart3 size={18} /> : <Lock size={18} />}
+          <span>Ver reportes</span>
+          <ChevronRight size={16} />
+        </button>
       </div>
     </div>
   )

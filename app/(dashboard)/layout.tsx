@@ -8,6 +8,7 @@ type User = {
   id: string
   nombre: string
   email: string
+  role: string
 }
 
 // Cache del usuario en memoria del cliente
@@ -41,6 +42,11 @@ export default function DashboardLayout({
       })
       .then(data => {
         if (data?.user) {
+          // Si es alumno, redirigir a su dashboard
+          if (data.user.role === 'ALUMNO') {
+            router.push('/alumno')
+            return
+          }
           cachedUser = data.user
           setUser(data.user)
         }

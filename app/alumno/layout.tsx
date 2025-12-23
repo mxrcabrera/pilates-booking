@@ -1,58 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRequireRole } from '@/lib/use-session'
 import { AlumnoNav } from './alumno-nav'
-
-type User = {
-  id: string
-  nombre: string
-  email: string
-  role: string
-}
-
-let cachedUser: User | null = null
 
 export default function AlumnoLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(cachedUser)
-  const [loading, setLoading] = useState(!cachedUser)
+  const { user, loading } = useRequireRole(['ALUMNO'], '/dashboard')
 
-  useEffect(() => {
-    if (cachedUser) {
-      setUser(cachedUser)
-      setLoading(false)
-      return
-    }
-
-    fetch('/api/auth/me')
-      .then(res => {
-        if (!res.ok) {
-          router.push('/login')
-          return null
-        }
-        return res.json()
-      })
-      .then(data => {
-        if (data?.user) {
-          if (data.user.role !== 'ALUMNO') {
-            router.push('/dashboard')
-            return
-          }
-          cachedUser = data.user
-          setUser(data.user)
-        }
-        setLoading(false)
-      })
-      .catch(() => {
-        router.push('/login')
-      })
-  }, [router])
-
+  // Mostrar loading placeholder mientras carga
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-background">

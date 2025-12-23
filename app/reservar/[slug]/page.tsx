@@ -1,13 +1,22 @@
 import { prisma } from '@/lib/prisma'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { auth } from '@/lib/auth/auth'
 import { PortalClient } from './portal-client'
 
 type Props = {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ codigo?: string }>
 }
 
-export default async function PortalPage({ params }: Props) {
+export default async function PortalPage({ params, searchParams }: Props) {
   const { slug } = await params
+  const { codigo } = await searchParams
+
+  // Verificar autenticación - sin login no se ve NADA
+  const session = await auth()
+  if (!session?.user) {
+    redirect(`/login?callbackUrl=/reservar/${slug}${codigo ? `?codigo=${codigo}` : ''}`)
+  }
 
   const profesor = await prisma.user.findFirst({
     where: {
@@ -19,6 +28,7 @@ export default async function PortalPage({ params }: Props) {
       id: true,
       nombre: true,
       slug: true,
+      codigoPortal: true,
       portalDescripcion: true,
       horarioMananaInicio: true,
       horarioMananaFin: true,
@@ -58,6 +68,16 @@ export default async function PortalPage({ params }: Props) {
 
   if (!profesor) {
     notFound()
+  }
+
+  // Si el profesor tiene código configurado, verificar
+  if (profesor.codigoPortal) {
+    const codigoValido = codigo && codigo.toUpperCase() === profesor.codigoPortal.toUpperCase()
+
+    if (!codigoValido) {
+      // Usuario logueado pero sin código válido - redirigir a página de código
+      redirect(`/alumno/reservar?error=codigo&slug=${slug}`)
+    }
   }
 
   return (

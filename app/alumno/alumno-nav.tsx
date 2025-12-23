@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, Settings, LayoutDashboard, LogOut, Menu, X, User, Search } from 'lucide-react'
+import { Calendar, LayoutDashboard, LogOut, Menu, X, User, Search } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 
 type UserData = {
@@ -16,7 +16,6 @@ const navItems = [
   { href: '/alumno', icon: LayoutDashboard, label: 'Inicio' },
   { href: '/alumno/reservar', icon: Search, label: 'Reservar' },
   { href: '/alumno/mis-clases', icon: Calendar, label: 'Mis Clases' },
-  { href: '/alumno/configuracion', icon: Settings, label: 'Mi Perfil' },
 ]
 
 export function AlumnoNav({ user }: { user: UserData }) {

@@ -69,8 +69,10 @@ export default function MisClasesPage() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Mis Clases</h1>
-        <p>Tus reservas y clases programadas</p>
+        <div>
+          <h1>Mis Clases</h1>
+          <p>Tus reservas y clases programadas</p>
+        </div>
       </div>
 
       {message && (

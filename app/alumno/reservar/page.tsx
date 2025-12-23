@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, ExternalLink, AlertCircle } from 'lucide-react'
+import { Lock, ExternalLink, AlertCircle } from 'lucide-react'
 
 export default function AlumnoReservarPage() {
   const router = useRouter()
-  const [slug, setSlug] = useState('')
+  const [codigo, setCodigo] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -15,38 +15,27 @@ export default function AlumnoReservarPage() {
     setError(null)
     setLoading(true)
 
-    let cleanSlug = slug.trim().toLowerCase()
+    const cleanCodigo = codigo.trim().toUpperCase()
 
-    // Extraer slug de URL si pegaron una URL completa
-    if (cleanSlug.includes('/reservar/')) {
-      const match = cleanSlug.match(/\/reservar\/([a-z0-9-]+)/i)
-      if (match) {
-        cleanSlug = match[1]
-      }
-    }
-
-    // Remover caracteres inválidos
-    cleanSlug = cleanSlug.replace(/[^a-z0-9-]/g, '')
-
-    if (!cleanSlug || cleanSlug.length < 2) {
-      setError('Ingresá un nombre de profesor válido')
+    if (!cleanCodigo || cleanCodigo.length < 4) {
+      setError('Ingresá un código válido')
       setLoading(false)
       return
     }
 
     try {
-      // Verificar si el profesor existe
-      const res = await fetch(`/api/portal/${cleanSlug}/info`)
+      // Buscar profesor por código
+      const res = await fetch(`/api/portal/buscar-codigo?codigo=${encodeURIComponent(cleanCodigo)}`)
       const data = await res.json()
 
-      if (data.error || !data.profesor) {
-        setError('No se encontró un profesor con ese nombre. Verificá el link.')
+      if (data.error || !data.slug) {
+        setError('Código no encontrado. Verificá con tu profesor.')
         setLoading(false)
         return
       }
 
-      // Redirigir al portal del profesor
-      router.push(`/reservar/${cleanSlug}`)
+      // Redirigir al portal con el código
+      router.push(`/reservar/${data.slug}?codigo=${encodeURIComponent(cleanCodigo)}`)
     } catch {
       setError('Error al buscar. Intentá de nuevo.')
       setLoading(false)
@@ -56,20 +45,24 @@ export default function AlumnoReservarPage() {
   return (
     <div className="page-container">
       <div className="page-header centered">
-        <h1>Reservar Clase</h1>
-        <p>Ingresá el link o nombre del portal de tu profesor</p>
+        <div>
+          <h1>Reservar Clase</h1>
+          <p>Ingresá el código que te compartió tu profesor</p>
+        </div>
       </div>
 
       <div className="content-card search-card">
         <form onSubmit={handleSubmit} className="search-form">
           <div className="search-input-wrapper">
-            <Search size={20} />
+            <Lock size={20} />
             <input
               type="text"
-              value={slug}
-              onChange={e => setSlug(e.target.value)}
-              placeholder="ej: maria-garcia o pilatesbooking.com/reservar/maria-garcia"
+              value={codigo}
+              onChange={e => setCodigo(e.target.value.toUpperCase())}
+              placeholder="ej: ABC123"
               autoFocus
+              maxLength={10}
+              style={{ letterSpacing: '0.1em', fontWeight: 600 }}
             />
           </div>
 
@@ -80,17 +73,17 @@ export default function AlumnoReservarPage() {
             </div>
           )}
 
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <button type="submit" className="btn-primary" disabled={loading || codigo.length < 4}>
             {loading ? 'Buscando...' : 'Ir al portal'}
             {!loading && <ExternalLink size={16} />}
           </button>
         </form>
 
         <div className="search-help">
-          <h3>¿Cómo obtengo el link?</h3>
+          <h3>¿Cómo obtengo el código?</h3>
           <p>
-            Tu profesor te puede compartir su link de reservas.
-            Generalmente tiene el formato: <code>pilatesbooking.com/reservar/nombre-del-profesor</code>
+            Tu profesor te compartirá un código de acceso (ej: <code>ABC123</code>).
+            Ingresalo arriba para acceder al portal de reservas.
           </p>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
+import { sendEmail } from '@/lib/email'
+import { getEffectiveFeatures } from '@/lib/plans'
 
 // POST /api/portal/[slug]/reservar
 // Body: { fecha: "2024-01-15", hora: "10:00" }
@@ -50,7 +52,9 @@ export async function POST(
         id: true,
         nombre: true,
         horasAnticipacionMinima: true,
-        maxAlumnosPorClase: true
+        maxAlumnosPorClase: true,
+        plan: true,
+        trialEndsAt: true
       }
     })
 
@@ -180,6 +184,38 @@ export async function POST(
         asistencia: 'pendiente'
       }
     })
+
+    // Si estaba en lista de espera, marcar como confirmado
+    await prisma.listaEspera.updateMany({
+      where: {
+        alumnoId: alumno.id,
+        profesorId: profesor.id,
+        fecha: fechaDate,
+        horaInicio: hora,
+        estado: { in: ['esperando', 'notificado'] }
+      },
+      data: {
+        estado: 'confirmado'
+      }
+    })
+
+    // Enviar email de confirmación (solo si el plan lo permite)
+    const features = getEffectiveFeatures(profesor.plan, profesor.trialEndsAt)
+    if (features.notificacionesEmail && alumno.email) {
+      const fechaFormateada = fechaDate.toLocaleDateString('es-AR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      })
+      sendEmail({
+        template: 'reserva-confirmada',
+        to: alumno.email,
+        alumnoNombre: alumno.nombre,
+        fecha: fechaFormateada,
+        hora,
+        profesorNombre: profesor.nombre
+      }).catch(err => console.error('[Email] Error sending confirmation:', err))
+    }
 
     return NextResponse.json({
       success: true,
@@ -318,7 +354,10 @@ export async function DELETE(
       },
       select: {
         id: true,
-        horasAnticipacionMinima: true
+        nombre: true,
+        horasAnticipacionMinima: true,
+        plan: true,
+        trialEndsAt: true
       }
     })
 
@@ -381,6 +420,89 @@ export async function DELETE(
       where: { id: claseId },
       data: { estado: 'cancelada' }
     })
+
+    // Enviar email de cancelación (solo si el plan lo permite)
+    const features = getEffectiveFeatures(profesor.plan, profesor.trialEndsAt)
+    if (features.notificacionesEmail && alumno.email) {
+      const fechaFormateada = clase.fecha.toLocaleDateString('es-AR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      })
+      sendEmail({
+        template: 'reserva-cancelada',
+        to: alumno.email,
+        alumnoNombre: alumno.nombre,
+        fecha: fechaFormateada,
+        hora: clase.horaInicio,
+        profesorNombre: profesor.nombre
+      }).catch(err => console.error('[Email] Error sending cancellation:', err))
+    }
+
+    // Notificar al primero en lista de espera
+    const fechaStr = clase.fecha.toISOString().split('T')[0]
+    const primerEnEspera = await prisma.listaEspera.findFirst({
+      where: {
+        profesorId: profesor.id,
+        fecha: clase.fecha,
+        horaInicio: clase.horaInicio,
+        estado: 'esperando'
+      },
+      orderBy: { posicion: 'asc' },
+      include: {
+        alumno: {
+          select: { nombre: true, email: true, userId: true }
+        }
+      }
+    })
+
+    if (primerEnEspera && primerEnEspera.alumno.userId) {
+      // Actualizar estado en lista de espera
+      const expiraEn = new Date()
+      expiraEn.setHours(expiraEn.getHours() + 2) // 2 horas para confirmar
+
+      await prisma.listaEspera.update({
+        where: { id: primerEnEspera.id },
+        data: {
+          estado: 'notificado',
+          notificadoEn: new Date(),
+          expiraEn
+        }
+      })
+
+      // Crear notificación para el alumno
+      await prisma.notificacion.create({
+        data: {
+          userId: primerEnEspera.alumno.userId,
+          tipo: 'LUGAR_DISPONIBLE',
+          titulo: '¡Se liberó un lugar!',
+          mensaje: `Hay un lugar disponible el ${fechaStr} a las ${clase.horaInicio}. Tenés 2 horas para reservar.`,
+          datos: JSON.stringify({
+            fecha: fechaStr,
+            hora: clase.horaInicio,
+            profesorId: profesor.id,
+            listaEsperaId: primerEnEspera.id
+          })
+        }
+      })
+
+      // Enviar email de lista de espera (solo si el plan lo permite)
+      if (features.notificacionesEmail && primerEnEspera.alumno.email) {
+        const fechaFormateada = clase.fecha.toLocaleDateString('es-AR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long'
+        })
+        sendEmail({
+          template: 'lista-espera-lugar',
+          to: primerEnEspera.alumno.email,
+          alumnoNombre: primerEnEspera.alumno.nombre,
+          fecha: fechaFormateada,
+          hora: clase.horaInicio,
+          profesorNombre: profesor.nombre
+        }).catch(err => console.error('[Email] Error sending waitlist notification:', err))
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

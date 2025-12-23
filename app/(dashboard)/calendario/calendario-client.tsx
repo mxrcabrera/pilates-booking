@@ -8,7 +8,7 @@ import { ClaseDetailDialog } from './clase-detail-dialog'
 import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
-import type { Clase, AlumnoSimple, Pack } from '@/lib/types'
+import type { Clase, AlumnoSimple, Pack, CalendarioFeatures } from '@/lib/types'
 import { DIAS_SEMANA, DIAS_SEMANA_COMPLETO, MESES } from '@/lib/constants'
 import { getTurno, formatearHora, formatearFechaDia, getErrorMessage } from '@/lib/utils'
 
@@ -24,13 +24,14 @@ interface CalendarioClientProps {
   precioPorClase: string
   maxAlumnosPorClase: number
   horasAnticipacionMinima: number
+  features: CalendarioFeatures
 }
 
 type Vista = 'dia' | 'semana'
 
 const HORAS_DIA = Array.from({ length: 16 }, (_, i) => i + 7) // 7:00 a 22:00
 
-export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserId: _currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin, precioPorClase, maxAlumnosPorClase, horasAnticipacionMinima }: CalendarioClientProps) {
+export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserId: _currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin, precioPorClase, maxAlumnosPorClase, horasAnticipacionMinima, features }: CalendarioClientProps) {
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
@@ -709,6 +710,8 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
         horarioTardeFin={horarioTardeFin}
         maxAlumnosPorClase={maxAlumnosPorClase}
         onSuccess={handleClaseSuccess}
+        canUseRecurrentes={features.clasesRecurrentes}
+        currentPlan={features.plan}
       />
 
       <ClaseDialog
@@ -725,6 +728,8 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
         horarioTardeFin={horarioTardeFin}
         maxAlumnosPorClase={maxAlumnosPorClase}
         onSuccess={handleClaseSuccess}
+        canUseRecurrentes={features.clasesRecurrentes}
+        currentPlan={features.plan}
       />
 
       {claseSeleccionada && (

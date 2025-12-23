@@ -140,6 +140,9 @@ export type ProfesorConfig = {
   syncGoogleCalendar: boolean
   precioPorClase: string
   hasGoogleAccount: boolean
+  slug: string | null
+  portalActivo: boolean
+  portalDescripcion: string | null
 }
 
 // ----- PAGINACIÓN -----
@@ -173,6 +176,13 @@ export type PlanInfo = {
   canAddMore: boolean
 }
 
+export type AlumnosFeatures = {
+  prorrateoAutomatico: boolean
+  exportarExcel: boolean
+  portalAlumnos: boolean
+  plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
+}
+
 export type AlumnosData = {
   // Nuevo formato paginado
   data: Alumno[]
@@ -182,6 +192,13 @@ export type AlumnosData = {
   packs: Pack[]
   precioPorClase: string
   planInfo: PlanInfo
+  features: AlumnosFeatures
+}
+
+export type CalendarioFeatures = {
+  clasesRecurrentes: boolean
+  listaEspera: boolean
+  plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
 }
 
 export type CalendarioData = {
@@ -200,6 +217,7 @@ export type CalendarioData = {
   precioPorClase: string
   maxAlumnosPorClase: number
   horasAnticipacionMinima: number
+  features: CalendarioFeatures
 }
 
 export type CalendarioDataCached = Omit<CalendarioData, 'clases' | 'data'> & {
@@ -207,10 +225,23 @@ export type CalendarioDataCached = Omit<CalendarioData, 'clases' | 'data'> & {
   data: ClaseAPI[]
 }
 
+export type ConfigFeatures = {
+  configuracionHorarios: boolean
+  googleCalendarSync: boolean
+  portalAlumnos: boolean
+  plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
+}
+
 export type ConfigData = {
   profesor: ProfesorConfig
   horarios: Horario[]
   packs: Pack[]
+  features: ConfigFeatures
+}
+
+export type PagosFeatures = {
+  exportarExcel: boolean
+  plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
 }
 
 export type PagosData = {
@@ -220,6 +251,7 @@ export type PagosData = {
   // Compatibilidad con formato anterior
   pagos: Pago[]
   alumnos: AlumnoPago[]
+  features: PagosFeatures
 }
 
 export type SiguienteClase = {
@@ -235,6 +267,11 @@ export type SetupStatus = {
   userName: string | null
 }
 
+export type DashboardFeatures = {
+  reportesBasicos: boolean
+  plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
+}
+
 export type DashboardData = {
   totalAlumnos: number
   clasesHoy: ClaseHoy[]
@@ -243,4 +280,5 @@ export type DashboardData = {
   maxAlumnosPorClase: number
   siguienteClase: SiguienteClase | null
   setupStatus: SetupStatus
+  features: DashboardFeatures
 }

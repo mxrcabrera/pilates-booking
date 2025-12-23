@@ -1,24 +1,34 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Check, Clock, Trash2, DollarSign, Search, X, ChevronDown } from 'lucide-react'
+import { Plus, Check, Clock, Trash2, DollarSign, Search, X, ChevronDown, Download, Lock } from 'lucide-react'
 import { PagoDialog } from './pago-dialog'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { marcarPagadoAPI, marcarPendienteAPI, deletePagoAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { formatMes, diasDiferencia } from '@/lib/dates'
-import type { Pago, AlumnoPago } from '@/lib/types'
+import { exportToCSV, PAGOS_COLUMNS } from '@/lib/export'
+import type { Pago, AlumnoPago, PagosFeatures } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
 
 type FilterType = 'todos' | 'pendientes' | 'pagados'
 
+const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Max'
+}
+
 export function PagosClient({
   pagos: initialPagos,
-  alumnos
+  alumnos,
+  features
 }: {
   pagos: Pago[]
   alumnos: AlumnoPago[]
+  features: PagosFeatures
 }) {
   const { showSuccess, showError } = useToast()
   const [pagos, setPagos] = useState(initialPagos)
@@ -281,18 +291,43 @@ export function PagosClient({
             className="pagos-search-input"
           />
         </div>
-        <div className="mes-filter">
-          <select
-            value={mesFilter}
-            onChange={(e) => setMesFilter(e.target.value)}
-            className="mes-filter-select"
+        <div className="toolbar-actions">
+          <button
+            className={`toolbar-btn ${!features.exportarExcel ? 'btn-locked' : ''}`}
+            onClick={() => {
+              if (!features.exportarExcel) {
+                showError(`Exportar está disponible desde el plan ${PLAN_NAMES['PRO']}`)
+                return
+              }
+              const dataToExport = processedPagos.map(p => ({
+                alumnoNombre: p.alumno.nombre,
+                monto: p.monto,
+                estado: p.estado === 'pagado' ? 'Pagado' : 'Pendiente',
+                fechaPago: p.fechaPago ? new Date(p.fechaPago).toLocaleDateString('es-AR') : '',
+                fechaVencimiento: new Date(p.fechaVencimiento).toLocaleDateString('es-AR'),
+                mesCorrespondiente: formatMes(p.mesCorrespondiente),
+                tipoPago: p.tipoPago === 'mensual' ? 'Mensual' : 'Por clase'
+              }))
+              exportToCSV(dataToExport, PAGOS_COLUMNS, `pagos-${new Date().toISOString().split('T')[0]}`)
+              showSuccess('Archivo exportado correctamente')
+            }}
+            title={features.exportarExcel ? 'Exportar a CSV' : `Disponible en plan ${PLAN_NAMES['PRO']}`}
           >
-            <option value="todos">Todos los meses</option>
-            {mesesDisponibles.map(mes => (
-              <option key={mes} value={mes}>{formatMes(mes)}</option>
-            ))}
-          </select>
-          <ChevronDown size={16} className="mes-filter-icon" />
+            {!features.exportarExcel ? <Lock size={16} /> : <Download size={16} />}
+          </button>
+          <div className="mes-filter">
+            <select
+              value={mesFilter}
+              onChange={(e) => setMesFilter(e.target.value)}
+              className="mes-filter-select"
+            >
+              <option value="todos">Todos los meses</option>
+              {mesesDisponibles.map(mes => (
+                <option key={mes} value={mes}>{formatMes(mes)}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="mes-filter-icon" />
+          </div>
         </div>
       </div>
 

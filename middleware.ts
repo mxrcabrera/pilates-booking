@@ -12,6 +12,8 @@ export function middleware(request: NextRequest) {
   const publicPaths = [
     '/login',
     '/api/auth',
+    '/api/portal',
+    '/reservar',
     '/privacy',
     '/terms',
     '/_next',
@@ -41,11 +43,15 @@ export function middleware(request: NextRequest) {
   // Página raíz: redirigir según estado de auth (evita doble round-trip)
   if (pathname === '/') {
     if (hasValidSession) {
+      // La redirección según rol se hace después de verificar el rol en el cliente
       return NextResponse.redirect(new URL('/dashboard', request.url))
     } else {
       return NextResponse.redirect(new URL('/login', request.url))
     }
   }
+
+  // Agregar /api/alumno a rutas protegidas que requieren autenticación
+  // pero no bloqueamos acceso aquí, solo dejamos pasar
 
   if (!hasValidSession) {
     // Para APIs, retornar 401

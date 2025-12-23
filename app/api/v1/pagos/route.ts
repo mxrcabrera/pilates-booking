@@ -5,6 +5,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { pagoActionSchema } from '@/lib/schemas/pago.schema'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { getEffectiveFeatures } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -172,23 +173,31 @@ export async function GET(request: NextRequest) {
       clasesCompletadas: clasesCompletadasMap.get(`${p.alumnoId}-${p.mesCorrespondiente}`) || 0
     }))
 
-    // Obtener alumnos activos para el formulario
-    const alumnos = await prisma.alumno.findMany({
-      where: {
-        profesorId: userId,
-        estaActivo: true,
-        deletedAt: null
-      },
-      select: {
-        id: true,
-        nombre: true,
-        precio: true,
-        packType: true,
-        diaInicioCiclo: true,
-        saldoAFavor: true
-      },
-      orderBy: { nombre: 'asc' }
-    })
+    // Obtener usuario para features y alumnos activos para el formulario
+    const [user, alumnos] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { plan: true, trialEndsAt: true }
+      }),
+      prisma.alumno.findMany({
+        where: {
+          profesorId: userId,
+          estaActivo: true,
+          deletedAt: null
+        },
+        select: {
+          id: true,
+          nombre: true,
+          precio: true,
+          packType: true,
+          diaInicioCiclo: true,
+          saldoAFavor: true
+        },
+        orderBy: { nombre: 'asc' }
+      })
+    ])
+
+    const features = user ? getEffectiveFeatures(user.plan, user.trialEndsAt) : null
 
     const alumnosSerializados = alumnos.map(a => ({
       id: a.id,
@@ -204,7 +213,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ...paginatedData,
       pagos,
-      alumnos: alumnosSerializados
+      alumnos: alumnosSerializados,
+      features: {
+        exportarExcel: features?.exportarExcel ?? false,
+        plan: user?.plan || 'FREE'
+      }
     })
   } catch (error) {
     return serverError(error)

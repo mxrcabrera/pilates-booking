@@ -33,9 +33,13 @@ model User {
   syncGoogleCalendar      Boolean             @default(false) @map("sync_google_calendar")
   googleCalendarId        String?             @map("google_calendar_id")
   precioPorClase          Decimal             @default(0) @map("precio_por_clase") @db.Decimal(10, 2)
+  slug                    String?             @unique @map("slug")
+  portalActivo            Boolean             @default(false) @map("portal_activo")
+  portalDescripcion       String?             @map("portal_descripcion")
   createdAt               DateTime            @default(now()) @map("created_at")
   accounts                Account[]
   alumnos                 Alumno[]
+  alumnoProfile           Alumno?             @relation("AlumnoUser")
   clases                  Clase[]
   horariosDisponibles     HorarioDisponible[]
   notificacionesRecibidas Notificacion[]
@@ -64,6 +68,7 @@ model Pack {
 model Alumno {
   id                  String    @id @default(uuid())
   profesorId          String    @map("profesor_id")
+  userId              String?   @unique @map("user_id")
   nombre              String
   email               String
   telefono            String
@@ -83,6 +88,7 @@ model Alumno {
   diaInicioCiclo      Int       @default(1) @map("dia_inicio_ciclo")
   saldoAFavor         Decimal   @default(0) @db.Decimal(10, 2) @map("saldo_a_favor")
   profesor            User      @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  user                User?     @relation("AlumnoUser", fields: [userId], references: [id])
   clases              Clase[]
   pagos               Pago[]
 

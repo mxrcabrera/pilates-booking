@@ -4,12 +4,20 @@ import { useState, useEffect } from 'react'
 import { createClaseAPI, updateClaseAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { format } from 'date-fns'
+import { Lock } from 'lucide-react'
 import { DialogBase } from '@/components/ui/dialog-base'
 import { TimeInput } from '@/components/time-input'
 import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import type { Clase, AlumnoSimple, Pack } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
+
+const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Max'
+}
 
 const DIAS_SEMANA = [
   { value: 1, label: 'Lunes' },
@@ -36,7 +44,9 @@ export function ClaseDialog({
   horarioTardeInicio: _horarioTardeInicio,
   horarioTardeFin: _horarioTardeFin,
   maxAlumnosPorClase,
-  onSuccess
+  onSuccess,
+  canUseRecurrentes = true,
+  currentPlan = 'STARTER'
 }: {
   isOpen: boolean
   onClose: () => void
@@ -51,6 +61,8 @@ export function ClaseDialog({
   horarioTardeFin: string
   maxAlumnosPorClase: number
   onSuccess?: (data: { clase?: Clase; clases?: Clase[]; isNew: boolean }) => void
+  canUseRecurrentes?: boolean
+  currentPlan?: string
 }) {
   const { showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -66,19 +78,23 @@ export function ClaseDialog({
   useEffect(() => {
     if (isOpen) {
       if (clase) {
-        setTipoClase(clase.esClasePrueba ? 'prueba' : 'recurrente')
+        // Si es edición de una clase existente, usar su tipo
+        // Pero si no tiene permisos de recurrente, forzar a prueba
+        const tipoActual = clase.esClasePrueba ? 'prueba' : 'recurrente'
+        setTipoClase(tipoActual === 'recurrente' && !canUseRecurrentes ? 'prueba' : tipoActual)
         setFrecuencia(clase.frecuenciaSemanal)
         setDiasSeleccionados(clase.diasSemana || [])
         setAlumnosSeleccionados(clase.alumno?.id ? [clase.alumno.id] : [])
       } else {
-        setTipoClase('recurrente')
+        // Nueva clase: usar recurrente solo si tiene permisos
+        setTipoClase(canUseRecurrentes ? 'recurrente' : 'prueba')
         setFrecuencia(null)
         setDiasSeleccionados([])
         setAlumnosSeleccionados([])
       }
       setError(null)
     }
-  }, [isOpen, clase])
+  }, [isOpen, clase, canUseRecurrentes])
 
   const handleDiaToggle = (dia: number) => {
     setDiasSeleccionados(prev => {
@@ -299,13 +315,20 @@ export function ClaseDialog({
             </button>
             <button
               type="button"
-              className={`segmented-option ${tipoClase === 'recurrente' ? 'active' : ''}`}
-              onClick={() => setTipoClase('recurrente')}
-              disabled={isLoading}
+              className={`segmented-option ${tipoClase === 'recurrente' ? 'active' : ''} ${!canUseRecurrentes ? 'locked' : ''}`}
+              onClick={() => canUseRecurrentes && setTipoClase('recurrente')}
+              disabled={isLoading || !canUseRecurrentes}
+              title={!canUseRecurrentes ? `Disponible en plan ${PLAN_NAMES['STARTER']}` : undefined}
             >
+              {!canUseRecurrentes && <Lock size={14} className="lock-icon" />}
               Recurrente
             </button>
           </div>
+          {!canUseRecurrentes && (
+            <p className="feature-locked-hint">
+              Las clases recurrentes están disponibles desde el plan {PLAN_NAMES['STARTER']}
+            </p>
+          )}
         </div>
 
         {esRecurrente && (

@@ -39,6 +39,7 @@ export default function ConfiguracionPage() {
         profesor={data.profesor}
         horarios={data.horarios}
         packs={data.packs}
+        features={data.features}
       />
     </div>
   )

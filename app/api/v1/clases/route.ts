@@ -10,7 +10,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { getCachedPacks, getCachedAlumnosSimple } from '@/lib/server-cache'
 import { unauthorized, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
-import { canUseFeature, PLAN_CONFIGS, getSuggestedUpgrade } from '@/lib/plans'
+import { canUseFeature, PLAN_CONFIGS, getSuggestedUpgrade, getEffectiveFeatures } from '@/lib/plans'
 // import { logger } from '@/lib/logger'  // Comentado junto con Google Calendar sync
 
 // Google Calendar API responses don't have proper TypeScript types
@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
         precioPorClase: true,
         maxAlumnosPorClase: true,
         horasAnticipacionMinima: true,
+        plan: true,
+        trialEndsAt: true,
         _count: {
           select: {
             horariosDisponibles: true,
@@ -158,6 +160,9 @@ export async function GET(request: NextRequest) {
 
     const paginatedData = paginatedResponse(clasesNormalizadas, total, { page, limit, skip })
 
+    // Calcular features del usuario según plan y trial
+    const features = getEffectiveFeatures(user.plan, user.trialEndsAt)
+
     return NextResponse.json({
       // Nuevo formato paginado
       ...paginatedData,
@@ -172,7 +177,13 @@ export async function GET(request: NextRequest) {
       horarioTardeFin: user.horarioTardeFin || '22:00',
       precioPorClase: user.precioPorClase?.toString() || '0',
       maxAlumnosPorClase: user.maxAlumnosPorClase || 3,
-      horasAnticipacionMinima: user.horasAnticipacionMinima || 1
+      horasAnticipacionMinima: user.horasAnticipacionMinima || 1,
+      // Features del plan para bloquear UI
+      features: {
+        clasesRecurrentes: features.clasesRecurrentes,
+        listaEspera: features.listaEspera,
+        plan: user.plan
+      }
     })
   } catch (error) {
     return serverError(error)

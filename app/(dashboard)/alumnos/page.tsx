@@ -26,5 +26,5 @@ export default function AlumnosPage() {
     return <PageLoading />
   }
 
-  return <AlumnosClient alumnos={data.alumnos} packs={data.packs} precioPorClase={data.precioPorClase} planInfo={data.planInfo} />
+  return <AlumnosClient alumnos={data.alumnos} packs={data.packs} precioPorClase={data.precioPorClase} planInfo={data.planInfo} features={data.features} />
 }

@@ -7,7 +7,15 @@ import { getErrorMessage } from '@/lib/utils'
 import { DialogBase } from '@/components/ui/dialog-base'
 import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
+import { Lock } from 'lucide-react'
 import type { Alumno, Pack } from '@/lib/types'
+
+const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Max'
+}
 
 export function AlumnoDialog({
   isOpen,
@@ -15,7 +23,9 @@ export function AlumnoDialog({
   alumno,
   onSuccess,
   packs,
-  precioPorClase
+  precioPorClase,
+  canUseProrrateo = true,
+  currentPlan = 'STARTER'
 }: {
   isOpen: boolean
   onClose: () => void
@@ -23,6 +33,8 @@ export function AlumnoDialog({
   onSuccess?: (alumno: Alumno, isEdit: boolean) => void
   packs: Pack[]
   precioPorClase: string
+  canUseProrrateo?: boolean
+  currentPlan?: string
 }) {
   const { showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -386,19 +398,35 @@ export function AlumnoDialog({
             </div>
 
             <div className="form-group">
-              <label>Día de inicio de ciclo</label>
-              <SelectInput
-                value={diaInicioCiclo}
-                onChange={(e) => setDiaInicioCiclo(e.target.value)}
-                disabled={isLoading}
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map(dia => (
-                  <option key={dia} value={dia}>{dia}</option>
-                ))}
-              </SelectInput>
-              <small style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>
-                Día del mes en que comienza el ciclo de facturación
-              </small>
+              <label className={!canUseProrrateo ? 'label-with-lock' : ''}>
+                Día de inicio de ciclo
+                {!canUseProrrateo && <Lock size={14} className="label-lock-icon" />}
+              </label>
+              {canUseProrrateo ? (
+                <>
+                  <SelectInput
+                    value={diaInicioCiclo}
+                    onChange={(e) => setDiaInicioCiclo(e.target.value)}
+                    disabled={isLoading}
+                  >
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map(dia => (
+                      <option key={dia} value={dia}>{dia}</option>
+                    ))}
+                  </SelectInput>
+                  <small style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>
+                    Día del mes en que comienza el ciclo de facturación
+                  </small>
+                </>
+              ) : (
+                <>
+                  <div className="locked-field">
+                    <span>Día 1 (fijo)</span>
+                  </div>
+                  <p className="feature-locked-hint">
+                    Los ciclos personalizados están disponibles desde el plan {PLAN_NAMES['STARTER']}
+                  </p>
+                </>
+              )}
             </div>
           </>
         )}

@@ -8,7 +8,7 @@ import { alumnoActionSchema } from '@/lib/schemas/alumno.schema'
 import { calcularRangoCiclo, calcularPrecioImplicitoPorClase } from '@/lib/alumno-utils'
 import { invalidateAlumnos } from '@/lib/cache-utils'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
-import { getEffectiveMaxAlumnos, getSuggestedUpgrade, PLAN_CONFIGS } from '@/lib/plans'
+import { getEffectiveMaxAlumnos, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -109,8 +109,9 @@ export async function GET(request: NextRequest) {
 
     const paginatedData = paginatedResponse(alumnosSerializados, total, { page, limit, skip })
 
-    // Calcular info del plan
+    // Calcular info del plan y features
     const maxAlumnos = user ? getEffectiveMaxAlumnos(user.plan, user.trialEndsAt) : 5
+    const features = user ? getEffectiveFeatures(user.plan, user.trialEndsAt) : null
 
     return NextResponse.json({
       ...paginatedData,
@@ -123,6 +124,12 @@ export async function GET(request: NextRequest) {
         maxAlumnos,
         currentAlumnos: total,
         canAddMore: total < maxAlumnos
+      },
+      features: {
+        prorrateoAutomatico: features?.prorrateoAutomatico ?? false,
+        exportarExcel: features?.exportarExcel ?? false,
+        portalAlumnos: features?.portalAlumnos ?? false,
+        plan: user?.plan || 'FREE'
       }
     })
   } catch (error) {

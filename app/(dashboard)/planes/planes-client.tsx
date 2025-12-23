@@ -31,7 +31,7 @@ const PLAN_ORDER: PlanType[] = ['FREE', 'STARTER', 'PRO', 'ESTUDIO']
 const COMPARISON_FEATURES: (keyof typeof PLAN_CONFIGS.FREE.features)[] = [
   'clasesRecurrentes',
   'prorrateoAutomatico',
-  'portalAlumnas',
+  'portalAlumnos',
   'configuracionHorarios',
   'googleCalendarSync',
   'notificacionesEmail',
@@ -50,7 +50,7 @@ const FEATURE_LABELS: Record<string, string> = {
   maxAlumnos: 'Máximo de alumnos',
   clasesRecurrentes: 'Clases recurrentes',
   prorrateoAutomatico: 'Prorrateo automático',
-  portalAlumnas: 'Portal de alumnas',
+  portalAlumnos: 'Portal de alumnos',
   configuracionHorarios: 'Configuración de horarios',
   googleCalendarSync: 'Google Calendar',
   notificacionesEmail: 'Notificaciones email',
@@ -178,7 +178,7 @@ export function PlanesClient({ userPlan, inTrial, trialDaysLeft }: Props) {
             </div>
 
             <div className="pricing-comparison-row highlight">
-              <div className="pricing-comparison-feature">Alumnas</div>
+              <div className="pricing-comparison-feature">Alumnos</div>
               {PLAN_ORDER.map(planKey => (
                 <div key={planKey} className="pricing-comparison-value">
                   {PLAN_CONFIGS[planKey].features.maxAlumnos}
@@ -304,12 +304,12 @@ export function PlanesClient({ userPlan, inTrial, trialDaysLeft }: Props) {
             <p>Sí, podés actualizar o bajar tu plan cuando quieras. Los cambios se aplican inmediatamente.</p>
           </div>
           <div className="faq-item">
-            <h4>¿Qué pasa si supero el límite de alumnas?</h4>
-            <p>No podrás agregar nuevas alumnas hasta que actualices tu plan o elimines alumnas existentes.</p>
+            <h4>¿Qué pasa si supero el límite de alumnos?</h4>
+            <p>No podrás agregar nuevos alumnos hasta que actualices tu plan o elimines alumnos existentes.</p>
           </div>
           <div className="faq-item">
             <h4>¿Cómo funciona el período de prueba?</h4>
-            <p>Tenés 14 días para probar todas las funcionalidades del plan Pro con hasta 10 alumnas. Después del trial, tu cuenta pasa al plan Free automáticamente.</p>
+            <p>Tenés 14 días para probar todas las funcionalidades del plan Pro con hasta 10 alumnos. Después del trial, tu cuenta pasa al plan Free automáticamente.</p>
           </div>
           <div className="faq-item">
             <h4>¿Qué métodos de pago aceptan?</h4>

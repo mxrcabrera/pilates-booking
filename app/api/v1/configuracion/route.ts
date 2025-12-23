@@ -5,6 +5,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getCachedPacks, getCachedHorarios, getCachedProfesorConfig } from '@/lib/server-cache'
 import { invalidatePacks, invalidateHorarios, invalidateConfig } from '@/lib/cache-utils'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { canUseFeature, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
 
 export const runtime = 'nodejs'
 
@@ -36,13 +37,24 @@ export async function GET() {
 
     const hasGoogleAccount = accounts.some(account => account.provider === 'google')
 
+    // Calcular features del usuario según plan y trial
+    const trialEndsAt = profesor.trialEndsAt ? new Date(profesor.trialEndsAt) : null
+    const features = getEffectiveFeatures(profesor.plan, trialEndsAt)
+
     return NextResponse.json({
       profesor: {
         ...profesor,
         hasGoogleAccount
       },
       horarios,
-      packs
+      packs,
+      // Features del plan para bloquear UI
+      features: {
+        configuracionHorarios: features.configuracionHorarios,
+        googleCalendarSync: features.googleCalendarSync,
+        portalAlumnos: features.portalAlumnos,
+        plan: profesor.plan
+      }
     })
   } catch (error) {
     return serverError(error)
@@ -70,19 +82,34 @@ export async function POST(request: NextRequest) {
       case 'saveHorario': {
         const { id, diaSemana, horaInicio, horaFin, esManiana } = data
 
-        // Obtener horarios por defecto configurados
+        // Obtener horarios por defecto configurados y plan
         const user = await prisma.user.findUnique({
           where: { id: userId },
           select: {
             horarioMananaInicio: true,
             horarioMananaFin: true,
             horarioTardeInicio: true,
-            horarioTardeFin: true
+            horarioTardeFin: true,
+            plan: true,
+            trialEndsAt: true
           }
         })
 
         if (!user) {
           return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+        }
+
+        // Verificar que el plan permita configuración de horarios
+        if (!canUseFeature('configuracionHorarios', user.plan, user.trialEndsAt)) {
+          const suggestedPlan = getSuggestedUpgrade(user.plan, 'feature')
+          return NextResponse.json({
+            error: 'La configuración de horarios no está disponible en tu plan',
+            code: 'FEATURE_NOT_AVAILABLE',
+            feature: 'configuracionHorarios',
+            currentPlan: user.plan,
+            suggestedPlan,
+            suggestedPlanName: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].name : null
+          }, { status: 403 })
         }
 
         // Validar que los horarios estén dentro del rango configurado
@@ -141,6 +168,24 @@ export async function POST(request: NextRequest) {
 
         if (!horariosData || !Array.isArray(horariosData) || horariosData.length === 0) {
           return NextResponse.json({ error: 'No hay horarios para crear' }, { status: 400 })
+        }
+
+        // Verificar que el plan permita configuración de horarios
+        const userBatch = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { plan: true, trialEndsAt: true }
+        })
+
+        if (userBatch && !canUseFeature('configuracionHorarios', userBatch.plan, userBatch.trialEndsAt)) {
+          const suggestedPlan = getSuggestedUpgrade(userBatch.plan, 'feature')
+          return NextResponse.json({
+            error: 'La configuración de horarios no está disponible en tu plan',
+            code: 'FEATURE_NOT_AVAILABLE',
+            feature: 'configuracionHorarios',
+            currentPlan: userBatch.plan,
+            suggestedPlan,
+            suggestedPlanName: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].name : null
+          }, { status: 403 })
         }
 
         // Validar horarios (sin query a DB - usar valores por defecto si no hay config)
@@ -335,6 +380,54 @@ export async function POST(request: NextRequest) {
           where: { id: userId },
           data: { password: hashedPassword }
         })
+        return NextResponse.json({ success: true })
+      }
+
+      case 'updatePortal': {
+        const { slug, portalActivo, portalDescripcion } = data
+
+        // Validar slug
+        if (slug) {
+          // Slug válido: solo letras, números y guiones, 3-30 caracteres
+          const slugRegex = /^[a-z0-9-]{3,30}$/
+          if (!slugRegex.test(slug)) {
+            return NextResponse.json({
+              error: 'El slug debe tener entre 3 y 30 caracteres, solo letras minúsculas, números y guiones'
+            }, { status: 400 })
+          }
+
+          // Verificar que no empiece ni termine con guión
+          if (slug.startsWith('-') || slug.endsWith('-')) {
+            return NextResponse.json({
+              error: 'El slug no puede empezar ni terminar con guión'
+            }, { status: 400 })
+          }
+
+          // Verificar disponibilidad del slug
+          const existingSlug = await prisma.user.findFirst({
+            where: {
+              slug,
+              id: { not: userId }
+            }
+          })
+
+          if (existingSlug) {
+            return NextResponse.json({
+              error: 'Este slug ya está en uso, probá con otro'
+            }, { status: 400 })
+          }
+        }
+
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            slug: slug || null,
+            portalActivo: !!portalActivo,
+            portalDescripcion: portalDescripcion || null
+          }
+        })
+
+        invalidateConfig()
         return NextResponse.json({ success: true })
       }
 

@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { Calendar, Clock, ChevronLeft, ChevronRight, Check, X, User, LogOut } from 'lucide-react'
-import Link from 'next/link'
+import { Calendar, Clock, ChevronLeft, ChevronRight, Check, X, User, LogOut, Bell } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 
 type Pack = {
@@ -35,6 +34,13 @@ type Reserva = {
   estado: string
 }
 
+type Espera = {
+  id: string
+  fecha: string
+  hora: string
+  posicion: number
+}
+
 type Props = {
   profesor: {
     id: string
@@ -58,7 +64,6 @@ type Props = {
 }
 
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-const DIAS_SEMANA_LARGO = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
 function formatFecha(fecha: Date): string {
@@ -72,30 +77,29 @@ function formatPrecio(precio: string): string {
 }
 
 export function PortalClient({ profesor }: Props) {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [slots, setSlots] = useState<Slot[]>([])
   const [loading, setLoading] = useState(false)
   const [reservando, setReservando] = useState(false)
   const [misReservas, setMisReservas] = useState<Reserva[]>([])
+  const [misEsperas, setMisEsperas] = useState<Espera[]>([])
+  const [anotandoEspera, setAnotandoEspera] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-
-  const isLoggedIn = status === 'authenticated' && session?.user
 
   // Cargar slots cuando se selecciona una fecha
   useEffect(() => {
-    if (selectedDate && isLoggedIn) {
+    if (selectedDate) {
       loadSlots(selectedDate)
     }
-  }, [selectedDate, isLoggedIn])
+  }, [selectedDate])
 
-  // Cargar mis reservas si estoy logueado
+  // Cargar mis reservas y lista de espera al montar
   useEffect(() => {
-    if (isLoggedIn) {
-      loadMisReservas()
-    }
-  }, [isLoggedIn])
+    loadMisReservas()
+    loadMisEsperas()
+  }, [])
 
   const loadSlots = async (fecha: Date) => {
     setLoading(true)
@@ -124,8 +128,20 @@ export function PortalClient({ profesor }: Props) {
     }
   }
 
+  const loadMisEsperas = async () => {
+    try {
+      const res = await fetch(`/api/portal/${profesor.slug}/lista-espera`)
+      const data = await res.json()
+      if (data.enEspera) {
+        setMisEsperas(data.enEspera)
+      }
+    } catch (error) {
+      console.error('Error loading lista espera:', error)
+    }
+  }
+
   const reservar = async (hora: string) => {
-    if (!isLoggedIn || !selectedDate) return
+    if (!selectedDate) return
 
     setReservando(true)
     try {
@@ -172,6 +188,57 @@ export function PortalClient({ profesor }: Props) {
     }
   }
 
+  const anotarseEnEspera = async (hora: string) => {
+    if (!selectedDate) return
+
+    setAnotandoEspera(true)
+    try {
+      const res = await fetch(`/api/portal/${profesor.slug}/lista-espera`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fecha: formatFecha(selectedDate),
+          hora
+        })
+      })
+      const data = await res.json()
+
+      if (data.error) {
+        setMessage({ type: 'error', text: data.error })
+      } else {
+        setMessage({ type: 'success', text: data.mensaje || 'Te anotaste en la lista de espera' })
+        loadMisEsperas()
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Error al anotarse' })
+    } finally {
+      setAnotandoEspera(false)
+    }
+  }
+
+  const salirDeEspera = async (id: string) => {
+    try {
+      const res = await fetch(`/api/portal/${profesor.slug}/lista-espera?id=${id}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+
+      if (data.error) {
+        setMessage({ type: 'error', text: data.error })
+      } else {
+        setMessage({ type: 'success', text: 'Saliste de la lista de espera' })
+        loadMisEsperas()
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Error al salir de la lista' })
+    }
+  }
+
+  // Verificar si estoy en espera para un slot específico
+  const getEsperaParaSlot = (fecha: string, hora: string) => {
+    return misEsperas.find(e => e.fecha === fecha && e.hora === hora)
+  }
+
   // Generar días del calendario
   const getDaysInMonth = () => {
     const year = currentMonth.getFullYear()
@@ -202,90 +269,7 @@ export function PortalClient({ profesor }: Props) {
     return profesor.horarios.some(h => h.diaSemana === dayOfWeek)
   }
 
-  // Agrupar horarios por día
-  const horariosPorDia = profesor.horarios.reduce((acc, h) => {
-    if (!acc[h.diaSemana]) acc[h.diaSemana] = []
-    acc[h.diaSemana].push(h)
-    return acc
-  }, {} as Record<number, Horario[]>)
-
-  // Vista para usuario NO logueado - Landing page del profesor
-  if (!isLoggedIn) {
-    return (
-      <div className="portal-container">
-        <div className="portal-landing">
-          {/* Header con nombre del profesor */}
-          <header className="portal-landing-header">
-            <h1>{profesor.nombre}</h1>
-            {profesor.descripcion && <p className="portal-landing-desc">{profesor.descripcion}</p>}
-          </header>
-
-          {/* CTA principal */}
-          <section className="portal-cta-section">
-            <h2>Reservá tu clase</h2>
-            <p>Ingresá a tu cuenta para ver los horarios disponibles y reservar.</p>
-            <div className="portal-cta-buttons">
-              <Link href={`/login?callbackUrl=/reservar/${profesor.slug}`} className="portal-btn-primary">
-                Iniciar sesión
-              </Link>
-              <Link href={`/login?callbackUrl=/reservar/${profesor.slug}`} className="portal-btn-secondary">
-                Crear cuenta
-              </Link>
-            </div>
-          </section>
-
-          {/* Info de horarios disponibles */}
-          {Object.keys(horariosPorDia).length > 0 && (
-            <section className="portal-section">
-              <h2>Horarios de clases</h2>
-              <div className="portal-horarios-grid">
-                {Object.entries(horariosPorDia)
-                  .sort(([a], [b]) => Number(a) - Number(b))
-                  .map(([dia, horarios]) => (
-                    <div key={dia} className="portal-horario-card">
-                      <h3>{DIAS_SEMANA_LARGO[Number(dia)]}</h3>
-                      <div className="portal-horario-times">
-                        {horarios.map(h => (
-                          <span key={h.id}>{h.horaInicio} - {h.horaFin}</span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </section>
-          )}
-
-          {/* Packs disponibles */}
-          {profesor.packs.length > 0 && (
-            <section className="portal-section">
-              <h2>Planes disponibles</h2>
-              <div className="portal-packs-grid">
-                {profesor.packs.map(pack => (
-                  <div key={pack.id} className="portal-pack-card">
-                    <h3>{pack.nombre}</h3>
-                    <p className="portal-pack-clases">{pack.clasesPorSemana} clase{pack.clasesPorSemana !== 1 ? 's' : ''}/semana</p>
-                    <p className="portal-pack-price">{formatPrecio(pack.precio)}<span>/mes</span></p>
-                  </div>
-                ))}
-              </div>
-              {parseFloat(profesor.config.precioPorClase) > 0 && (
-                <p className="portal-clase-suelta">
-                  Clase suelta: {formatPrecio(profesor.config.precioPorClase)}
-                </p>
-              )}
-            </section>
-          )}
-
-          {/* Footer */}
-          <footer className="portal-footer">
-            <p>Reservá con anticipación mínima de {profesor.config.horasAnticipacionMinima} hora{profesor.config.horasAnticipacionMinima !== 1 ? 's' : ''}</p>
-          </footer>
-        </div>
-      </div>
-    )
-  }
-
-  // Vista para usuario LOGUEADO - Sistema de reservas
+  // Vista de reservas (usuario siempre logueado - verificado en server)
   return (
     <div className="portal-container">
       {/* Header */}
@@ -338,6 +322,33 @@ export function PortalClient({ profesor }: Props) {
                     onClick={() => cancelarReserva(r.id)}
                   >
                     Cancelar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Mis esperas */}
+        {misEsperas.length > 0 && (
+          <section className="portal-section">
+            <h2>En lista de espera</h2>
+            <div className="portal-reservas-list">
+              {misEsperas.map(e => (
+                <div key={e.id} className="portal-reserva-card waiting">
+                  <div className="portal-reserva-info">
+                    <Bell size={16} />
+                    <span>Posición {e.posicion}</span>
+                    <Calendar size={16} />
+                    <span>{new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                    <Clock size={16} />
+                    <span>{e.hora}</span>
+                  </div>
+                  <button
+                    className="portal-cancel-btn"
+                    onClick={() => salirDeEspera(e.id)}
+                  >
+                    Salir
                   </button>
                 </div>
               ))}
@@ -400,22 +411,60 @@ export function PortalClient({ profesor }: Props) {
               <div className="portal-empty">No hay horarios disponibles para esta fecha</div>
             ) : (
               <div className="portal-slots-grid">
-                {slots.map(slot => (
-                  <button
-                    key={slot.hora}
-                    className={`portal-slot ${slot.disponible ? 'available' : 'full'}`}
-                    disabled={!slot.disponible || reservando}
-                    onClick={() => reservar(slot.hora)}
-                  >
-                    <span className="portal-slot-time">{slot.hora}</span>
-                    <span className="portal-slot-status">
-                      {slot.disponible
-                        ? `${slot.maxAlumnos - slot.ocupados} lugar${slot.maxAlumnos - slot.ocupados !== 1 ? 'es' : ''}`
-                        : 'Completo'
-                      }
-                    </span>
-                  </button>
-                ))}
+                {slots.map(slot => {
+                  const fechaStr = selectedDate ? formatFecha(selectedDate) : ''
+                  const esperaExistente = getEsperaParaSlot(fechaStr, slot.hora)
+
+                  if (slot.disponible) {
+                    return (
+                      <button
+                        key={slot.hora}
+                        className="portal-slot available"
+                        disabled={reservando}
+                        onClick={() => reservar(slot.hora)}
+                      >
+                        <span className="portal-slot-time">{slot.hora}</span>
+                        <span className="portal-slot-status">
+                          {slot.maxAlumnos - slot.ocupados} lugar{slot.maxAlumnos - slot.ocupados !== 1 ? 'es' : ''}
+                        </span>
+                      </button>
+                    )
+                  }
+
+                  // Slot lleno
+                  if (esperaExistente) {
+                    return (
+                      <div key={slot.hora} className="portal-slot waiting">
+                        <span className="portal-slot-time">{slot.hora}</span>
+                        <span className="portal-slot-status">
+                          <Bell size={14} />
+                          Posición {esperaExistente.posicion}
+                        </span>
+                        <button
+                          className="portal-slot-cancel-wait"
+                          onClick={() => salirDeEspera(esperaExistente.id)}
+                        >
+                          Salir
+                        </button>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div key={slot.hora} className="portal-slot full">
+                      <span className="portal-slot-time">{slot.hora}</span>
+                      <span className="portal-slot-status">Completo</span>
+                      <button
+                        className="portal-slot-waitlist"
+                        disabled={anotandoEspera}
+                        onClick={() => anotarseEnEspera(slot.hora)}
+                      >
+                        <Bell size={14} />
+                        Lista de espera
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </section>

@@ -282,3 +282,30 @@ export type DashboardData = {
   setupStatus: SetupStatus
   features: DashboardFeatures
 }
+
+export type ReportesData = {
+  canAccess: boolean
+  metricas: {
+    alumnosActivos: number
+    alumnosTrend: number
+    ingresosMes: number
+    ingresosTrend: number
+    clasesDictadas: number
+    clasesTrend: number
+  }
+  asistencia: {
+    presentes: number
+    ausentes: number
+    tasaAsistencia: number
+  }
+  pagos: {
+    pagados: number
+    pendientes: number
+    vencidos: number
+  }
+  ocupacion: {
+    promedio: number
+    horasPico: string
+    diaPico: string
+  }
+}

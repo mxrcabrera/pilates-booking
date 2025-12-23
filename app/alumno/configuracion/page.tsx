@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, User, Phone, Calendar, FileText } from 'lucide-react'
+import { Check, User, Phone, Calendar, FileText, AlertCircle } from 'lucide-react'
 import { PageLoading } from '@/components/ui/loading'
 
 type UserData = {
@@ -15,12 +15,19 @@ type UserData = {
   patologias: string | null
 }
 
+type FormErrors = {
+  nombre?: string
+  telefono?: string
+  genero?: string
+}
+
 export default function AlumnoConfiguracionPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [user, setUser] = useState<UserData | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [errors, setErrors] = useState<FormErrors>({})
   const [form, setForm] = useState({
     nombre: '',
     telefono: '',
@@ -48,10 +55,46 @@ export default function AlumnoConfiguracionPage() {
       .catch(() => setLoading(false))
   }, [])
 
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    // Validar nombre
+    if (!form.nombre.trim()) {
+      newErrors.nombre = 'El nombre es requerido'
+    } else if (form.nombre.trim().length < 2) {
+      newErrors.nombre = 'El nombre debe tener al menos 2 caracteres'
+    } else if (form.nombre.trim().length > 100) {
+      newErrors.nombre = 'El nombre es demasiado largo'
+    }
+
+    // Validar teléfono
+    if (!form.telefono.trim()) {
+      newErrors.telefono = 'El teléfono es requerido'
+    } else if (form.telefono.replace(/\D/g, '').length < 8) {
+      newErrors.telefono = 'El teléfono debe tener al menos 8 dígitos'
+    } else if (form.telefono.replace(/\D/g, '').length > 15) {
+      newErrors.telefono = 'El teléfono es demasiado largo'
+    }
+
+    // Validar género
+    if (!['F', 'M'].includes(form.genero)) {
+      newErrors.genero = 'Seleccioná un género'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
     setMessage(null)
+
+    if (!validateForm()) {
+      setMessage({ type: 'error', text: 'Corregí los errores del formulario' })
+      return
+    }
+
+    setSaving(true)
 
     try {
       const res = await fetch('/api/alumno/perfil', {
@@ -79,8 +122,10 @@ export default function AlumnoConfiguracionPage() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Mi Perfil</h1>
-        <p>Completá tus datos personales</p>
+        <div>
+          <h1>Mi Perfil</h1>
+          <p>Completá tus datos personales</p>
+        </div>
       </div>
 
       {message && (
@@ -92,39 +137,55 @@ export default function AlumnoConfiguracionPage() {
 
       <div className="content-card">
         <form onSubmit={handleSubmit} className="form-grid">
-          <div className="form-field">
+          <div className={`form-field ${errors.nombre ? 'has-error' : ''}`}>
             <label htmlFor="nombre">
               <User size={16} />
-              Nombre completo
+              Nombre completo <span className="required">*</span>
             </label>
             <input
               id="nombre"
               type="text"
               value={form.nombre}
-              onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-              required
-              minLength={2}
+              onChange={e => {
+                setForm(f => ({ ...f, nombre: e.target.value }))
+                if (errors.nombre) setErrors(e => ({ ...e, nombre: undefined }))
+              }}
+              className={errors.nombre ? 'input-error' : ''}
             />
+            {errors.nombre && (
+              <span className="field-error">
+                <AlertCircle size={14} />
+                {errors.nombre}
+              </span>
+            )}
           </div>
 
-          <div className="form-field">
+          <div className={`form-field ${errors.telefono ? 'has-error' : ''}`}>
             <label htmlFor="telefono">
               <Phone size={16} />
-              Teléfono
+              Teléfono <span className="required">*</span>
             </label>
             <input
               id="telefono"
               type="tel"
               value={form.telefono}
-              onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
+              onChange={e => {
+                setForm(f => ({ ...f, telefono: e.target.value }))
+                if (errors.telefono) setErrors(e => ({ ...e, telefono: undefined }))
+              }}
               placeholder="11 1234-5678"
-              required
-              minLength={8}
+              className={errors.telefono ? 'input-error' : ''}
             />
+            {errors.telefono && (
+              <span className="field-error">
+                <AlertCircle size={14} />
+                {errors.telefono}
+              </span>
+            )}
           </div>
 
-          <div className="form-field">
-            <label htmlFor="genero">Género</label>
+          <div className={`form-field ${errors.genero ? 'has-error' : ''}`}>
+            <label htmlFor="genero">Género <span className="required">*</span></label>
             <div className="radio-group">
               <label className={`radio-option ${form.genero === 'F' ? 'selected' : ''}`}>
                 <input
@@ -132,7 +193,10 @@ export default function AlumnoConfiguracionPage() {
                   name="genero"
                   value="F"
                   checked={form.genero === 'F'}
-                  onChange={e => setForm(f => ({ ...f, genero: e.target.value }))}
+                  onChange={e => {
+                    setForm(f => ({ ...f, genero: e.target.value }))
+                    if (errors.genero) setErrors(e => ({ ...e, genero: undefined }))
+                  }}
                 />
                 <span>Femenino</span>
               </label>
@@ -142,11 +206,20 @@ export default function AlumnoConfiguracionPage() {
                   name="genero"
                   value="M"
                   checked={form.genero === 'M'}
-                  onChange={e => setForm(f => ({ ...f, genero: e.target.value }))}
+                  onChange={e => {
+                    setForm(f => ({ ...f, genero: e.target.value }))
+                    if (errors.genero) setErrors(e => ({ ...e, genero: undefined }))
+                  }}
                 />
                 <span>Masculino</span>
               </label>
             </div>
+            {errors.genero && (
+              <span className="field-error">
+                <AlertCircle size={14} />
+                {errors.genero}
+              </span>
+            )}
           </div>
 
           <div className="form-field">

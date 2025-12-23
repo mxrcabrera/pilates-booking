@@ -36,6 +36,7 @@ model User {
   slug                    String?             @unique @map("slug")
   portalActivo            Boolean             @default(false) @map("portal_activo")
   portalDescripcion       String?             @map("portal_descripcion")
+  codigoPortal            String?             @unique @map("codigo_portal")
   createdAt               DateTime            @default(now()) @map("created_at")
   accounts                Account[]
   alumnos                 Alumno[]
@@ -48,6 +49,7 @@ model User {
   reservasComoProfesor    Reserva[]           @relation("ProfesorReservas")
   sessions                Session[]
   pagosRecibidos          Pago[]
+  listaEspera             ListaEspera[]
 
   @@map("users")
 }
@@ -91,6 +93,7 @@ model Alumno {
   user                User?     @relation("AlumnoUser", fields: [userId], references: [id])
   clases              Clase[]
   pagos               Pago[]
+  listaEspera         ListaEspera[]
 
   @@map("alumnos")
 }
@@ -235,10 +238,29 @@ enum PlanType {
   ESTUDIO
 }
 
+model ListaEspera {
+  id          String    @id @default(uuid())
+  alumnoId    String    @map("alumno_id")
+  profesorId  String    @map("profesor_id")
+  fecha       DateTime  @db.Date
+  horaInicio  String    @map("hora_inicio")
+  posicion    Int       @default(1) @map("posicion")
+  estado      String    @default("esperando") // esperando, notificado, confirmado, expirado, cancelado
+  notificadoEn DateTime? @map("notificado_en")
+  expiraEn    DateTime? @map("expira_en")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  alumno      Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  profesor    User      @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, profesorId, fecha, horaInicio])
+  @@map("lista_espera")
+}
+
 enum NotificationType {
   RESERVA_NUEVA
   RESERVA_CANCELADA
   CLASE_MODIFICADA
   CLASE_CANCELADA
   RECORDATORIO_CLASE
+  LUGAR_DISPONIBLE
 }

@@ -364,20 +364,22 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
           <span>Ver calendario completo</span>
           <ChevronRight size={16} />
         </Link>
-        <button
-          className={`dash-quick-link ${!features.reportesBasicos ? 'locked' : ''}`}
-          onClick={() => {
-            if (!features.reportesBasicos) {
-              showError(`Reportes disponibles desde el plan ${PLAN_NAMES['PRO']}`)
-              return
-            }
-            showSuccess('Próximamente: Reportes y estadísticas')
-          }}
-        >
-          {features.reportesBasicos ? <BarChart3 size={18} /> : <Lock size={18} />}
-          <span>Ver reportes</span>
-          <ChevronRight size={16} />
-        </button>
+        {features.reportesBasicos ? (
+          <Link href="/reportes" className="dash-quick-link">
+            <BarChart3 size={18} />
+            <span>Ver reportes</span>
+            <ChevronRight size={16} />
+          </Link>
+        ) : (
+          <button
+            className="dash-quick-link locked"
+            onClick={() => showError(`Reportes disponibles desde el plan ${PLAN_NAMES['PRO']}`)}
+          >
+            <Lock size={18} />
+            <span>Ver reportes</span>
+            <ChevronRight size={16} />
+          </button>
+        )}
       </div>
     </div>
   )

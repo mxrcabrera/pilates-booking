@@ -7,6 +7,10 @@ import { AlumnoSetupWizard } from './alumno-setup-wizard'
 import { AlumnoDashboardClient } from './alumno-dashboard-client'
 import { usePageData } from '@/lib/use-page-data'
 
+function getGreeting(genero: string): string {
+  return genero === 'F' ? 'Bienvenida' : genero === 'M' ? 'Bienvenido' : 'Bienvenido/a'
+}
+
 type AlumnoDashboardData = {
   user: {
     id: string
@@ -59,7 +63,7 @@ export default function AlumnoDashboardPage() {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div>
-          <h1>{needsSetup ? 'Bienvenido/a' : 'Mis Clases'}</h1>
+          <h1>{needsSetup ? getGreeting(data.user.genero) : 'Mis Clases'}</h1>
           <p className="date-text">
             {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
           </p>

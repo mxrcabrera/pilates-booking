@@ -25,25 +25,11 @@ export const MESES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ]
 
-// Estados de la CLASE (ciclo de vida de la clase)
-export const ESTADOS_CLASE = {
-  RESERVADA: 'reservada',
-  COMPLETADA: 'completada',
-  CANCELADA: 'cancelada'
-} as const
-
 export const ESTADO_LABELS: Record<string, string> = {
   reservada: 'Reservada',
   completada: 'Completada',
   cancelada: 'Cancelada'
 }
-
-// Asistencia del ALUMNO (si estuvo presente o no)
-export const ASISTENCIA = {
-  PENDIENTE: 'pendiente',
-  PRESENTE: 'presente',
-  AUSENTE: 'ausente'
-} as const
 
 export const ASISTENCIA_LABELS: Record<string, string> = {
   pendiente: 'Pendiente',
@@ -51,7 +37,3 @@ export const ASISTENCIA_LABELS: Record<string, string> = {
   ausente: 'Ausente'
 }
 
-export const ESTADOS_PAGO = {
-  PENDIENTE: 'pendiente',
-  PAGADO: 'pagado'
-} as const

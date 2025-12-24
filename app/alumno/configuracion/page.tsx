@@ -25,7 +25,7 @@ export default function AlumnoConfiguracionPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [user, setUser] = useState<UserData | null>(null)
+  const [_user, setUser] = useState<UserData | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [errors, setErrors] = useState<FormErrors>({})
   const [form, setForm] = useState({

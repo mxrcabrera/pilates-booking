@@ -29,11 +29,3 @@ export function PageLoading() {
   )
 }
 
-export function InlineLoading({ text = 'Cargando...' }: { text?: string }) {
-  return (
-    <span className="inline-loading">
-      <span className="inline-loading-spinner" />
-      {text}
-    </span>
-  )
-}

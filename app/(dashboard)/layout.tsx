@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession, useRequireRole } from '@/lib/use-session'
+import { useRequireRole } from '@/lib/use-session'
 import { DashboardNav } from './dashboard/dashboard-nav'
 
 export default function DashboardLayout({
@@ -20,9 +20,11 @@ export default function DashboardLayout({
     )
   }
 
+  const features = user.features as { multiUsuarios?: boolean; reportesBasicos?: boolean } | undefined
+
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav profesor={user} />
+      <DashboardNav profesor={user} features={features} />
       <main style={{ paddingTop: '5rem' }}>{children}</main>
     </div>
   )

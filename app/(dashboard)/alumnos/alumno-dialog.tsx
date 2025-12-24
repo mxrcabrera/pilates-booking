@@ -25,7 +25,7 @@ export function AlumnoDialog({
   packs,
   precioPorClase,
   canUseProrrateo = true,
-  currentPlan = 'STARTER'
+  currentPlan: _currentPlan = 'STARTER'
 }: {
   isOpen: boolean
   onClose: () => void

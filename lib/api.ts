@@ -33,10 +33,6 @@ export async function deleteHorarioAPI(id: string) {
   return apiCall('deleteHorario', { id })
 }
 
-export async function toggleHorarioAPI(id: string) {
-  return apiCall('toggleHorario', { id })
-}
-
 export async function saveHorariosBatchAPI(horarios: Array<{
   diaSemana: number
   horaInicio: string
@@ -58,36 +54,6 @@ export async function savePackAPI(data: {
 
 export async function deletePackAPI(id: string) {
   return apiCall('deletePack', { id })
-}
-
-// Profile
-export async function updateProfileAPI(data: {
-  nombre: string
-  telefono: string
-}) {
-  return apiCall('updateProfile', data)
-}
-
-export async function changePasswordAPI(data: {
-  currentPassword: string
-  newPassword: string
-  confirmPassword: string
-}) {
-  return apiCall('changePassword', data)
-}
-
-// Preferencias
-export async function updatePreferenciasAPI(data: {
-  horasAnticipacionMinima: number
-  maxAlumnosPorClase: number
-  horarioMananaInicio: string
-  horarioMananaFin: string
-  horarioTardeInicio: string
-  horarioTardeFin: string
-  espacioCompartidoId?: string
-  syncGoogleCalendar: boolean
-}) {
-  return apiCall('updatePreferencias', data)
 }
 
 // Helper genérico para otras APIs

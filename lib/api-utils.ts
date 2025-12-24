@@ -25,10 +25,3 @@ export function serverError(error: unknown) {
   return NextResponse.json({ error: message }, { status: 500 })
 }
 
-export function success<T>(data: T) {
-  return NextResponse.json(data)
-}
-
-export function created<T>(data: T) {
-  return NextResponse.json(data, { status: 201 })
-}

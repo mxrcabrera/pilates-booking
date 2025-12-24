@@ -252,10 +252,9 @@ export async function POST(request: NextRequest) {
       case 'create': {
         const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas, profesorId: profesorIdParam } = parsed.data
 
-        // Verificar que el alumno pertenece al profesor o a un espacio compartido
+        // Verificar que el alumno pertenece al profesor
         const alumno = await prisma.alumno.findFirst({
-          where: { id: alumnoId, profesorId: userId, deletedAt: null },
-          include: { profesor: { select: { espacioCompartidoId: true } } }
+          where: { id: alumnoId, profesorId: userId, deletedAt: null }
         })
 
         if (!alumno) {

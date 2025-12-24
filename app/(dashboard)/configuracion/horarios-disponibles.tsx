@@ -36,7 +36,7 @@ export function HorariosDisponibles({
   onEliminar,
   onAgregarDisponibilidad,
   canConfigureHorarios = true,
-  currentPlan = 'STARTER'
+  currentPlan: _currentPlan = 'STARTER'
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { Calendar, Clock, ChevronLeft, ChevronRight, Check, X, User, LogOut, Bell } from 'lucide-react'
 import { signOut } from 'next-auth/react'
@@ -88,20 +88,7 @@ export function PortalClient({ profesor }: Props) {
   const [anotandoEspera, setAnotandoEspera] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  // Cargar slots cuando se selecciona una fecha
-  useEffect(() => {
-    if (selectedDate) {
-      loadSlots(selectedDate)
-    }
-  }, [selectedDate])
-
-  // Cargar mis reservas y lista de espera al montar
-  useEffect(() => {
-    loadMisReservas()
-    loadMisEsperas()
-  }, [])
-
-  const loadSlots = async (fecha: Date) => {
+  const loadSlots = useCallback(async (fecha: Date) => {
     setLoading(true)
     try {
       const res = await fetch(`/api/portal/${profesor.slug}/disponibilidad?fecha=${formatFecha(fecha)}`)
@@ -114,9 +101,9 @@ export function PortalClient({ profesor }: Props) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [profesor.slug])
 
-  const loadMisReservas = async () => {
+  const loadMisReservas = useCallback(async () => {
     try {
       const res = await fetch(`/api/portal/${profesor.slug}/reservar`)
       const data = await res.json()
@@ -126,9 +113,9 @@ export function PortalClient({ profesor }: Props) {
     } catch (error) {
       console.error('Error loading reservas:', error)
     }
-  }
+  }, [profesor.slug])
 
-  const loadMisEsperas = async () => {
+  const loadMisEsperas = useCallback(async () => {
     try {
       const res = await fetch(`/api/portal/${profesor.slug}/lista-espera`)
       const data = await res.json()
@@ -138,7 +125,20 @@ export function PortalClient({ profesor }: Props) {
     } catch (error) {
       console.error('Error loading lista espera:', error)
     }
-  }
+  }, [profesor.slug])
+
+  // Cargar slots cuando se selecciona una fecha
+  useEffect(() => {
+    if (selectedDate) {
+      loadSlots(selectedDate)
+    }
+  }, [selectedDate, loadSlots])
+
+  // Cargar mis reservas y lista de espera al montar
+  useEffect(() => {
+    loadMisReservas()
+    loadMisEsperas()
+  }, [loadMisReservas, loadMisEsperas])
 
   const reservar = async (hora: string) => {
     if (!selectedDate) return
@@ -281,7 +281,7 @@ export function PortalClient({ profesor }: Props) {
         <div className="portal-header-actions">
           <div className="portal-user-info">
             <User size={16} />
-            <span>{session.user?.name || session.user?.email}</span>
+            <span>{session?.user?.name || session?.user?.email}</span>
           </div>
           <button
             className="portal-logout-btn"

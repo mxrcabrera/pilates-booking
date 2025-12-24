@@ -3,24 +3,43 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, DollarSign, Crown, ChevronDown, User } from 'lucide-react'
+import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, DollarSign, Crown, User, UsersRound, BarChart3 } from 'lucide-react'
 import { logout } from '@/app/(auth)/login/actions'
 import type { Profesor } from '@/lib/types'
 
-const navItems = [
+interface NavItem {
+  href: string
+  icon: typeof LayoutDashboard
+  label: string
+  requiresFeature?: 'multiUsuarios' | 'reportesBasicos'
+}
+
+const navItems: NavItem[] = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { href: '/calendario', icon: Calendar, label: 'Calendario' },
   { href: '/alumnos', icon: Users, label: 'Alumnos' },
   { href: '/pagos', icon: DollarSign, label: 'Pagos' },
+  { href: '/reportes', icon: BarChart3, label: 'Reportes', requiresFeature: 'reportesBasicos' },
+  { href: '/equipo', icon: UsersRound, label: 'Equipo', requiresFeature: 'multiUsuarios' },
   { href: '/configuracion', icon: Settings, label: 'Configuración' },
 ]
 
-export function DashboardNav({ profesor }: { profesor: Profesor }) {
+interface Features {
+  multiUsuarios?: boolean
+  reportesBasicos?: boolean
+}
+
+export function DashboardNav({ profesor, features }: { profesor: Profesor; features?: Features }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const visibleNavItems = navItems.filter(item => {
+    if (!item.requiresFeature) return true
+    return features?.[item.requiresFeature] === true
+  })
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -46,7 +65,7 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
 
           {/* Desktop nav - centrado */}
           <div className="nav-links desktop-only">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
@@ -163,7 +182,7 @@ export function DashboardNav({ profesor }: { profesor: Profesor }) {
             </div>
 
             <div className="mobile-menu-items">
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
                 return (

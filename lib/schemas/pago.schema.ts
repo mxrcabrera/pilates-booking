@@ -39,6 +39,3 @@ export const pagoActionSchema = z.discriminatedUnion('action', [
   marcarPendienteSchema,
   deletePagoSchema
 ])
-
-export type CreatePagoInput = z.infer<typeof createPagoSchema>
-export type PagoAction = z.infer<typeof pagoActionSchema>

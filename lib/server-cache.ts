@@ -49,7 +49,6 @@ export const getCachedProfesorConfig = unstable_cache(
         horarioTardeInicio: true,
         horarioTardeFin: true,
         turnoTardeActivo: true,
-        espacioCompartidoId: true,
         syncGoogleCalendar: true,
         precioPorClase: true,
         plan: true,

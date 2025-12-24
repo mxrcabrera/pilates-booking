@@ -18,13 +18,6 @@ const PLAN_ICONS: Record<PlanType, React.ReactNode> = {
   ESTUDIO: <Building2 size={24} />
 }
 
-const PLAN_ICONS_SMALL: Record<PlanType, React.ReactNode> = {
-  FREE: <Sparkles size={16} />,
-  STARTER: <Zap size={16} />,
-  PRO: <Crown size={16} />,
-  ESTUDIO: <Building2 size={16} />
-}
-
 const PLAN_ORDER: PlanType[] = ['FREE', 'STARTER', 'PRO', 'ESTUDIO']
 
 // Features para mostrar en comparativa (todas)

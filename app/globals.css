@@ -9721,3 +9721,291 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.6);
 }
+
+/* Charts Section */
+.reportes-charts-section {
+  margin-bottom: 1.5rem;
+}
+
+.reportes-charts-section h2 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.reportes-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.reportes-charts-grid.single {
+  grid-template-columns: 1fr;
+  max-width: 500px;
+}
+
+.chart-container {
+  background: rgba(147, 155, 245, 0.05);
+  border: 1px solid rgba(147, 155, 245, 0.15);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.chart-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.875rem;
+}
+
+/* Recharts custom styles */
+.recharts-cartesian-axis-tick-value {
+  fill: rgba(255, 255, 255, 0.5) !important;
+  font-size: 0.75rem !important;
+}
+
+.recharts-legend-item-text {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.8rem !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(30, 30, 40, 0.95) !important;
+  border: 1px solid rgba(147, 155, 245, 0.3) !important;
+  border-radius: 8px !important;
+}
+
+.recharts-tooltip-label {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.recharts-tooltip-item {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.85rem !important;
+}
+
+@media (max-width: 768px) {
+  .reportes-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    padding: 1rem;
+  }
+}
+
+/* ========================================
+   PREMIUM GATE
+   ======================================== */
+.premium-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  max-width: 400px;
+  margin: 2rem auto;
+  background: rgba(147, 155, 245, 0.05);
+  border: 1px solid rgba(147, 155, 245, 0.15);
+  border-radius: 16px;
+}
+
+.premium-gate-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.premium-gate h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.premium-gate p {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.premium-gate-plan {
+  font-size: 0.875rem;
+  color: rgba(139, 92, 246, 0.9);
+  font-weight: 500;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ========================================
+   EQUIPO - Gestión de Equipo
+   ======================================== */
+.equipo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.equipo-card {
+  background: rgba(147, 155, 245, 0.05);
+  border: 1px solid rgba(147, 155, 245, 0.15);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.equipo-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.equipo-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.equipo-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(147, 155, 245, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.equipo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.equipo-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 0.25rem;
+}
+
+.equipo-email {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipo-rol {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(var(--rol-color), 0.15);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--rol-color);
+  width: fit-content;
+}
+
+.equipo-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.equipo-rol-select {
+  flex: 1;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(147, 155, 245, 0.2);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+}
+
+.equipo-rol-select:focus {
+  outline: none;
+  border-color: rgba(147, 155, 245, 0.5);
+}
+
+/* Roles Info Section */
+.roles-info {
+  background: rgba(147, 155, 245, 0.03);
+  border: 1px solid rgba(147, 155, 245, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.roles-info h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.role-card {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+
+.role-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--rol-color);
+  font-weight: 500;
+}
+
+.role-card p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+/* Button Icon Danger */
+.btn-icon.btn-danger {
+  color: rgba(239, 68, 68, 0.8);
+}
+
+.btn-icon.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: rgba(239, 68, 68, 1);
+}
+
+@media (max-width: 640px) {
+  .equipo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
+}

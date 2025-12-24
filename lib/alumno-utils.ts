@@ -130,91 +130,10 @@ export function calcularRangoCiclo(diaInicioCiclo: number, fechaReferencia: Date
 }
 
 /**
- * Formatea un rango de ciclo para mostrar en UI
- */
-export function formatearRangoCiclo(rango: RangoCiclo): string {
-  const formatoCorto = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}`
-  return `${formatoCorto(rango.inicio)} - ${formatoCorto(rango.fin)}`
-}
-
-export type DatosProrrateo = {
-  packAnteriorNombre: string
-  packAnteriorPrecio: number
-  packAnteriorClasesSemana: number
-  packNuevoNombre: string | null
-  packNuevoPrecio: number
-  clasesTomadas: number
-  precioImplicitoPorClase: number
-  valorConsumido: number
-  montoPagado: number
-  saldoAFavor: number // positivo = a favor del alumno, negativo = debe
-  rangoCiclo: RangoCiclo
-}
-
-/**
- * Calcula el precio implícito por clase de un pack
- * Fórmula: precio mensual / (clases por semana * 4 semanas)
+ * Calcula el precio implícito por clase basado en el precio del pack
+ * y la cantidad de clases por semana (4 semanas por mes)
  */
 export function calcularPrecioImplicitoPorClase(precioPack: number, clasesPorSemana: number): number {
-  const clasesEsperadasMes = clasesPorSemana * 4
-  if (clasesEsperadasMes === 0) return 0
-  return precioPack / clasesEsperadasMes
-}
-
-/**
- * Calcula el prorrateo cuando un alumno cambia de pack
- *
- * @param packAnterior - Pack que tenía el alumno
- * @param clasesTomadas - Clases que tomó en el ciclo actual
- * @param montoPagado - Monto del último pago del ciclo
- * @returns Objeto con todos los datos del cálculo
- */
-export function calcularProrrateo(
-  packAnterior: { nombre: string; precio: number; clasesPorSemana: number },
-  packNuevo: { nombre: string; precio: number } | null,
-  clasesTomadas: number,
-  montoPagado: number,
-  diaInicioCiclo: number
-): DatosProrrateo {
-  const precioImplicitoPorClase = calcularPrecioImplicitoPorClase(
-    packAnterior.precio,
-    packAnterior.clasesPorSemana
-  )
-
-  const valorConsumido = clasesTomadas * precioImplicitoPorClase
-  const saldoAFavor = montoPagado - valorConsumido
-
-  return {
-    packAnteriorNombre: packAnterior.nombre,
-    packAnteriorPrecio: packAnterior.precio,
-    packAnteriorClasesSemana: packAnterior.clasesPorSemana,
-    packNuevoNombre: packNuevo?.nombre ?? null,
-    packNuevoPrecio: packNuevo?.precio ?? 0,
-    clasesTomadas,
-    precioImplicitoPorClase,
-    valorConsumido,
-    montoPagado,
-    saldoAFavor,
-    rangoCiclo: calcularRangoCiclo(diaInicioCiclo)
-  }
-}
-
-/**
- * Formatea el saldo a favor para mostrar en UI
- */
-export function formatearSaldo(saldo: number): string {
-  const abs = Math.abs(saldo)
-  const formatted = new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(abs)
-
-  if (saldo > 0) {
-    return `+${formatted} a favor`
-  } else if (saldo < 0) {
-    return `${formatted} a pagar`
-  }
-  return '$0'
+  const clasesPorMes = clasesPorSemana * 4
+  return precioPack / clasesPorMes
 }

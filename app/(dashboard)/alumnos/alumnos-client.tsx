@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Plus, Grid, List, Users, Pencil, Trash2, UserX, UserCheck, X, Crown, Download, Lock, Share2 } from 'lucide-react'
+import { Search, Plus, Grid, List, Users, Pencil, Trash2, UserX, UserCheck, X, Crown, Download, Lock } from 'lucide-react'
 import { AlumnoCard } from './alumno-card'
 import { AlumnoDialog } from './alumno-dialog'
 import { AlumnoDetailSheet } from './alumno-detail-sheet'
@@ -245,19 +245,6 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
           />
         </div>
         <div className="toolbar-actions">
-          <button
-            className={`toolbar-btn ${!features.portalAlumnos ? 'btn-locked' : ''}`}
-            onClick={() => {
-              if (!features.portalAlumnos) {
-                showError(`El portal de alumnos está disponible desde el plan ${PLAN_NAMES['STARTER']}`)
-                return
-              }
-              showSuccess('Próximamente: Portal para compartir con tus alumnos')
-            }}
-            title={features.portalAlumnos ? 'Compartir portal con alumnos' : `Disponible en plan ${PLAN_NAMES['STARTER']}`}
-          >
-            {!features.portalAlumnos ? <Lock size={16} /> : <Share2 size={16} />}
-          </button>
           <button
             className={`toolbar-btn ${!features.exportarExcel ? 'btn-locked' : ''}`}
             onClick={() => {

@@ -8,14 +8,12 @@ type Props = {
   profesores: Array<{
     id: string
     nombre: string
-    slug: string
   }>
   proximasClases: Array<{
     id: string
     fecha: string
     hora: string
     profesorNombre: string
-    profesorSlug: string
   }>
 }
 
@@ -70,17 +68,15 @@ export function AlumnoDashboardClient({ profesores, proximasClases }: Props) {
 
           <div className="profesores-grid">
             {profesores.map(profesor => (
-              <Link
+              <div
                 key={profesor.id}
-                href={`/reservar/${profesor.slug}`}
                 className="profesor-card"
               >
                 <div className="profesor-avatar">
                   {profesor.nombre.charAt(0).toUpperCase()}
                 </div>
                 <span className="profesor-nombre">{profesor.nombre}</span>
-                <ChevronRight size={16} className="profesor-arrow" />
-              </Link>
+              </div>
             ))}
           </div>
         </section>

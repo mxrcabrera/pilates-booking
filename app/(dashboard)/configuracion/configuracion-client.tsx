@@ -3,7 +3,6 @@
 import { HorariosDisponibles } from './horarios-disponibles'
 import { HorarioDialog } from './horario-dialog'
 import { PacksSection } from './packs-section'
-import { PortalSection } from './portal-section'
 import { updatePreferencias } from './actions'
 import { useState, useMemo } from 'react'
 import { Plus } from 'lucide-react'
@@ -366,15 +365,6 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         </div>
       </div>
     </div>
-
-    {/* Sección 4: Portal de Reservas */}
-    <PortalSection
-      slug={profesor.slug}
-      portalActivo={profesor.portalActivo}
-      portalDescripcion={profesor.portalDescripcion}
-      canUsePortal={features.portalAlumnos}
-      currentPlan={features.plan}
-    />
 
     <form onSubmit={handleSubmit}>
       {/* Botón de guardar */}

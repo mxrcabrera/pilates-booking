@@ -128,7 +128,6 @@ export async function GET(request: NextRequest) {
       features: {
         prorrateoAutomatico: features?.prorrateoAutomatico ?? false,
         exportarExcel: features?.exportarExcel ?? false,
-        portalAlumnos: features?.portalAlumnos ?? false,
         plan: user?.plan || 'FREE'
       }
     })

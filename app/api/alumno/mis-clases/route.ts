@@ -34,8 +34,7 @@ export async function GET() {
       include: {
         profesor: {
           select: {
-            nombre: true,
-            slug: true
+            nombre: true
           }
         }
       },
@@ -48,8 +47,7 @@ export async function GET() {
         fecha: c.fecha.toISOString().split('T')[0],
         hora: c.horaInicio,
         estado: c.estado,
-        profesorNombre: c.profesor.nombre,
-        profesorSlug: c.profesor.slug || ''
+        profesorNombre: c.profesor.nombre
       }))
     })
   } catch (error) {

@@ -4,7 +4,6 @@ export interface PlanFeatures {
   maxAlumnos: number
   clasesRecurrentes: boolean
   prorrateoAutomatico: boolean
-  portalAlumnos: boolean
   configuracionHorarios: boolean
   googleCalendarSync: boolean
   notificacionesEmail: boolean
@@ -34,7 +33,6 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxAlumnos: 5,
       clasesRecurrentes: false,
       prorrateoAutomatico: false,
-      portalAlumnos: false,
       configuracionHorarios: false,
       googleCalendarSync: false,
       notificacionesEmail: false,
@@ -57,7 +55,6 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxAlumnos: 20,
       clasesRecurrentes: true,
       prorrateoAutomatico: true,
-      portalAlumnos: true,
       configuracionHorarios: true,
       googleCalendarSync: false,
       notificacionesEmail: false,
@@ -80,7 +77,6 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxAlumnos: 50,
       clasesRecurrentes: true,
       prorrateoAutomatico: true,
-      portalAlumnos: true,
       configuracionHorarios: true,
       googleCalendarSync: true,
       notificacionesEmail: true,
@@ -103,7 +99,6 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxAlumnos: 150,
       clasesRecurrentes: true,
       prorrateoAutomatico: true,
-      portalAlumnos: true,
       configuracionHorarios: true,
       googleCalendarSync: true,
       notificacionesEmail: true,

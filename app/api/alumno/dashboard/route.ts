@@ -36,8 +36,7 @@ export async function GET() {
         profesor: {
           select: {
             id: true,
-            nombre: true,
-            slug: true
+            nombre: true
           }
         }
       }
@@ -59,8 +58,7 @@ export async function GET() {
       include: {
         profesor: {
           select: {
-            nombre: true,
-            slug: true
+            nombre: true
           }
         }
       },
@@ -75,9 +73,8 @@ export async function GET() {
     // Extraer profesores únicos
     const profesores = alumnos.map(a => ({
       id: a.profesor.id,
-      nombre: a.profesor.nombre,
-      slug: a.profesor.slug || ''
-    })).filter(p => p.slug)
+      nombre: a.profesor.nombre
+    }))
 
     return NextResponse.json({
       user: {
@@ -96,8 +93,7 @@ export async function GET() {
         id: c.id,
         fecha: c.fecha.toISOString().split('T')[0],
         hora: c.horaInicio,
-        profesorNombre: c.profesor.nombre,
-        profesorSlug: c.profesor.slug || ''
+        profesorNombre: c.profesor.nombre
       }))
     })
   } catch (error) {

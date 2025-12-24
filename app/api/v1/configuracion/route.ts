@@ -52,7 +52,6 @@ export async function GET() {
       features: {
         configuracionHorarios: features.configuracionHorarios,
         googleCalendarSync: features.googleCalendarSync,
-        portalAlumnos: features.portalAlumnos,
         plan: profesor.plan
       }
     })
@@ -380,54 +379,6 @@ export async function POST(request: NextRequest) {
           where: { id: userId },
           data: { password: hashedPassword }
         })
-        return NextResponse.json({ success: true })
-      }
-
-      case 'updatePortal': {
-        const { slug, portalActivo, portalDescripcion } = data
-
-        // Validar slug
-        if (slug) {
-          // Slug válido: solo letras, números y guiones, 3-30 caracteres
-          const slugRegex = /^[a-z0-9-]{3,30}$/
-          if (!slugRegex.test(slug)) {
-            return NextResponse.json({
-              error: 'El slug debe tener entre 3 y 30 caracteres, solo letras minúsculas, números y guiones'
-            }, { status: 400 })
-          }
-
-          // Verificar que no empiece ni termine con guión
-          if (slug.startsWith('-') || slug.endsWith('-')) {
-            return NextResponse.json({
-              error: 'El slug no puede empezar ni terminar con guión'
-            }, { status: 400 })
-          }
-
-          // Verificar disponibilidad del slug
-          const existingSlug = await prisma.user.findFirst({
-            where: {
-              slug,
-              id: { not: userId }
-            }
-          })
-
-          if (existingSlug) {
-            return NextResponse.json({
-              error: 'Este slug ya está en uso, probá con otro'
-            }, { status: 400 })
-          }
-        }
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            slug: slug || null,
-            portalActivo: !!portalActivo,
-            portalDescripcion: portalDescripcion || null
-          }
-        })
-
-        invalidateConfig()
         return NextResponse.json({ success: true })
       }
 

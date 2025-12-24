@@ -32,10 +32,6 @@ model User {
   syncGoogleCalendar      Boolean             @default(false) @map("sync_google_calendar")
   googleCalendarId        String?             @map("google_calendar_id")
   precioPorClase          Decimal             @default(0) @map("precio_por_clase") @db.Decimal(10, 2)
-  slug                    String?             @unique @map("slug")
-  portalActivo            Boolean             @default(false) @map("portal_activo")
-  portalDescripcion       String?             @map("portal_descripcion")
-  codigoPortal            String?             @unique @map("codigo_portal")
   createdAt               DateTime            @default(now()) @map("created_at")
   accounts                Account[]
   alumnos                 Alumno[]
@@ -44,8 +40,6 @@ model User {
   horariosDisponibles     HorarioDisponible[]
   notificacionesRecibidas Notificacion[]
   packs                   Pack[]
-  reservasComoAlumno      Reserva[]           @relation("AlumnoReservas")
-  reservasComoProfesor    Reserva[]           @relation("ProfesorReservas")
   sessions                Session[]
   pagosRecibidos          Pago[]
   listaEspera             ListaEspera[]
@@ -136,9 +130,10 @@ model Clase {
   googleEventId     String?   @map("google_event_id")
   createdAt         DateTime  @default(now()) @map("created_at")
   deletedAt         DateTime? @map("deleted_at")
-  alumno            Alumno?   @relation(fields: [alumnoId], references: [id])
-  profesor          User      @relation(fields: [profesorId], references: [id], onDelete: Cascade)
-  estudio           Estudio?  @relation(fields: [estudioId], references: [id])
+  alumno            Alumno?        @relation(fields: [alumnoId], references: [id])
+  profesor          User           @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  estudio           Estudio?       @relation(fields: [estudioId], references: [id])
+  notificaciones    Notificacion[]
 
   @@map("clases")
 }
@@ -202,25 +197,6 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-model Reserva {
-  id             String         @id @default(uuid())
-  alumnoUserId   String         @map("alumno_user_id")
-  profesorId     String         @map("profesor_id")
-  estudioId      String?        @map("estudio_id")
-  fecha          DateTime       @db.Date
-  horaInicio     String         @map("hora_inicio")
-  horaFin        String         @map("hora_fin")
-  estado         String         @default("confirmada")
-  notasAlumno    String?        @map("notas_alumno")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  canceladaEn    DateTime?      @map("cancelada_en")
-  notificaciones Notificacion[]
-  alumnoUser     User           @relation("AlumnoReservas", fields: [alumnoUserId], references: [id], onDelete: Cascade)
-  profesor       User           @relation("ProfesorReservas", fields: [profesorId], references: [id], onDelete: Cascade)
-  estudio        Estudio?       @relation(fields: [estudioId], references: [id])
-
-  @@map("reservas")
-}
 
 model Notificacion {
   id           String           @id @default(uuid())
@@ -229,10 +205,10 @@ model Notificacion {
   titulo       String
   mensaje      String
   leida        Boolean          @default(false)
-  reservaId    String?          @map("reserva_id")
+  claseId      String?          @map("clase_id")
   emailEnviado Boolean          @default(false) @map("email_enviado")
   createdAt    DateTime         @default(now()) @map("created_at")
-  reserva      Reserva?         @relation(fields: [reservaId], references: [id])
+  clase        Clase?           @relation(fields: [claseId], references: [id])
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notificaciones")
@@ -276,11 +252,6 @@ model Estudio {
   turnoTardeActivo        Boolean       @default(true) @map("turno_tarde_activo")
   precioPorClase          Decimal       @default(0) @map("precio_por_clase") @db.Decimal(10, 2)
 
-  // Portal de alumnos
-  portalActivo        Boolean           @default(false) @map("portal_activo")
-  portalDescripcion   String?           @map("portal_descripcion")
-  codigoPortal        String?           @unique @map("codigo_portal")
-
   // Google Calendar
   syncGoogleCalendar  Boolean           @default(false) @map("sync_google_calendar")
   googleCalendarId    String?           @map("google_calendar_id")
@@ -295,7 +266,6 @@ model Estudio {
   horariosDisponibles HorarioDisponible[]
   packs               Pack[]
   listaEspera         ListaEspera[]
-  reservas            Reserva[]
 
   @@map("estudios")
 }
@@ -335,8 +305,7 @@ model ListaEspera {
 }
 
 enum NotificationType {
-  RESERVA_NUEVA
-  RESERVA_CANCELADA
+  CLASE_NUEVA
   CLASE_MODIFICADA
   CLASE_CANCELADA
   RECORDATORIO_CLASE

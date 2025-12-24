@@ -52,10 +52,7 @@ export const getCachedProfesorConfig = unstable_cache(
         syncGoogleCalendar: true,
         precioPorClase: true,
         plan: true,
-        trialEndsAt: true,
-        slug: true,
-        portalActivo: true,
-        portalDescripcion: true
+        trialEndsAt: true
       }
     })
     if (!user) return null

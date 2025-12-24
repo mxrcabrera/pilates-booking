@@ -139,9 +139,6 @@ export type ProfesorConfig = {
   syncGoogleCalendar: boolean
   precioPorClase: string
   hasGoogleAccount: boolean
-  slug: string | null
-  portalActivo: boolean
-  portalDescripcion: string | null
 }
 
 // ----- PAGINACIÓN -----
@@ -174,7 +171,6 @@ export type PlanInfo = {
 export type AlumnosFeatures = {
   prorrateoAutomatico: boolean
   exportarExcel: boolean
-  portalAlumnos: boolean
   plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
 }
 
@@ -223,7 +219,6 @@ export type CalendarioDataCached = Omit<CalendarioData, 'clases' | 'data'> & {
 export type ConfigFeatures = {
   configuracionHorarios: boolean
   googleCalendarSync: boolean
-  portalAlumnos: boolean
   plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
 }
 

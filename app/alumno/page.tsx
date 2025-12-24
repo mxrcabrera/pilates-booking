@@ -26,14 +26,12 @@ type AlumnoDashboardData = {
   profesores: Array<{
     id: string
     nombre: string
-    slug: string
   }>
   proximasClases: Array<{
     id: string
     fecha: string
     hora: string
     profesorNombre: string
-    profesorSlug: string
   }>
 }
 

@@ -24,7 +24,6 @@ const PLAN_ORDER: PlanType[] = ['FREE', 'STARTER', 'PRO', 'ESTUDIO']
 const COMPARISON_FEATURES: (keyof typeof PLAN_CONFIGS.FREE.features)[] = [
   'clasesRecurrentes',
   'prorrateoAutomatico',
-  'portalAlumnos',
   'configuracionHorarios',
   'googleCalendarSync',
   'notificacionesEmail',
@@ -43,7 +42,6 @@ const FEATURE_LABELS: Record<string, string> = {
   maxAlumnos: 'Máximo de alumnos',
   clasesRecurrentes: 'Clases recurrentes',
   prorrateoAutomatico: 'Prorrateo automático',
-  portalAlumnos: 'Portal de alumnos',
   configuracionHorarios: 'Configuración de horarios',
   googleCalendarSync: 'Google Calendar',
   notificacionesEmail: 'Notificaciones email',

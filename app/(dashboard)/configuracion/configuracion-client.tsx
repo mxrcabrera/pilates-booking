@@ -6,7 +6,7 @@ import { PacksSection } from './packs-section'
 import { PortalSection } from './portal-section'
 import { updatePreferencias } from './actions'
 import { useState, useMemo } from 'react'
-import { Plus, Lock } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { TimeInput } from '@/components/time-input'
 import { SelectInput } from '@/components/select-input'
@@ -14,13 +14,6 @@ import type { Horario, Pack, ProfesorConfig, ConfigFeatures } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
 
 const DIAS_NOMBRES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Max'
-}
 
 interface ConfiguracionClientProps {
   profesor: ProfesorConfig
@@ -384,32 +377,6 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
     />
 
     <form onSubmit={handleSubmit}>
-      {/* Sección 5: Avanzado */}
-      <div className="settings-section">
-        <div className="section-content">
-          <div className="section-header">
-            <h2>Avanzado</h2>
-          </div>
-
-          <div className="form-content compact-form">
-            <div className="form-group">
-              <label>Espacio compartido</label>
-              <input
-                type="text"
-                name="espacioCompartidoId"
-                defaultValue={profesor.espacioCompartidoId || ''}
-                placeholder="Código (ej: studio-palermo)"
-                disabled={isLoading}
-                className="form-input"
-              />
-              <p className="form-hint">
-                Para coordinar horarios con otros profesores del mismo espacio
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Botón de guardar */}
       <div className="settings-actions">
         {message && (

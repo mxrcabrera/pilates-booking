@@ -4,9 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { addWeeks } from 'date-fns'
-// TODO: Google Calendar sync - Próximamente
-// import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar'
-// import { logger } from '@/lib/logger'  // Comentado junto con Google Calendar sync
 import type { Prisma } from '@prisma/client'
 
 export async function createClase(formData: FormData) {
@@ -18,8 +15,7 @@ export async function createClase(formData: FormData) {
     where: { id: userId },
     select: {
       horasAnticipacionMinima: true,
-      maxAlumnosPorClase: true,
-      // syncGoogleCalendar: true  // TODO: Google Calendar sync - Próximamente
+      maxAlumnosPorClase: true
     }
   })
 
@@ -116,7 +112,6 @@ export async function createClase(formData: FormData) {
     throw new Error(`Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`)
   }
 
-  // claseCreada no se usa actualmente (Google Calendar sync deshabilitado)
   await prisma.clase.create({
     data: {
       profesorId: userId,
@@ -131,29 +126,6 @@ export async function createClase(formData: FormData) {
       estado: 'reservada'
     }
   })
-
-  // TODO: Google Calendar sync - Próximamente
-  // if (user.syncGoogleCalendar) {
-  //   try {
-  //     const account = await prisma.account.findFirst({
-  //       where: { userId: userId, provider: 'google' },
-  //       select: { access_token: true, refresh_token: true }
-  //     })
-  //     if (account?.access_token) {
-  //       const eventId = await createCalendarEvent(
-  //         claseCreada.id,
-  //         account.access_token,
-  //         account.refresh_token || undefined
-  //       )
-  //       await prisma.clase.update({
-  //         where: { id: claseCreada.id },
-  //         data: { googleEventId: eventId }
-  //       })
-  //     }
-  //   } catch (error) {
-  //     logger.error('Error al sincronizar con Google Calendar', error)
-  //   }
-  // }
 
   // Crear clases recurrentes
   if (esRecurrente && diasSemana.length > 0) {
@@ -209,8 +181,7 @@ export async function updateClase(formData: FormData) {
     where: { id: userId },
     select: {
       horasAnticipacionMinima: true,
-      maxAlumnosPorClase: true,
-      // syncGoogleCalendar: true  // TODO: Google Calendar sync - Próximamente
+      maxAlumnosPorClase: true
     }
   })
 
@@ -315,12 +286,6 @@ export async function updateClase(formData: FormData) {
     throw new Error(`Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`)
   }
 
-  // Obtener clase actual para comparar cambios (reservado para uso futuro)
-  const _claseActual = await prisma.clase.findUnique({
-    where: { id }
-  })
-
-  // claseActualizada no se usa actualmente (Google Calendar sync deshabilitado)
   await prisma.clase.update({
     where: { id },
     data: {
@@ -336,38 +301,6 @@ export async function updateClase(formData: FormData) {
     }
   })
 
-  // TODO: Google Calendar sync - Próximamente
-  // if (user.syncGoogleCalendar) {
-  //   try {
-  //     const account = await prisma.account.findFirst({
-  //       where: { userId: userId, provider: 'google' },
-  //       select: { access_token: true, refresh_token: true }
-  //     })
-  //     if (account?.access_token) {
-  //       if (claseActualizada.googleEventId) {
-  //         await updateCalendarEvent(
-  //           claseActualizada.id,
-  //           claseActualizada.googleEventId,
-  //           account.access_token,
-  //           account.refresh_token || undefined
-  //         )
-  //       } else {
-  //         const eventId = await createCalendarEvent(
-  //           claseActualizada.id,
-  //           account.access_token,
-  //           account.refresh_token || undefined
-  //         )
-  //         await prisma.clase.update({
-  //           where: { id: claseActualizada.id },
-  //           data: { googleEventId: eventId }
-  //         })
-  //       }
-  //     }
-  //   } catch (error) {
-  //     logger.error('Error al sincronizar con Google Calendar:', error)
-  //   }
-  // }
-
   revalidatePath('/calendario')
   return { success: true }
 }
@@ -376,38 +309,9 @@ export async function deleteClase(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  // TODO: Google Calendar sync - Próximamente
-  // const clase = await prisma.clase.findUnique({
-  //   where: { id },
-  //   select: { googleEventId: true }
-  // })
-  // const user = await prisma.user.findUnique({
-  //   where: { id: userId },
-  //   select: { syncGoogleCalendar: true }
-  // })
-
   await prisma.clase.delete({
     where: { id }
   })
-
-  // TODO: Google Calendar sync - Próximamente
-  // if (user?.syncGoogleCalendar && clase?.googleEventId) {
-  //   try {
-  //     const account = await prisma.account.findFirst({
-  //       where: { userId: userId, provider: 'google' },
-  //       select: { access_token: true, refresh_token: true }
-  //     })
-  //     if (account?.access_token) {
-  //       await deleteCalendarEvent(
-  //         clase.googleEventId,
-  //         account.access_token,
-  //         account.refresh_token || undefined
-  //       )
-  //     }
-  //   } catch (error) {
-  //     logger.error('Error al eliminar de Google Calendar', error)
-  //   }
-  // }
 
   revalidatePath('/calendario')
   return { success: true }

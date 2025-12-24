@@ -3,6 +3,13 @@
 import { useState } from 'react'
 import { Users, DollarSign, Calendar, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ReportesData } from '@/lib/types'
+import {
+  IngresosChart,
+  ClasesAlumnosChart,
+  AsistenciaPorDiaChart,
+  DistribucionPacksChart,
+  HorariosPopularesChart
+} from '@/components/charts'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -38,7 +45,7 @@ export function ReportesClient({ data }: { data: ReportesData }) {
   const mesSiguiente = () => {
     const now = new Date()
     if (añoActual === now.getFullYear() && mesActual === now.getMonth()) {
-      return // No avanzar más allá del mes actual
+      return
     }
     if (mesActual === 11) {
       setMesActual(0)
@@ -121,6 +128,17 @@ export function ReportesClient({ data }: { data: ReportesData }) {
         </div>
       </div>
 
+      {/* Gráficos de tendencia - Solo si hay datos */}
+      {data.graficos && (
+        <div className="reportes-charts-section">
+          <h2>Tendencias</h2>
+          <div className="reportes-charts-grid">
+            <IngresosChart data={data.graficos.historico} />
+            <ClasesAlumnosChart data={data.graficos.historico} />
+          </div>
+        </div>
+      )}
+
       {/* Estadísticas adicionales */}
       <div className="reportes-section">
         <h2>Asistencia</h2>
@@ -139,6 +157,16 @@ export function ReportesClient({ data }: { data: ReportesData }) {
           </div>
         </div>
       </div>
+
+      {/* Gráfico de asistencia por día */}
+      {data.graficos && (
+        <div className="reportes-charts-section">
+          <div className="reportes-charts-grid">
+            <AsistenciaPorDiaChart data={data.graficos.asistenciaPorDia} />
+            <HorariosPopularesChart data={data.graficos.horarios} />
+          </div>
+        </div>
+      )}
 
       <div className="reportes-section">
         <h2>Pagos</h2>
@@ -182,6 +210,16 @@ export function ReportesClient({ data }: { data: ReportesData }) {
           </div>
         </div>
       </div>
+
+      {/* Distribución de packs */}
+      {data.graficos && data.graficos.distribucionPacks.length > 0 && (
+        <div className="reportes-charts-section">
+          <h2>Distribución</h2>
+          <div className="reportes-charts-grid single">
+            <DistribucionPacksChart data={data.graficos.distribucionPacks} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

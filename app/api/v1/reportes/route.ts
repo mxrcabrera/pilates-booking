@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { getEffectiveFeatures } from '@/lib/plans'
@@ -9,6 +10,7 @@ import { getEffectiveFeatures } from '@/lib/plans'
 export const runtime = 'nodejs'
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const DIAS_SEMANA_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 export async function GET(request: Request) {
   try {
@@ -61,7 +63,7 @@ export async function GET(request: Request) {
         where: {
           profesorId: userId,
           estaActivo: true,
-          creadoEn: { lte: fechaFinAnterior }
+          createdAt: { lte: fechaFinAnterior }
         }
       }),
       // Pagos del mes actual
@@ -162,6 +164,86 @@ export async function GET(request: Request) {
     // Ocupación promedio (simplificada)
     const ocupacionPromedio = clasesMes.length > 0 ? Math.round((presentes / clasesMes.length) * 100) : 0
 
+    // ===== DATOS HISTÓRICOS PARA GRÁFICOS (últimos 6 meses) =====
+    const historico: Array<{
+      mes: string
+      ingresos: number
+      clases: number
+      alumnos: number
+    }> = []
+
+    for (let i = 5; i >= 0; i--) {
+      const fecha = subMonths(new Date(), i)
+      const inicioMes = startOfMonth(fecha)
+      const finMes = endOfMonth(fecha)
+
+      const [pagosHist, clasesHist, alumnosHist] = await Promise.all([
+        prisma.pago.aggregate({
+          where: {
+            alumno: { profesorId: userId },
+            estado: 'pagado',
+            fechaPago: { gte: inicioMes, lte: finMes }
+          },
+          _sum: { monto: true }
+        }),
+        prisma.clase.count({
+          where: {
+            profesorId: userId,
+            fecha: { gte: inicioMes, lte: finMes },
+            alumnoId: { not: null },
+            asistencia: 'presente'
+          }
+        }),
+        prisma.alumno.count({
+          where: {
+            profesorId: userId,
+            estaActivo: true,
+            createdAt: { lte: finMes }
+          }
+        })
+      ])
+
+      historico.push({
+        mes: format(fecha, 'MMM', { locale: es }),
+        ingresos: Number(pagosHist._sum.monto || 0),
+        clases: clasesHist,
+        alumnos: alumnosHist
+      })
+    }
+
+    // ===== DISTRIBUCIÓN POR DÍA DE SEMANA =====
+    const asistenciaPorDia: Array<{ dia: string; clases: number; asistencia: number }> = []
+    for (let d = 1; d <= 6; d++) { // Lun a Sáb (0=Dom, 1=Lun...)
+      const clasesDelDia = clasesMes.filter(c => new Date(c.fecha).getDay() === d)
+      const presentesDelDia = clasesDelDia.filter(c => c.asistencia === 'presente').length
+      asistenciaPorDia.push({
+        dia: DIAS_SEMANA_CORTO[d],
+        clases: clasesDelDia.length,
+        asistencia: clasesDelDia.length > 0 ? Math.round((presentesDelDia / clasesDelDia.length) * 100) : 0
+      })
+    }
+
+    // ===== DISTRIBUCIÓN DE PACKS =====
+    const alumnosConPack = await prisma.alumno.groupBy({
+      by: ['packType'],
+      where: {
+        profesorId: userId,
+        estaActivo: true
+      },
+      _count: true
+    })
+
+    const distribucionPacks = alumnosConPack.map(p => ({
+      pack: p.packType || 'Sin pack',
+      cantidad: p._count
+    }))
+
+    // ===== HORARIOS MÁS USADOS =====
+    const horariosData = Object.entries(horaCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([hora, cantidad]) => ({ hora, cantidad }))
+
     return NextResponse.json({
       canAccess: true,
       metricas: {
@@ -186,6 +268,13 @@ export async function GET(request: Request) {
         promedio: ocupacionPromedio,
         horasPico,
         diaPico
+      },
+      // Datos para gráficos
+      graficos: {
+        historico,
+        asistenciaPorDia,
+        distribucionPacks,
+        horarios: horariosData
       }
     })
   } catch (error) {

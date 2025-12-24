@@ -210,11 +210,6 @@ export async function updatePreferencias(formData: FormData) {
     data.turnoTardeActivo = formData.get('turnoTardeActivo') === 'on'
   }
 
-  const espacioCompartidoId = formData.get('espacioCompartidoId') as string | null
-  if (espacioCompartidoId !== null) {
-    data.espacioCompartidoId = espacioCompartidoId?.trim().toLowerCase() || null
-  }
-
   if (formData.has('syncGoogleCalendar')) {
     data.syncGoogleCalendar = formData.get('syncGoogleCalendar') === 'on'
   }

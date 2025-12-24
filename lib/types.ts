@@ -136,7 +136,6 @@ export type ProfesorConfig = {
   horarioTardeInicio: string
   horarioTardeFin: string
   turnoTardeActivo: boolean
-  espacioCompartidoId: string | null
   syncGoogleCalendar: boolean
   precioPorClase: string
   hasGoogleAccount: boolean
@@ -155,10 +154,6 @@ export type Pagination = {
   hasPrev: boolean
 }
 
-export type PaginatedResponse<T> = {
-  data: T[]
-  pagination: Pagination
-}
 
 // ----- API RESPONSE TYPES -----
 export type PreferencesIncompleteResponse = {
@@ -307,5 +302,26 @@ export type ReportesData = {
     promedio: number
     horasPico: string
     diaPico: string
+  }
+  graficos?: {
+    historico: Array<{
+      mes: string
+      ingresos: number
+      clases: number
+      alumnos: number
+    }>
+    asistenciaPorDia: Array<{
+      dia: string
+      clases: number
+      asistencia: number
+    }>
+    distribucionPacks: Array<{
+      pack: string
+      cantidad: number
+    }>
+    horarios: Array<{
+      hora: string
+      cantidad: number
+    }>
   }
 }

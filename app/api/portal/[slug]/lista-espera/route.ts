@@ -183,7 +183,7 @@ export async function POST(
     const posicion = (ultimoEnEspera?.posicion || 0) + 1
 
     // Crear entrada en lista de espera
-    const espera = await prisma.listaEspera.create({
+    await prisma.listaEspera.create({
       data: {
         alumnoId: alumno.id,
         profesorId: profesor.id,

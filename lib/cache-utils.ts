@@ -18,10 +18,3 @@ export function invalidateConfig() {
 export function invalidateAlumnos() {
   revalidateTag('alumnos', 'max')
 }
-
-export function invalidateAll() {
-  revalidateTag('packs', 'max')
-  revalidateTag('horarios', 'max')
-  revalidateTag('config', 'max')
-  revalidateTag('alumnos', 'max')
-}

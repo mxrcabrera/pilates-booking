@@ -17,7 +17,6 @@ type PreferenciasProps = {
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
-  espacioCompartidoId: string | null
   syncGoogleCalendar: boolean
   hasGoogleAccount: boolean
   packs: Pack[]
@@ -30,7 +29,6 @@ export function PreferenciasSection({
   horarioMananaFin,
   horarioTardeInicio,
   horarioTardeFin,
-  espacioCompartidoId,
   syncGoogleCalendar: _syncGoogleCalendar,
   hasGoogleAccount: _hasGoogleAccount,
   packs
@@ -133,21 +131,6 @@ export function PreferenciasSection({
               />
             </div>
             <p className="form-hint">Horario por defecto para turnos de tarde</p>
-          </div>
-
-          <div className="form-group">
-            <label>Espacio Compartido</label>
-            <input
-              type="text"
-              name="espacioCompartidoId"
-              defaultValue={espacioCompartidoId || ''}
-              placeholder="Código de espacio (ej: studio-palermo)"
-              disabled={isLoading}
-            />
-            <p className="form-hint">
-              Si trabajás con otros profesores en el mismo lugar, usá el mismo código para coordinar horarios.
-              Todos los profesores con el mismo código verán las clases de las demás en su calendario.
-            </p>
           </div>
 
           <div className="form-divider"></div>

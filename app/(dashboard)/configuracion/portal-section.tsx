@@ -19,7 +19,7 @@ const PLAN_NAMES: Record<string, string> = {
   ESTUDIO: 'Max'
 }
 
-export function PortalSection({ slug, portalActivo, portalDescripcion, canUsePortal, currentPlan }: Props) {
+export function PortalSection({ slug, portalActivo, portalDescripcion, canUsePortal, currentPlan: _currentPlan }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [copied, setCopied] = useState(false)

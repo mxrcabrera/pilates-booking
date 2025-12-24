@@ -62,21 +62,3 @@ export function invalidateCache(key?: string): void {
   }
 }
 
-// Invalida múltiples keys a la vez (sin duplicados)
-export function invalidateCaches(...keys: string[]): void {
-  const toInvalidate = new Set<string>()
-
-  for (const key of keys) {
-    toInvalidate.add(key)
-    const deps = CACHE_DEPENDENCIES[key]
-    if (deps) {
-      for (const dep of deps) {
-        toInvalidate.add(dep)
-      }
-    }
-  }
-
-  for (const key of toInvalidate) {
-    cache.delete(key)
-  }
-}

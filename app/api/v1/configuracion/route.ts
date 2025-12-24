@@ -441,7 +441,6 @@ export async function POST(request: NextRequest) {
           horarioTardeInicio,
           horarioTardeFin,
           turnoTardeActivo,
-          espacioCompartidoId,
           syncGoogleCalendar,
           precioPorClase
         } = data
@@ -476,8 +475,6 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const espacioNormalizado = espacioCompartidoId?.trim().toLowerCase() || null
-
         await prisma.user.update({
           where: { id: userId },
           data: {
@@ -489,7 +486,6 @@ export async function POST(request: NextRequest) {
             horarioTardeInicio,
             horarioTardeFin,
             turnoTardeActivo,
-            espacioCompartidoId: espacioNormalizado,
             syncGoogleCalendar,
             ...(precioPorClase !== undefined && { precioPorClase: parseFloat(precioPorClase) || 0 })
           }

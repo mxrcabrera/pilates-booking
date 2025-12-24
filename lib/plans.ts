@@ -13,6 +13,7 @@ export interface PlanFeatures {
   listaEspera: boolean
   notificacionesWhatsApp: boolean
   multiplesUsuarios: boolean
+  multiUsuarios: boolean // Alias para multiplesUsuarios
   rolesPermisos: boolean
   reportesAvanzados: boolean
   soportePrioritario: boolean
@@ -42,6 +43,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       listaEspera: false,
       notificacionesWhatsApp: false,
       multiplesUsuarios: false,
+      multiUsuarios: false,
       rolesPermisos: false,
       reportesAvanzados: false,
       soportePrioritario: false,
@@ -64,6 +66,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       listaEspera: false,
       notificacionesWhatsApp: false,
       multiplesUsuarios: false,
+      multiUsuarios: false,
       rolesPermisos: false,
       reportesAvanzados: false,
       soportePrioritario: false,
@@ -86,6 +89,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       listaEspera: true,
       notificacionesWhatsApp: false,
       multiplesUsuarios: false,
+      multiUsuarios: false,
       rolesPermisos: false,
       reportesAvanzados: false,
       soportePrioritario: false,
@@ -108,6 +112,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       listaEspera: true,
       notificacionesWhatsApp: true,
       multiplesUsuarios: true,
+      multiUsuarios: true,
       rolesPermisos: true,
       reportesAvanzados: true,
       soportePrioritario: true,
@@ -120,11 +125,6 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
 export const TRIAL_DAYS = 14
 export const TRIAL_MAX_ALUMNOS = 10
 export const TRIAL_PLAN_FEATURES = PLAN_CONFIGS.PRO.features // Trial tiene features de Pro
-
-// Helper functions
-export function getPlanConfig(plan: PlanType): PlanConfig {
-  return PLAN_CONFIGS[plan]
-}
 
 export function getPlanFeatures(plan: PlanType): PlanFeatures {
   return PLAN_CONFIGS[plan].features
@@ -184,7 +184,7 @@ export function getTrialEndDate(): Date {
 // Plan upgrade suggestions based on limits hit
 export function getSuggestedUpgrade(
   currentPlan: PlanType,
-  reason: 'alumnos' | 'feature'
+  _reason: 'alumnos' | 'feature'
 ): PlanType | null {
   const upgradeMap: Record<PlanType, PlanType | null> = {
     FREE: 'STARTER',

@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 
 interface DialogBaseProps {
   isOpen: boolean
@@ -63,58 +62,3 @@ export function DialogBase({
   )
 }
 
-interface ConfirmDialogBaseProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  title: string
-  description: string
-  confirmText?: string
-  cancelText?: string
-  isDestructive?: boolean
-  isLoading?: boolean
-}
-
-export function ConfirmDialogBase({
-  isOpen,
-  onClose,
-  onConfirm,
-  title,
-  description,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
-  isDestructive = false,
-  isLoading = false
-}: ConfirmDialogBaseProps) {
-  return (
-    <DialogBase
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      description={description}
-      size="sm"
-      footer={
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-          >
-            {cancelText}
-          </Button>
-          <Button
-            type="button"
-            variant={isDestructive ? 'destructive' : 'default'}
-            onClick={onConfirm}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Procesando...' : confirmText}
-          </Button>
-        </>
-      }
-    >
-      <p className="text-sm text-muted-foreground">{description}</p>
-    </DialogBase>
-  )
-}

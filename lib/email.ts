@@ -1,17 +1,17 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization to avoid build-time errors when RESEND_API_KEY is not set
+let resend: Resend | null = null
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resend
+}
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@tuapp.com'
 const APP_NAME = 'Pilates Booking'
-
-export type EmailTemplate =
-  | 'reserva-confirmada'
-  | 'reserva-cancelada'
-  | 'recordatorio-clase'
-  | 'pago-vencido'
-  | 'bienvenida'
-  | 'lista-espera-lugar'
 
 interface BaseEmailData {
   to: string
@@ -208,13 +208,14 @@ function getHtml(data: EmailData): string {
 }
 
 export async function sendEmail(data: EmailData): Promise<{ success: boolean; error?: string }> {
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend()
+  if (!client) {
     console.log('[Email] RESEND_API_KEY not configured, skipping email')
     return { success: true }
   }
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await client.emails.send({
       from: FROM_EMAIL,
       to: data.to,
       subject: getSubject(data),

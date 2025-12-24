@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-// GET /api/portal/[slug] - Obtener info pública del profesor
+// GET /api/portal/[slug] - Obtener info pública del estudio o profesor
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -9,6 +9,81 @@ export async function GET(
   try {
     const { slug } = await params
 
+    // Primero buscar en Estudio (nuevo sistema)
+    const estudio = await prisma.estudio.findFirst({
+      where: {
+        slug,
+        portalActivo: true
+      },
+      select: {
+        id: true,
+        nombre: true,
+        slug: true,
+        portalDescripcion: true,
+        horarioMananaInicio: true,
+        horarioMananaFin: true,
+        turnoMananaActivo: true,
+        horarioTardeInicio: true,
+        horarioTardeFin: true,
+        turnoTardeActivo: true,
+        horasAnticipacionMinima: true,
+        maxAlumnosPorClase: true,
+        precioPorClase: true,
+        packs: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            nombre: true,
+            clasesPorSemana: true,
+            precio: true
+          },
+          orderBy: { clasesPorSemana: 'asc' }
+        },
+        horariosDisponibles: {
+          where: {
+            deletedAt: null,
+            estaActivo: true
+          },
+          select: {
+            id: true,
+            diaSemana: true,
+            horaInicio: true,
+            horaFin: true,
+            esManiana: true
+          },
+          orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }]
+        }
+      }
+    })
+
+    if (estudio) {
+      return NextResponse.json({
+        id: estudio.id,
+        nombre: estudio.nombre,
+        slug: estudio.slug,
+        descripcion: estudio.portalDescripcion,
+        config: {
+          horasAnticipacionMinima: estudio.horasAnticipacionMinima,
+          maxAlumnosPorClase: estudio.maxAlumnosPorClase,
+          precioPorClase: estudio.precioPorClase.toString(),
+          horarioMananaInicio: estudio.horarioMananaInicio,
+          horarioMananaFin: estudio.horarioMananaFin,
+          turnoMananaActivo: estudio.turnoMananaActivo,
+          horarioTardeInicio: estudio.horarioTardeInicio,
+          horarioTardeFin: estudio.horarioTardeFin,
+          turnoTardeActivo: estudio.turnoTardeActivo
+        },
+        packs: estudio.packs.map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          clasesPorSemana: p.clasesPorSemana,
+          precio: p.precio.toString()
+        })),
+        horarios: estudio.horariosDisponibles
+      })
+    }
+
+    // Fallback: buscar en User (compatibilidad hacia atrás)
     const profesor = await prisma.user.findFirst({
       where: {
         slug,

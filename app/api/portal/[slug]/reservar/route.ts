@@ -476,13 +476,7 @@ export async function DELETE(
           userId: primerEnEspera.alumno.userId,
           tipo: 'LUGAR_DISPONIBLE',
           titulo: '¡Se liberó un lugar!',
-          mensaje: `Hay un lugar disponible el ${fechaStr} a las ${clase.horaInicio}. Tenés 2 horas para reservar.`,
-          datos: JSON.stringify({
-            fecha: fechaStr,
-            hora: clase.horaInicio,
-            profesorId: profesor.id,
-            listaEsperaId: primerEnEspera.id
-          })
+          mensaje: `Hay un lugar disponible el ${fechaStr} a las ${clase.horaInicio}. Tenés 2 horas para reservar.`
         }
       })
 

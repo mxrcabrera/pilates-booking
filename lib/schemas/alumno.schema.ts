@@ -59,7 +59,3 @@ export const alumnoActionSchema = z.discriminatedUnion('action', [
   deleteAlumnoSchema,
   toggleStatusSchema
 ])
-
-export type CreateAlumnoInput = z.infer<typeof createAlumnoSchema>
-export type UpdateAlumnoInput = z.infer<typeof updateAlumnoSchema>
-export type AlumnoAction = z.infer<typeof alumnoActionSchema>

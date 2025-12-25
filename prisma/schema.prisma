@@ -276,6 +276,7 @@ model EstudioMiembro {
   userId    String      @map("user_id")
   rol       EstudioRol  @default(INSTRUCTOR)
   createdAt DateTime    @default(now()) @map("created_at")
+  deletedAt DateTime?   @map("deleted_at")
 
   estudio   Estudio     @relation(fields: [estudioId], references: [id], onDelete: Cascade)
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)

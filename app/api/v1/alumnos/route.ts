@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getUserContext, hasPermission } from '@/lib/auth'
 import { Decimal } from '@prisma/client/runtime/library'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { alumnoActionSchema } from '@/lib/schemas/alumno.schema'
 import { calcularRangoCiclo, calcularPrecioImplicitoPorClase } from '@/lib/alumno-utils'
 import { invalidateAlumnos } from '@/lib/cache-utils'
-import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
 import { getEffectiveMaxAlumnos, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
+import type { PlanType } from '@prisma/client'
 
 export const runtime = 'nodejs'
 
@@ -18,10 +19,12 @@ const WINDOW_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
+
+    const { userId, estudio } = context
 
     const { page, limit, skip } = getPaginationParams(request)
     const { searchParams } = new URL(request.url)
@@ -32,9 +35,14 @@ export async function GET(request: NextRequest) {
     const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
     const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
+    // Filtrar por estudioId si existe, sino por profesorId (backwards compatible)
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
+
     // Construir where con búsqueda opcional
     const where = {
-      profesorId: userId,
+      ...ownerFilter,
       deletedAt: null,
       ...(search && {
         OR: [
@@ -45,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener alumnos paginados, total, packs y precio por clase en paralelo
-    const [alumnos, total, user] = await Promise.all([
+    const [alumnos, total, configData] = await Promise.all([
       prisma.alumno.findMany({
         where,
         skip,
@@ -75,18 +83,32 @@ export async function GET(request: NextRequest) {
         orderBy: { nombre: 'asc' }
       }),
       prisma.alumno.count({ where }),
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          precioPorClase: true,
-          plan: true,
-          trialEndsAt: true,
-          packs: {
-            where: { deletedAt: null },
-            orderBy: { clasesPorSemana: 'asc' }
-          }
-        }
-      })
+      // Obtener config del estudio o del usuario
+      estudio
+        ? prisma.estudio.findUnique({
+            where: { id: estudio.estudioId },
+            select: {
+              precioPorClase: true,
+              plan: true,
+              trialEndsAt: true,
+              packs: {
+                where: { deletedAt: null },
+                orderBy: { clasesPorSemana: 'asc' }
+              }
+            }
+          })
+        : prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+              precioPorClase: true,
+              plan: true,
+              trialEndsAt: true,
+              packs: {
+                where: { deletedAt: null },
+                orderBy: { clasesPorSemana: 'asc' }
+              }
+            }
+          })
     ])
 
     const alumnosSerializados = alumnos.map(alumno => ({
@@ -100,7 +122,7 @@ export async function GET(request: NextRequest) {
       pagos: undefined
     }))
 
-    const packsSerializados = user?.packs.map(pack => ({
+    const packsSerializados = configData?.packs.map(pack => ({
       id: pack.id,
       nombre: pack.nombre,
       clasesPorSemana: pack.clasesPorSemana,
@@ -110,17 +132,19 @@ export async function GET(request: NextRequest) {
     const paginatedData = paginatedResponse(alumnosSerializados, total, { page, limit, skip })
 
     // Calcular info del plan y features
-    const maxAlumnos = user ? getEffectiveMaxAlumnos(user.plan, user.trialEndsAt) : 5
-    const features = user ? getEffectiveFeatures(user.plan, user.trialEndsAt) : null
+    const plan = (configData?.plan || 'FREE') as PlanType
+    const trialEndsAt = configData?.trialEndsAt || null
+    const maxAlumnos = getEffectiveMaxAlumnos(plan, trialEndsAt)
+    const features = getEffectiveFeatures(plan, trialEndsAt)
 
     return NextResponse.json({
       ...paginatedData,
       alumnos: alumnosSerializados,
       packs: packsSerializados,
-      precioPorClase: user?.precioPorClase?.toString() || '0',
+      precioPorClase: configData?.precioPorClase?.toString() || '0',
       planInfo: {
-        plan: user?.plan || 'FREE',
-        trialEndsAt: user?.trialEndsAt?.toISOString() || null,
+        plan,
+        trialEndsAt: trialEndsAt?.toISOString() || null,
         maxAlumnos,
         currentAlumnos: total,
         canAddMore: total < maxAlumnos
@@ -128,7 +152,7 @@ export async function GET(request: NextRequest) {
       features: {
         prorrateoAutomatico: features?.prorrateoAutomatico ?? false,
         exportarExcel: features?.exportarExcel ?? false,
-        plan: user?.plan || 'FREE'
+        plan
       }
     })
   } catch (error) {
@@ -145,10 +169,12 @@ export async function POST(request: NextRequest) {
       return tooManyRequests()
     }
 
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
+
+    const { userId, estudio } = context
 
     // Validar con Zod schema
     const body = await request.json()
@@ -162,29 +188,43 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'create': {
+        // Verificar permiso para crear alumnos
+        if (estudio && !hasPermission(estudio.rol, 'create:alumnos')) {
+          return forbidden('No tienes permiso para crear alumnos')
+        }
+
         const { nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor, diaInicioCiclo } = parsed.data
 
-        // Verificar límite de alumnos según plan
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { plan: true, trialEndsAt: true }
-        })
+        // Obtener info del plan (de Estudio o User)
+        const planInfo = estudio
+          ? await prisma.estudio.findUnique({
+              where: { id: estudio.estudioId },
+              select: { plan: true, trialEndsAt: true }
+            })
+          : await prisma.user.findUnique({
+              where: { id: userId },
+              select: { plan: true, trialEndsAt: true }
+            })
 
-        if (!user) {
+        if (!planInfo) {
           return unauthorized()
         }
 
-        const maxAlumnos = getEffectiveMaxAlumnos(user.plan, user.trialEndsAt)
+        const ownerFilter = estudio
+          ? { estudioId: estudio.estudioId }
+          : { profesorId: userId }
+
+        const maxAlumnos = getEffectiveMaxAlumnos(planInfo.plan, planInfo.trialEndsAt)
         const alumnosActuales = await prisma.alumno.count({
-          where: { profesorId: userId, deletedAt: null }
+          where: { ...ownerFilter, deletedAt: null }
         })
 
         if (alumnosActuales >= maxAlumnos) {
-          const suggestedPlan = getSuggestedUpgrade(user.plan, 'alumnos')
+          const suggestedPlan = getSuggestedUpgrade(planInfo.plan, 'alumnos')
           return NextResponse.json({
             error: 'Límite de alumnos alcanzado',
             code: 'PLAN_LIMIT_REACHED',
-            currentPlan: user.plan,
+            currentPlan: planInfo.plan,
             maxAlumnos,
             currentAlumnos: alumnosActuales,
             suggestedPlan,
@@ -196,6 +236,7 @@ export async function POST(request: NextRequest) {
         const alumno = await prisma.alumno.create({
           data: {
             profesorId: userId,
+            ...(estudio && { estudioId: estudio.estudioId }),
             nombre,
             email,
             telefono,
@@ -217,11 +258,21 @@ export async function POST(request: NextRequest) {
       }
 
       case 'update': {
+        // Verificar permiso para editar alumnos
+        if (estudio && !hasPermission(estudio.rol, 'edit:alumnos')) {
+          return forbidden('No tienes permiso para editar alumnos')
+        }
+
         const { id, nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor, diaInicioCiclo } = parsed.data
 
-        // Validar que el alumno pertenece al profesor
+        // Filtro por estudio o profesor
+        const ownerFilter = estudio
+          ? { estudioId: estudio.estudioId }
+          : { profesorId: userId }
+
+        // Validar que el alumno pertenece al estudio/profesor
         const alumnoExistente = await prisma.alumno.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+          where: { id, ...ownerFilter, deletedAt: null }
         })
         if (!alumnoExistente) {
           return notFound('Alumno no encontrado')
@@ -307,10 +358,20 @@ export async function POST(request: NextRequest) {
       }
 
       case 'toggleStatus': {
+        // Verificar permiso para editar alumnos
+        if (estudio && !hasPermission(estudio.rol, 'edit:alumnos')) {
+          return forbidden('No tienes permiso para cambiar estado de alumnos')
+        }
+
         const { id } = parsed.data
 
+        // Filtro por estudio o profesor
+        const ownerFilter = estudio
+          ? { estudioId: estudio.estudioId }
+          : { profesorId: userId }
+
         const alumno = await prisma.alumno.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+          where: { id, ...ownerFilter, deletedAt: null }
         })
 
         if (!alumno) {
@@ -327,10 +388,20 @@ export async function POST(request: NextRequest) {
       }
 
       case 'delete': {
+        // Verificar permiso para eliminar alumnos
+        if (estudio && !hasPermission(estudio.rol, 'delete:alumnos')) {
+          return forbidden('No tienes permiso para eliminar alumnos')
+        }
+
         const { id } = parsed.data
 
+        // Filtro por estudio o profesor
+        const ownerFilter = estudio
+          ? { estudioId: estudio.estudioId }
+          : { profesorId: userId }
+
         const alumno = await prisma.alumno.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+          where: { id, ...ownerFilter, deletedAt: null }
         })
         if (!alumno) {
           return notFound('Alumno no encontrado')

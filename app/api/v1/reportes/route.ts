@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getUserContext } from '@/lib/auth'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { getEffectiveFeatures } from '@/lib/plans'
+import { unauthorized } from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
 
@@ -14,10 +15,17 @@ const DIAS_SEMANA_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 export async function GET(request: Request) {
   try {
-    const userId = await getCurrentUser()
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const context = await getUserContext()
+    if (!context) {
+      return unauthorized()
     }
+
+    const { userId, estudio } = context
+
+    // Filtro por estudio o profesor
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
 
     // Verificar permisos del plan
     const user = await prisma.user.findUnique({
@@ -56,12 +64,12 @@ export async function GET(request: Request) {
     ] = await Promise.all([
       // Alumnos activos actuales
       prisma.alumno.count({
-        where: { profesorId: userId, estaActivo: true }
+        where: { ...ownerFilter, estaActivo: true }
       }),
       // Alumnos activos mes anterior (aproximación - contamos los que existían)
       prisma.alumno.count({
         where: {
-          profesorId: userId,
+          ...ownerFilter,
           estaActivo: true,
           createdAt: { lte: fechaFinAnterior }
         }
@@ -69,7 +77,7 @@ export async function GET(request: Request) {
       // Pagos del mes actual
       prisma.pago.aggregate({
         where: {
-          alumno: { profesorId: userId },
+          alumno: ownerFilter,
           estado: 'pagado',
           fechaPago: { gte: fechaInicio, lte: fechaFin }
         },
@@ -79,7 +87,7 @@ export async function GET(request: Request) {
       // Pagos del mes anterior
       prisma.pago.aggregate({
         where: {
-          alumno: { profesorId: userId },
+          alumno: ownerFilter,
           estado: 'pagado',
           fechaPago: { gte: fechaInicioAnterior, lte: fechaFinAnterior }
         },
@@ -89,7 +97,7 @@ export async function GET(request: Request) {
       // Clases del mes actual
       prisma.clase.findMany({
         where: {
-          profesorId: userId,
+          ...ownerFilter,
           fecha: { gte: fechaInicio, lte: fechaFin },
           alumnoId: { not: null }
         },
@@ -102,7 +110,7 @@ export async function GET(request: Request) {
       // Clases del mes anterior
       prisma.clase.count({
         where: {
-          profesorId: userId,
+          ...ownerFilter,
           fecha: { gte: fechaInicioAnterior, lte: fechaFinAnterior },
           alumnoId: { not: null },
           asistencia: 'presente'
@@ -112,7 +120,7 @@ export async function GET(request: Request) {
       prisma.pago.groupBy({
         by: ['estado'],
         where: {
-          alumno: { profesorId: userId },
+          alumno: ownerFilter,
           fechaVencimiento: { gte: fechaInicio, lte: fechaFin }
         },
         _count: true
@@ -180,7 +188,7 @@ export async function GET(request: Request) {
       const [pagosHist, clasesHist, alumnosHist] = await Promise.all([
         prisma.pago.aggregate({
           where: {
-            alumno: { profesorId: userId },
+            alumno: ownerFilter,
             estado: 'pagado',
             fechaPago: { gte: inicioMes, lte: finMes }
           },
@@ -188,7 +196,7 @@ export async function GET(request: Request) {
         }),
         prisma.clase.count({
           where: {
-            profesorId: userId,
+            ...ownerFilter,
             fecha: { gte: inicioMes, lte: finMes },
             alumnoId: { not: null },
             asistencia: 'presente'
@@ -196,7 +204,7 @@ export async function GET(request: Request) {
         }),
         prisma.alumno.count({
           where: {
-            profesorId: userId,
+            ...ownerFilter,
             estaActivo: true,
             createdAt: { lte: finMes }
           }
@@ -227,7 +235,7 @@ export async function GET(request: Request) {
     const alumnosConPack = await prisma.alumno.groupBy({
       by: ['packType'],
       where: {
-        profesorId: userId,
+        ...ownerFilter,
         estaActivo: true
       },
       _count: true

@@ -125,7 +125,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
 
     clasesDelDia.forEach(clase => {
       const hora = parseInt(clase.horaInicio.split(':')[0])
-      const turno = getTurno(hora)
+      const turno = getTurno(hora, horarioTardeInicio)
       turnoClases[turno].push(clase)
     })
 

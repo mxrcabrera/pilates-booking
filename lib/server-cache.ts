@@ -1,11 +1,21 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from './prisma'
 
+// Tipo para distinguir si filtramos por profesor o estudio
+type OwnerType = 'profesor' | 'estudio'
+
+// Helper para construir el filtro según el tipo
+function buildOwnerFilter(ownerId: string, ownerType: OwnerType) {
+  return ownerType === 'estudio'
+    ? { estudioId: ownerId }
+    : { profesorId: ownerId }
+}
+
 // Cache de packs - cambian muy poco
 export const getCachedPacks = unstable_cache(
-  async (profesorId: string) => {
+  async (ownerId: string, ownerType: OwnerType = 'profesor') => {
     const packs = await prisma.pack.findMany({
-      where: { profesorId, deletedAt: null },
+      where: { ...buildOwnerFilter(ownerId, ownerType), deletedAt: null },
       orderBy: { clasesPorSemana: 'asc' }
     })
     return packs.map(p => ({
@@ -21,9 +31,9 @@ export const getCachedPacks = unstable_cache(
 
 // Cache de horarios disponibles - cambian poco
 export const getCachedHorarios = unstable_cache(
-  async (profesorId: string) => {
+  async (ownerId: string, ownerType: OwnerType = 'profesor') => {
     return prisma.horarioDisponible.findMany({
-      where: { profesorId, deletedAt: null },
+      where: { ...buildOwnerFilter(ownerId, ownerType), deletedAt: null },
       orderBy: [{ diaSemana: 'asc' }, { horaInicio: 'asc' }]
     })
   },
@@ -68,9 +78,9 @@ export const getCachedProfesorConfig = unstable_cache(
 
 // Cache de alumnos activos (para selects) - cambia moderadamente
 export const getCachedAlumnosSimple = unstable_cache(
-  async (profesorId: string) => {
+  async (ownerId: string, ownerType: OwnerType = 'profesor') => {
     return prisma.alumno.findMany({
-      where: { profesorId, estaActivo: true, deletedAt: null },
+      where: { ...buildOwnerFilter(ownerId, ownerType), estaActivo: true, deletedAt: null },
       select: { id: true, nombre: true },
       orderBy: { nombre: 'asc' }
     })
@@ -78,3 +88,6 @@ export const getCachedAlumnosSimple = unstable_cache(
   ['alumnos-simple'],
   { revalidate: 300, tags: ['alumnos'] } // 5 min
 )
+
+// Exportar el tipo para uso externo
+export type { OwnerType }

@@ -1,0 +1,74 @@
+import { z } from 'zod'
+
+// Regex para validar formato HH:MM
+const horaRegex = /^([01]\d|2[0-3]):[0-5]\d$/
+
+// Regex para validar formato YYYY-MM-DD
+const fechaRegex = /^\d{4}-\d{2}-\d{2}$/
+
+export const createClaseSchema = z.object({
+  action: z.literal('create'),
+  alumnoIds: z.array(z.string().uuid()).default([]),
+  horaInicio: z.string().regex(horaRegex, 'Formato de hora inválido (HH:MM)'),
+  horaRecurrente: z.string().regex(horaRegex, 'Formato de hora inválido (HH:MM)').optional(),
+  esClasePrueba: z.boolean().optional().default(false),
+  esRecurrente: z.boolean().optional().default(false),
+  frecuenciaSemanal: z.union([z.string(), z.number()]).optional().nullable().transform(v => {
+    if (v === undefined || v === null) return null
+    return typeof v === 'string' ? parseInt(v) : v
+  }),
+  diasSemana: z.union([
+    z.array(z.number().min(0).max(6)),
+    z.string().transform(v => JSON.parse(v) as number[])
+  ]).optional().default([]),
+  fecha: z.string().regex(fechaRegex, 'Formato de fecha inválido (YYYY-MM-DD)')
+})
+
+export const updateClaseSchema = z.object({
+  action: z.literal('update'),
+  id: z.string().uuid('ID de clase inválido'),
+  alumnoId: z.string().uuid('ID de alumno inválido').optional().nullable(),
+  horaInicio: z.string().regex(horaRegex, 'Formato de hora inválido (HH:MM)'),
+  horaRecurrente: z.string().regex(horaRegex, 'Formato de hora inválido (HH:MM)').optional(),
+  estado: z.enum(['reservada', 'completada', 'cancelada']),
+  esClasePrueba: z.boolean().optional().default(false),
+  esRecurrente: z.boolean().optional().default(false),
+  frecuenciaSemanal: z.union([z.string(), z.number()]).optional().nullable().transform(v => {
+    if (v === undefined || v === null) return null
+    return typeof v === 'string' ? parseInt(v) : v
+  }),
+  diasSemana: z.union([
+    z.array(z.number().min(0).max(6)),
+    z.string().transform(v => JSON.parse(v) as number[])
+  ]).optional().default([]),
+  fecha: z.string().regex(fechaRegex, 'Formato de fecha inválido (YYYY-MM-DD)')
+})
+
+export const deleteClaseSchema = z.object({
+  action: z.literal('delete'),
+  id: z.string().uuid('ID de clase inválido')
+})
+
+export const changeStatusSchema = z.object({
+  action: z.literal('changeStatus'),
+  id: z.string().uuid('ID de clase inválido'),
+  estado: z.enum(['reservada', 'completada', 'cancelada'], {
+    message: 'Estado no válido'
+  })
+})
+
+export const changeAsistenciaSchema = z.object({
+  action: z.literal('changeAsistencia'),
+  id: z.string().uuid('ID de clase inválido'),
+  asistencia: z.enum(['pendiente', 'presente', 'ausente'], {
+    message: 'Asistencia no válida'
+  })
+})
+
+export const claseActionSchema = z.discriminatedUnion('action', [
+  createClaseSchema,
+  updateClaseSchema,
+  deleteClaseSchema,
+  changeStatusSchema,
+  changeAsistenciaSchema
+])

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getUserContext, hasPermission } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { pagoActionSchema } from '@/lib/schemas/pago.schema'
-import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
 import { getEffectiveFeatures } from '@/lib/plans'
 
 export const runtime = 'nodejs'
@@ -19,17 +19,24 @@ export async function GET(request: NextRequest) {
   const estado = searchParams.get('estado')
 
   try {
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
+
+    const { userId, estudio } = context
+
+    // Filtro por estudio o profesor
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
 
     const { page, limit, skip } = getPaginationParams(request)
 
     // Si se pide pagos de un alumno específico
     if (alumnoId) {
       const alumno = await prisma.alumno.findFirst({
-        where: { id: alumnoId, profesorId: userId, deletedAt: null }
+        where: { id: alumnoId, ...ownerFilter, deletedAt: null }
       })
 
       if (!alumno) {
@@ -70,10 +77,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Construir where para todos los pagos
+    // Construir where para todos los pagos - filtrar por estudio o profesor
     const where = {
       alumno: {
-        profesorId: userId,
+        ...ownerFilter,
         deletedAt: null
       },
       deletedAt: null,
@@ -173,15 +180,20 @@ export async function GET(request: NextRequest) {
       clasesCompletadas: clasesCompletadasMap.get(`${p.alumnoId}-${p.mesCorrespondiente}`) || 0
     }))
 
-    // Obtener usuario para features y alumnos activos para el formulario
-    const [user, alumnos] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { plan: true, trialEndsAt: true }
-      }),
+    // Obtener config (estudio o usuario) para features y alumnos activos para el formulario
+    const [configData, alumnos] = await Promise.all([
+      estudio
+        ? prisma.estudio.findUnique({
+            where: { id: estudio.estudioId },
+            select: { plan: true, trialEndsAt: true }
+          })
+        : prisma.user.findUnique({
+            where: { id: userId },
+            select: { plan: true, trialEndsAt: true }
+          }),
       prisma.alumno.findMany({
         where: {
-          profesorId: userId,
+          ...ownerFilter,
           estaActivo: true,
           deletedAt: null
         },
@@ -197,7 +209,7 @@ export async function GET(request: NextRequest) {
       })
     ])
 
-    const features = user ? getEffectiveFeatures(user.plan, user.trialEndsAt) : null
+    const features = configData ? getEffectiveFeatures(configData.plan, configData.trialEndsAt) : null
 
     const alumnosSerializados = alumnos.map(a => ({
       id: a.id,
@@ -216,7 +228,7 @@ export async function GET(request: NextRequest) {
       alumnos: alumnosSerializados,
       features: {
         exportarExcel: features?.exportarExcel ?? false,
-        plan: user?.plan || 'FREE'
+        plan: configData?.plan || 'FREE'
       }
     })
   } catch (error) {
@@ -233,10 +245,17 @@ export async function POST(request: NextRequest) {
       return tooManyRequests()
     }
 
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
+
+    const { userId, estudio } = context
+
+    // Filtro por estudio o profesor
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
 
     // Validar con Zod schema
     const body = await request.json()
@@ -250,11 +269,16 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'create': {
+        // Verificar permiso para crear pagos
+        if (estudio && !hasPermission(estudio.rol, 'create:pagos')) {
+          return forbidden('No tienes permiso para registrar pagos')
+        }
+
         const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas, profesorId: profesorIdParam } = parsed.data
 
-        // Verificar que el alumno pertenece al profesor
+        // Verificar que el alumno pertenece al estudio/profesor
         const alumno = await prisma.alumno.findFirst({
-          where: { id: alumnoId, profesorId: userId, deletedAt: null }
+          where: { id: alumnoId, ...ownerFilter, deletedAt: null }
         })
 
         if (!alumno) {
@@ -283,6 +307,7 @@ export async function POST(request: NextRequest) {
             data: {
               alumnoId,
               profesorId: profesorDelPago,
+              ...(estudio && { estudioId: estudio.estudioId }),
               monto,
               fechaVencimiento: new Date(fechaVencimiento),
               mesCorrespondiente,
@@ -326,12 +351,17 @@ export async function POST(request: NextRequest) {
       }
 
       case 'marcarPagado': {
+        // Verificar permiso para marcar pagos
+        if (estudio && !hasPermission(estudio.rol, 'edit:pagos')) {
+          return forbidden('No tienes permiso para marcar pagos')
+        }
+
         const { id } = parsed.data
 
         const pagoExistente = await prisma.pago.findFirst({
           where: {
             id,
-            alumno: { profesorId: userId },
+            alumno: ownerFilter,
             deletedAt: null
           }
         })
@@ -362,12 +392,17 @@ export async function POST(request: NextRequest) {
       }
 
       case 'marcarPendiente': {
+        // Verificar permiso para marcar pagos
+        if (estudio && !hasPermission(estudio.rol, 'edit:pagos')) {
+          return forbidden('No tienes permiso para marcar pagos')
+        }
+
         const { id } = parsed.data
 
         const pagoExistente = await prisma.pago.findFirst({
           where: {
             id,
-            alumno: { profesorId: userId },
+            alumno: ownerFilter,
             deletedAt: null
           }
         })
@@ -397,12 +432,17 @@ export async function POST(request: NextRequest) {
       }
 
       case 'delete': {
+        // Verificar permiso para eliminar pagos
+        if (estudio && !hasPermission(estudio.rol, 'delete:pagos')) {
+          return forbidden('No tienes permiso para eliminar pagos')
+        }
+
         const { id } = parsed.data
 
         const pagoExistente = await prisma.pago.findFirst({
           where: {
             id,
-            alumno: { profesorId: userId },
+            alumno: ownerFilter,
             deletedAt: null
           }
         })

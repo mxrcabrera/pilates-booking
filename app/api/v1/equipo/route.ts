@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission } from '@/lib/auth/auth-utils'
 import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
-import type { EstudioRol } from '@prisma/client'
+import { invitarMiembroSchema, cambiarRolSchema } from '@/lib/schemas/equipo.schema'
+import { badRequest } from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
 
@@ -20,7 +21,7 @@ export async function GET() {
     }
 
     const miembros = await prisma.estudioMiembro.findMany({
-      where: { estudioId: context.estudio.estudioId },
+      where: { estudioId: context.estudio.estudioId, deletedAt: null },
       include: {
         user: {
           select: {
@@ -78,26 +79,20 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { email, rol } = body as { email: string; rol: EstudioRol }
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email es requerido' }, { status: 400 })
+    const parsed = invitarMiembroSchema.safeParse(body)
+    if (!parsed.success) {
+      return badRequest(parsed.error.issues[0].message)
     }
-
-    // Validar rol
-    const rolesValidos: EstudioRol[] = ['ADMIN', 'INSTRUCTOR', 'VIEWER']
-    if (!rolesValidos.includes(rol)) {
-      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
-    }
+    const { email, rol } = parsed.data
 
     // Solo OWNER puede crear otros ADMIN
     if (rol === 'ADMIN' && context.estudio.rol !== 'OWNER') {
       return NextResponse.json({ error: 'Solo el dueño puede crear administradores' }, { status: 403 })
     }
 
-    // Buscar usuario por email
+    // Buscar usuario por email (ya normalizado por Zod)
     const usuario = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() }
+      where: { email }
     })
 
     if (!usuario) {
@@ -106,7 +101,7 @@ export async function POST(request: Request) {
       }, { status: 404 })
     }
 
-    // Verificar si ya es miembro
+    // Verificar si ya es miembro (incluyendo soft-deleted para re-activar)
     const miembroExistente = await prisma.estudioMiembro.findUnique({
       where: {
         estudioId_userId: {
@@ -116,28 +111,43 @@ export async function POST(request: Request) {
       }
     })
 
-    if (miembroExistente) {
+    if (miembroExistente && !miembroExistente.deletedAt) {
       return NextResponse.json({ error: 'Este usuario ya es miembro del equipo' }, { status: 400 })
     }
 
-    // Crear membresía
-    const nuevoMiembro = await prisma.estudioMiembro.create({
-      data: {
-        estudioId: context.estudio.estudioId,
-        userId: usuario.id,
-        rol
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            image: true
+    // Si el miembro fue removido anteriormente, reactivarlo; si no, crear nuevo
+    const nuevoMiembro = miembroExistente
+      ? await prisma.estudioMiembro.update({
+          where: { id: miembroExistente.id },
+          data: { rol, deletedAt: null },
+          include: {
+            user: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+                image: true
+              }
+            }
           }
-        }
-      }
-    })
+        })
+      : await prisma.estudioMiembro.create({
+          data: {
+            estudioId: context.estudio.estudioId,
+            userId: usuario.id,
+            rol
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+                image: true
+              }
+            }
+          }
+        })
 
     logger.info(`Nuevo miembro agregado al estudio ${context.estudio.estudioNombre}`, {
       email,
@@ -180,18 +190,18 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { miembroId, nuevoRol } = body as { miembroId: string; nuevoRol: EstudioRol }
-
-    if (!miembroId || !nuevoRol) {
-      return NextResponse.json({ error: 'miembroId y nuevoRol son requeridos' }, { status: 400 })
+    const parsed = cambiarRolSchema.safeParse(body)
+    if (!parsed.success) {
+      return badRequest(parsed.error.issues[0].message)
     }
+    const { miembroId, nuevoRol } = parsed.data
 
     // Obtener miembro actual
     const miembro = await prisma.estudioMiembro.findUnique({
       where: { id: miembroId }
     })
 
-    if (!miembro || miembro.estudioId !== context.estudio.estudioId) {
+    if (!miembro || miembro.estudioId !== context.estudio.estudioId || miembro.deletedAt) {
       return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 })
     }
 
@@ -203,12 +213,6 @@ export async function PUT(request: Request) {
     // Solo OWNER puede asignar/quitar rol ADMIN
     if ((nuevoRol === 'ADMIN' || miembro.rol === 'ADMIN') && context.estudio.rol !== 'OWNER') {
       return NextResponse.json({ error: 'Solo el dueño puede gestionar administradores' }, { status: 403 })
-    }
-
-    // Validar nuevo rol
-    const rolesValidos: EstudioRol[] = ['ADMIN', 'INSTRUCTOR', 'VIEWER']
-    if (!rolesValidos.includes(nuevoRol)) {
-      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
     }
 
     const actualizado = await prisma.estudioMiembro.update({
@@ -272,7 +276,7 @@ export async function DELETE(request: Request) {
       }
     })
 
-    if (!miembro || miembro.estudioId !== context.estudio.estudioId) {
+    if (!miembro || miembro.estudioId !== context.estudio.estudioId || miembro.deletedAt) {
       return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 })
     }
 
@@ -286,8 +290,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Solo el dueño puede remover administradores' }, { status: 403 })
     }
 
-    await prisma.estudioMiembro.delete({
-      where: { id: miembroId }
+    await prisma.estudioMiembro.update({
+      where: { id: miembroId },
+      data: { deletedAt: new Date() }
     })
 
     logger.info(`Miembro removido del estudio ${context.estudio.estudioNombre}`, {

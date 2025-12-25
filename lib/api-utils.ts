@@ -12,6 +12,10 @@ export function notFound(message = 'No encontrado') {
   return NextResponse.json({ error: message }, { status: 404 })
 }
 
+export function forbidden(message = 'No tienes permiso') {
+  return NextResponse.json({ error: message }, { status: 403 })
+}
+
 export function tooManyRequests(retryAfter = 60) {
   return NextResponse.json(
     { error: 'Demasiadas solicitudes' },

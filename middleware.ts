@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-change-in-production')
+// En producción, JWT_SECRET es requerido
+const jwtSecret = process.env.JWT_SECRET
+if (!jwtSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production')
+}
+const secret = new TextEncoder().encode(jwtSecret || 'dev-secret-only-for-local')
 
 async function getRoleFromToken(token: string): Promise<string | null> {
   try {

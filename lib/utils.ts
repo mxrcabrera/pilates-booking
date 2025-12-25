@@ -16,9 +16,10 @@ export function getErrorMessage(error: unknown): string {
 }
 
 // Utilidades de tiempo/hora
-export function getTurno(hora: number): 'mañana' | 'tarde' | 'noche' {
-  if (hora < 12) return 'mañana'
-  if (hora < 19) return 'tarde'
+export function getTurno(hora: number, horarioTardeInicio: string = '17:00'): 'mañana' | 'tarde' | 'noche' {
+  const tardeComienzo = parseInt(horarioTardeInicio.split(':')[0])
+  if (hora < tardeComienzo) return 'mañana'
+  if (hora < 22) return 'tarde'
   return 'noche'
 }
 

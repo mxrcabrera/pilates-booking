@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getUserContext, hasPermission } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
-import { getCachedPacks, getCachedAlumnosSimple } from '@/lib/server-cache'
-import { unauthorized, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { getCachedPacks, getCachedAlumnosSimple, type OwnerType } from '@/lib/server-cache'
+import { unauthorized, notFound, tooManyRequests, serverError, forbidden, badRequest } from '@/lib/api-utils'
 import { canUseFeature, PLAN_CONFIGS, getSuggestedUpgrade, getEffectiveFeatures } from '@/lib/plans'
 import type { Prisma } from '@prisma/client'
+import {
+  createClaseSchema,
+  updateClaseSchema,
+  deleteClaseSchema,
+  changeStatusSchema,
+  changeAsistenciaSchema
+} from '@/lib/schemas/clase.schema'
 
 export const runtime = 'nodejs'
 
@@ -18,10 +25,12 @@ const WINDOW_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
+
+    const { userId, estudio } = context
 
     const { page, limit, skip } = getPaginationParams(request)
 
@@ -29,38 +38,65 @@ export async function GET(request: NextRequest) {
     const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
     const finRango = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0)
 
-    // UNA SOLA query para obtener user + counts para preferences check
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        horarioMananaInicio: true,
-        horarioMananaFin: true,
-        horarioTardeInicio: true,
-        horarioTardeFin: true,
-        precioPorClase: true,
-        maxAlumnosPorClase: true,
-        horasAnticipacionMinima: true,
-        plan: true,
-        trialEndsAt: true,
-        _count: {
+    // Filtro por estudio o profesor
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
+
+    // Obtener config del estudio o del usuario
+    const configData = estudio
+      ? await prisma.estudio.findUnique({
+          where: { id: estudio.estudioId },
           select: {
-            horariosDisponibles: true,
-            packs: true,
-            alumnos: true
+            horarioMananaInicio: true,
+            horarioMananaFin: true,
+            horarioTardeInicio: true,
+            horarioTardeFin: true,
+            precioPorClase: true,
+            maxAlumnosPorClase: true,
+            horasAnticipacionMinima: true,
+            plan: true,
+            trialEndsAt: true,
+            _count: {
+              select: {
+                horariosDisponibles: true,
+                packs: true,
+                alumnos: true
+              }
+            }
           }
-        }
-      }
-    })
+        })
+      : await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            horarioMananaInicio: true,
+            horarioMananaFin: true,
+            horarioTardeInicio: true,
+            horarioTardeFin: true,
+            precioPorClase: true,
+            maxAlumnosPorClase: true,
+            horasAnticipacionMinima: true,
+            plan: true,
+            trialEndsAt: true,
+            _count: {
+              select: {
+                horariosDisponibles: true,
+                packs: true,
+                alumnos: true
+              }
+            }
+          }
+        })
 
     // Check preferences inline (sin query adicional)
-    if (!user) {
-      return notFound('Usuario no encontrado')
+    if (!configData) {
+      return notFound('Usuario/Estudio no encontrado')
     }
 
     const missingFields: string[] = []
-    if (user._count.packs === 0) missingFields.push('Al menos un Pack')
-    if (user._count.horariosDisponibles === 0) missingFields.push('Al menos un Horario')
-    if (user._count.alumnos === 0) missingFields.push('Al menos un Alumno')
+    if (configData._count.packs === 0) missingFields.push('Al menos un Pack')
+    if (configData._count.horariosDisponibles === 0) missingFields.push('Al menos un Horario')
+    if (configData._count.alumnos === 0) missingFields.push('Al menos un Alumno')
 
     if (missingFields.length > 0) {
       return NextResponse.json({
@@ -69,14 +105,16 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Where para clases
+    // Where para clases - filtrar por estudio o profesor
     const clasesWhere = {
-      profesorId: userId,
+      ...ownerFilter,
       fecha: { gte: inicioRango, lte: finRango },
       deletedAt: null
     }
 
     // Queries de datos en paralelo (usando cache para packs y alumnos)
+    const cacheKey = estudio ? estudio.estudioId : userId
+    const cacheType: OwnerType = estudio ? 'estudio' : 'profesor'
     const [clases, total, alumnos, packs] = await Promise.all([
       prisma.clase.findMany({
         where: clasesWhere,
@@ -108,8 +146,8 @@ export async function GET(request: NextRequest) {
         orderBy: [{ fecha: 'asc' }, { horaInicio: 'asc' }]
       }),
       prisma.clase.count({ where: clasesWhere }),
-      getCachedAlumnosSimple(userId),
-      getCachedPacks(userId)
+      getCachedAlumnosSimple(cacheKey, cacheType),
+      getCachedPacks(cacheKey, cacheType)
     ])
 
     // Calcular clases usadas por alumno usando su ciclo de facturación personalizado
@@ -143,8 +181,8 @@ export async function GET(request: NextRequest) {
 
     const paginatedData = paginatedResponse(clasesNormalizadas, total, { page, limit, skip })
 
-    // Calcular features del usuario según plan y trial
-    const features = getEffectiveFeatures(user.plan, user.trialEndsAt)
+    // Calcular features según plan y trial
+    const features = getEffectiveFeatures(configData.plan, configData.trialEndsAt)
 
     return NextResponse.json({
       // Nuevo formato paginado
@@ -154,18 +192,18 @@ export async function GET(request: NextRequest) {
       alumnos,
       packs,
       currentUserId: userId,
-      horarioMananaInicio: user.horarioMananaInicio || '08:00',
-      horarioMananaFin: user.horarioMananaFin || '14:00',
-      horarioTardeInicio: user.horarioTardeInicio || '17:00',
-      horarioTardeFin: user.horarioTardeFin || '22:00',
-      precioPorClase: user.precioPorClase?.toString() || '0',
-      maxAlumnosPorClase: user.maxAlumnosPorClase || 3,
-      horasAnticipacionMinima: user.horasAnticipacionMinima || 1,
+      horarioMananaInicio: configData.horarioMananaInicio || '08:00',
+      horarioMananaFin: configData.horarioMananaFin || '14:00',
+      horarioTardeInicio: configData.horarioTardeInicio || '17:00',
+      horarioTardeFin: configData.horarioTardeFin || '22:00',
+      precioPorClase: configData.precioPorClase?.toString() || '0',
+      maxAlumnosPorClase: configData.maxAlumnosPorClase || 3,
+      horasAnticipacionMinima: configData.horasAnticipacionMinima || 1,
       // Features del plan para bloquear UI
       features: {
         clasesRecurrentes: features.clasesRecurrentes,
         listaEspera: features.listaEspera,
-        plan: user.plan
+        plan: configData.plan
       }
     })
   } catch (error) {
@@ -182,52 +220,93 @@ export async function POST(request: NextRequest) {
       return tooManyRequests()
     }
 
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
+
+    const { userId, estudio } = context
 
     const body = await request.json()
     const { action, ...data } = body
 
+    // Filtro por estudio o profesor
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
+
     switch (action) {
       case 'create': {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            horasAnticipacionMinima: true,
-            maxAlumnosPorClase: true,
-            syncGoogleCalendar: true,
-            horarioMananaInicio: true,
-            horarioMananaFin: true,
-            horarioTardeInicio: true,
-            horarioTardeFin: true,
-            plan: true,
-            trialEndsAt: true
-          }
-        })
-
-        if (!user) {
-          return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+        // Validar con Zod
+        const parsed = createClaseSchema.safeParse({ action, ...data })
+        if (!parsed.success) {
+          return badRequest(parsed.error.issues[0].message)
         }
 
-        const { alumnoIds, horaInicio, horaRecurrente: horaRecurrenteInput, esClasePrueba, esRecurrente, frecuenciaSemanal: frecuenciaSemanalStr, diasSemana: diasSemanaStr, fecha: fechaStr } = data
+        // Verificar permiso para crear clases
+        if (estudio && !hasPermission(estudio.rol, 'create:clases')) {
+          return forbidden('No tienes permiso para crear clases')
+        }
+
+        // Obtener config del estudio o del usuario
+        const configData = estudio
+          ? await prisma.estudio.findUnique({
+              where: { id: estudio.estudioId },
+              select: {
+                horasAnticipacionMinima: true,
+                maxAlumnosPorClase: true,
+                horarioMananaInicio: true,
+                horarioMananaFin: true,
+                horarioTardeInicio: true,
+                horarioTardeFin: true,
+                plan: true,
+                trialEndsAt: true
+              }
+            })
+          : await prisma.user.findUnique({
+              where: { id: userId },
+              select: {
+                horasAnticipacionMinima: true,
+                maxAlumnosPorClase: true,
+                horarioMananaInicio: true,
+                horarioMananaFin: true,
+                horarioTardeInicio: true,
+                horarioTardeFin: true,
+                plan: true,
+                trialEndsAt: true
+              }
+            })
+
+        if (!configData) {
+          return NextResponse.json({ error: 'Usuario/Estudio no encontrado' }, { status: 404 })
+        }
+
+        const {
+          alumnoIds,
+          horaInicio,
+          horaRecurrente: horaRecurrenteInput,
+          esClasePrueba,
+          esRecurrente,
+          frecuenciaSemanal: frecuenciaSemanalParsed,
+          diasSemana: diasSemanaParsed,
+          fecha: fechaStr
+        } = parsed.data
 
         // Verificar que el plan permita clases recurrentes
-        if (esRecurrente && !canUseFeature('clasesRecurrentes', user.plan, user.trialEndsAt)) {
-          const suggestedPlan = getSuggestedUpgrade(user.plan, 'feature')
+        if (esRecurrente && !canUseFeature('clasesRecurrentes', configData.plan, configData.trialEndsAt)) {
+          const suggestedPlan = getSuggestedUpgrade(configData.plan, 'feature')
           return NextResponse.json({
             error: 'Las clases recurrentes no están disponibles en tu plan',
             code: 'FEATURE_NOT_AVAILABLE',
             feature: 'clasesRecurrentes',
-            currentPlan: user.plan,
+            currentPlan: configData.plan,
             suggestedPlan,
             suggestedPlanName: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].name : null
           }, { status: 403 })
         }
         const horaRecurrente = horaRecurrenteInput || horaInicio
-        const frecuenciaSemanal = esRecurrente ? parseInt(frecuenciaSemanalStr) : null
-        const diasSemana = diasSemanaStr ? (typeof diasSemanaStr === 'string' ? JSON.parse(diasSemanaStr) : diasSemanaStr) : []
+        const frecuenciaSemanal = esRecurrente ? frecuenciaSemanalParsed : null
+        const diasSemana = diasSemanaParsed
 
         // Asegurar que alumnoIds es un array
         const alumnosArray: string[] = Array.isArray(alumnoIds) ? alumnoIds : []
@@ -246,21 +325,21 @@ export async function POST(request: NextRequest) {
         ))
 
         const ahora = new Date()
-        const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
+        const tiempoMinimoAnticipacion = new Date(ahora.getTime() + configData.horasAnticipacionMinima * 60 * 60 * 1000)
 
         if (fechaHoraClaseUTC < tiempoMinimoAnticipacion) {
-          const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
+          const horasTexto = configData.horasAnticipacionMinima === 1 ? '1 hora' : `${configData.horasAnticipacionMinima} horas`
           return NextResponse.json({ error: `Las clases deben reservarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
         }
 
-        // Validar horario contra configuración del profesor
+        // Validar horario contra configuración del profesor/estudio
         // Usar el inicio del horario de tarde para determinar si es mañana o tarde
-        const horaTardeInicio = parseInt(user.horarioTardeInicio.split(':')[0])
+        const horaTardeInicio = parseInt(configData.horarioTardeInicio.split(':')[0])
         const horaNum = parseInt(horaInicio.split(':')[0])
         const esManiana = horaNum < horaTardeInicio
 
-        const horarioInicio = esManiana ? user.horarioMananaInicio : user.horarioTardeInicio
-        const horarioFin = esManiana ? user.horarioMananaFin : user.horarioTardeFin
+        const horarioInicio = esManiana ? configData.horarioMananaInicio : configData.horarioTardeInicio
+        const horarioFin = esManiana ? configData.horarioMananaFin : configData.horarioTardeFin
 
         if (horaInicio < horarioInicio || horaInicio > horarioFin) {
           const turno = esManiana ? 'mañana' : 'tarde'
@@ -277,7 +356,7 @@ export async function POST(request: NextRequest) {
 
           const horarioDisponible = await prisma.horarioDisponible.findFirst({
             where: {
-              profesorId: userId,
+              ...ownerFilter,
               diaSemana,
               esManiana,
               estaActivo: true,
@@ -301,7 +380,7 @@ export async function POST(request: NextRequest) {
         // Validar cantidad de clases en el mismo horario
         const clasesEnMismoHorario = await prisma.clase.count({
           where: {
-            profesorId: userId,
+            ...ownerFilter,
             fecha,
             horaInicio,
             estado: { not: 'cancelada' },
@@ -309,21 +388,21 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        const espaciosDisponibles = user.maxAlumnosPorClase - clasesEnMismoHorario
+        const espaciosDisponibles = configData.maxAlumnosPorClase - clasesEnMismoHorario
         if (alumnosArray.length > espaciosDisponibles) {
           return NextResponse.json({
             error: espaciosDisponibles === 0
-              ? `Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos`
+              ? `Esta clase ya alcanzó el máximo de ${configData.maxAlumnosPorClase} alumnos`
               : `Solo hay ${espaciosDisponibles} lugar(es) disponible(s) en este horario`
           }, { status: 400 })
         }
 
-        // Validar que todos los alumnos pertenecen al profesor
+        // Validar que todos los alumnos pertenecen al estudio/profesor
         if (alumnosArray.length > 0) {
           const alumnosValidos = await prisma.alumno.count({
             where: {
               id: { in: alumnosArray },
-              profesorId: userId,
+              ...ownerFilter,
               deletedAt: null
             }
           })
@@ -338,6 +417,7 @@ export async function POST(request: NextRequest) {
           const claseCreada = await prisma.clase.create({
             data: {
               profesorId: userId,
+              ...(estudio && { estudioId: estudio.estudioId }),
               alumnoId: alumnoId || null,
               fecha,
               horaInicio,
@@ -372,6 +452,7 @@ export async function POST(request: NextRequest) {
 
                 clasesACrear.push({
                   profesorId: userId,
+                  ...(estudio && { estudioId: estudio.estudioId }),
                   alumnoId: alumnoId || null,
                   fecha: fechaClase,
                   horaInicio: horaRecurrente,
@@ -398,27 +479,61 @@ export async function POST(request: NextRequest) {
       }
 
       case 'update': {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            horasAnticipacionMinima: true,
-            maxAlumnosPorClase: true,
-            syncGoogleCalendar: true,
-            horarioMananaInicio: true,
-            horarioMananaFin: true,
-            horarioTardeInicio: true,
-            horarioTardeFin: true
-          }
-        })
-
-        if (!user) {
-          return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+        // Validar con Zod
+        const parsedUpdate = updateClaseSchema.safeParse({ action, ...data })
+        if (!parsedUpdate.success) {
+          return badRequest(parsedUpdate.error.issues[0].message)
         }
 
-        const { id, alumnoId, horaInicio, horaRecurrente: horaRecurrenteInput, estado, esClasePrueba, esRecurrente, frecuenciaSemanal: frecuenciaSemanalStr, diasSemana: diasSemanaStr, fecha: fechaStr } = data
+        // Verificar permiso para editar clases (según rol, INSTRUCTOR solo puede editar sus propias)
+        if (estudio && !hasPermission(estudio.rol, 'edit:clases')) {
+          return forbidden('No tienes permiso para editar clases')
+        }
+
+        // Obtener config del estudio o del usuario
+        const updateConfigData = estudio
+          ? await prisma.estudio.findUnique({
+              where: { id: estudio.estudioId },
+              select: {
+                horasAnticipacionMinima: true,
+                maxAlumnosPorClase: true,
+                horarioMananaInicio: true,
+                horarioMananaFin: true,
+                horarioTardeInicio: true,
+                horarioTardeFin: true
+              }
+            })
+          : await prisma.user.findUnique({
+              where: { id: userId },
+              select: {
+                horasAnticipacionMinima: true,
+                maxAlumnosPorClase: true,
+                horarioMananaInicio: true,
+                horarioMananaFin: true,
+                horarioTardeInicio: true,
+                horarioTardeFin: true
+              }
+            })
+
+        if (!updateConfigData) {
+          return NextResponse.json({ error: 'Usuario/Estudio no encontrado' }, { status: 404 })
+        }
+
+        const {
+          id,
+          alumnoId,
+          horaInicio,
+          horaRecurrente: horaRecurrenteInput,
+          estado,
+          esClasePrueba,
+          esRecurrente,
+          frecuenciaSemanal: frecuenciaSemanalParsed,
+          diasSemana: diasSemanaParsed,
+          fecha: fechaStr
+        } = parsedUpdate.data
         const horaRecurrente = horaRecurrenteInput || horaInicio
-        const frecuenciaSemanal = esRecurrente ? parseInt(frecuenciaSemanalStr) : null
-        const diasSemana = diasSemanaStr ? (typeof diasSemanaStr === 'string' ? JSON.parse(diasSemanaStr) : diasSemanaStr) : []
+        const frecuenciaSemanal = esRecurrente ? frecuenciaSemanalParsed : null
+        const diasSemana = diasSemanaParsed
 
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
@@ -434,21 +549,21 @@ export async function POST(request: NextRequest) {
         ))
 
         const ahora = new Date()
-        const tiempoMinimoAnticipacion = new Date(ahora.getTime() + user.horasAnticipacionMinima * 60 * 60 * 1000)
+        const tiempoMinimoAnticipacion = new Date(ahora.getTime() + updateConfigData.horasAnticipacionMinima * 60 * 60 * 1000)
 
         if (fechaHoraClaseUTC < tiempoMinimoAnticipacion) {
-          const horasTexto = user.horasAnticipacionMinima === 1 ? '1 hora' : `${user.horasAnticipacionMinima} horas`
+          const horasTexto = updateConfigData.horasAnticipacionMinima === 1 ? '1 hora' : `${updateConfigData.horasAnticipacionMinima} horas`
           return NextResponse.json({ error: `Las clases deben modificarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
         }
 
-        // Validar horario contra configuración del profesor
+        // Validar horario contra configuración del profesor/estudio
         // Usar el inicio del horario de tarde para determinar si es mañana o tarde
-        const horaTardeInicio = parseInt(user.horarioTardeInicio.split(':')[0])
+        const horaTardeInicio = parseInt(updateConfigData.horarioTardeInicio.split(':')[0])
         const horaNum = parseInt(horaInicio.split(':')[0])
         const esManiana = horaNum < horaTardeInicio
 
-        const horarioInicio = esManiana ? user.horarioMananaInicio : user.horarioTardeInicio
-        const horarioFin = esManiana ? user.horarioMananaFin : user.horarioTardeFin
+        const horarioInicio = esManiana ? updateConfigData.horarioMananaInicio : updateConfigData.horarioTardeInicio
+        const horarioFin = esManiana ? updateConfigData.horarioMananaFin : updateConfigData.horarioTardeFin
 
         if (horaInicio < horarioInicio || horaInicio > horarioFin) {
           const turno = esManiana ? 'mañana' : 'tarde'
@@ -465,7 +580,7 @@ export async function POST(request: NextRequest) {
 
           const horarioDisponible = await prisma.horarioDisponible.findFirst({
             where: {
-              profesorId: userId,
+              ...ownerFilter,
               diaSemana,
               esManiana,
               estaActivo: true,
@@ -489,7 +604,7 @@ export async function POST(request: NextRequest) {
         // Validar cantidad de clases en el mismo horario (una sola query)
         const clasesEnMismoHorario = await prisma.clase.count({
           where: {
-            profesorId: userId,
+            ...ownerFilter,
             fecha,
             horaInicio,
             estado: { not: 'cancelada' },
@@ -498,22 +613,27 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        if (clasesEnMismoHorario >= user.maxAlumnosPorClase) {
-          return NextResponse.json({ error: `Esta clase ya alcanzó el máximo de ${user.maxAlumnosPorClase} alumnos` }, { status: 400 })
+        if (clasesEnMismoHorario >= updateConfigData.maxAlumnosPorClase) {
+          return NextResponse.json({ error: `Esta clase ya alcanzó el máximo de ${updateConfigData.maxAlumnosPorClase} alumnos` }, { status: 400 })
         }
 
-        // Validar que la clase pertenece al profesor
+        // Validar que la clase pertenece al estudio/profesor
         const claseExistente = await prisma.clase.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+          where: { id, ...ownerFilter, deletedAt: null }
         })
         if (!claseExistente) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
         }
 
-        // Validar que el alumno pertenece al profesor (si se especifica)
+        // Si es INSTRUCTOR en un estudio, solo puede editar sus propias clases
+        if (estudio && estudio.rol === 'INSTRUCTOR' && claseExistente.profesorId !== userId) {
+          return forbidden('Solo puedes editar tus propias clases')
+        }
+
+        // Validar que el alumno pertenece al estudio/profesor (si se especifica)
         if (alumnoId) {
           const alumnoValido = await prisma.alumno.findFirst({
-            where: { id: alumnoId, profesorId: userId, deletedAt: null }
+            where: { id: alumnoId, ...ownerFilter, deletedAt: null }
           })
           if (!alumnoValido) {
             return NextResponse.json({ error: 'Alumno no válido' }, { status: 400 })
@@ -543,16 +663,32 @@ export async function POST(request: NextRequest) {
       }
 
       case 'delete': {
-        const { id } = data
+        // Validar con Zod
+        const parsedDelete = deleteClaseSchema.safeParse({ action, ...data })
+        if (!parsedDelete.success) {
+          return badRequest(parsedDelete.error.issues[0].message)
+        }
 
-        // Validar que la clase pertenece al profesor
+        // Verificar permiso para eliminar clases
+        if (estudio && !hasPermission(estudio.rol, 'delete:clases')) {
+          return forbidden('No tienes permiso para eliminar clases')
+        }
+
+        const { id } = parsedDelete.data
+
+        // Validar que la clase pertenece al estudio/profesor
         const clase = await prisma.clase.findFirst({
-          where: { id, profesorId: userId, deletedAt: null },
-          select: { id: true }
+          where: { id, ...ownerFilter, deletedAt: null },
+          select: { id: true, profesorId: true }
         })
 
         if (!clase) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
+        }
+
+        // Si es INSTRUCTOR, solo puede eliminar sus propias clases
+        if (estudio && estudio.rol === 'INSTRUCTOR' && clase.profesorId !== userId) {
+          return forbidden('Solo puedes eliminar tus propias clases')
         }
 
         // Soft delete: marcar como eliminado en lugar de borrar
@@ -565,55 +701,75 @@ export async function POST(request: NextRequest) {
       }
 
       case 'changeStatus': {
-        const { id, estado } = data
+        // Validar con Zod
+        const parsedStatus = changeStatusSchema.safeParse({ action, ...data })
+        if (!parsedStatus.success) {
+          return badRequest(parsedStatus.error.issues[0].message)
+        }
 
-        // Validar que la clase pertenece al profesor
-        const clase = await prisma.clase.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+        // Verificar permiso para cambiar estado
+        if (estudio && !hasPermission(estudio.rol, 'edit:clases')) {
+          return forbidden('No tienes permiso para cambiar el estado de clases')
+        }
+
+        const { id: statusId, estado: nuevoEstado } = parsedStatus.data
+
+        // Validar que la clase pertenece al estudio/profesor
+        const claseStatus = await prisma.clase.findFirst({
+          where: { id: statusId, ...ownerFilter, deletedAt: null }
         })
-        if (!clase) {
+        if (!claseStatus) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
         }
 
-        // Validar estado válido
-        const estadosValidos = ['reservada', 'completada', 'cancelada']
-        if (!estadosValidos.includes(estado)) {
-          return NextResponse.json({ error: 'Estado no válido' }, { status: 400 })
+        // Si es INSTRUCTOR, solo puede cambiar estado de sus propias clases
+        if (estudio && estudio.rol === 'INSTRUCTOR' && claseStatus.profesorId !== userId) {
+          return forbidden('Solo puedes cambiar el estado de tus propias clases')
         }
 
         await prisma.clase.update({
-          where: { id },
-          data: { estado }
+          where: { id: statusId },
+          data: { estado: nuevoEstado }
         })
 
         return NextResponse.json({ success: true })
       }
 
       case 'changeAsistencia': {
-        const { id, asistencia } = data
+        // Validar con Zod
+        const parsedAsistencia = changeAsistenciaSchema.safeParse({ action, ...data })
+        if (!parsedAsistencia.success) {
+          return badRequest(parsedAsistencia.error.issues[0].message)
+        }
 
-        // Validar que la clase pertenece al profesor
-        const clase = await prisma.clase.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+        // Verificar permiso para cambiar asistencia
+        if (estudio && !hasPermission(estudio.rol, 'edit:clases')) {
+          return forbidden('No tienes permiso para cambiar la asistencia')
+        }
+
+        const { id: asistenciaId, asistencia } = parsedAsistencia.data
+
+        // Validar que la clase pertenece al estudio/profesor
+        const claseAsistencia = await prisma.clase.findFirst({
+          where: { id: asistenciaId, ...ownerFilter, deletedAt: null }
         })
-        if (!clase) {
+        if (!claseAsistencia) {
           return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
         }
 
-        // Validar asistencia válida
-        const asistenciasValidas = ['pendiente', 'presente', 'ausente']
-        if (!asistenciasValidas.includes(asistencia)) {
-          return NextResponse.json({ error: 'Asistencia no válida' }, { status: 400 })
+        // Si es INSTRUCTOR, solo puede cambiar asistencia de sus propias clases
+        if (estudio && estudio.rol === 'INSTRUCTOR' && claseAsistencia.profesorId !== userId) {
+          return forbidden('Solo puedes cambiar la asistencia de tus propias clases')
         }
 
         // Cuando marcamos asistencia, también completamos la clase
-        const nuevoEstado = asistencia === 'pendiente' ? 'reservada' : 'completada'
+        const estadoAsistencia = asistencia === 'pendiente' ? 'reservada' : 'completada'
 
         await prisma.clase.update({
-          where: { id },
+          where: { id: asistenciaId },
           data: {
             asistencia,
-            estado: nuevoEstado
+            estado: estadoAsistencia
           }
         })
 

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
+import { getUserContext, hasPermission, hashPassword, verifyPassword } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
-import { getCachedPacks, getCachedHorarios, getCachedProfesorConfig } from '@/lib/server-cache'
+import { getCachedPacks, getCachedHorarios, getCachedProfesorConfig, type OwnerType } from '@/lib/server-cache'
 import { invalidatePacks, invalidateHorarios, invalidateConfig } from '@/lib/cache-utils'
-import { unauthorized, badRequest, notFound, tooManyRequests, serverError } from '@/lib/api-utils'
+import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
 import { canUseFeature, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
+import {
+  savePackSchema,
+  deletePackSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  updatePreferenciasSchema
+} from '@/lib/schemas/configuracion.schema'
 
 export const runtime = 'nodejs'
 
@@ -15,16 +22,22 @@ const WINDOW_MS = 60 * 1000
 
 export async function GET() {
   try {
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
 
-    // Usar cache para datos que cambian poco
+    const { userId, estudio } = context
+
+    // Para packs/horarios: usar estudioId si hay estudio, sino profesorId
+    const resourceOwnerId = estudio ? estudio.estudioId : userId
+    const ownerType: OwnerType = estudio ? 'estudio' : 'profesor'
+
+    // Para config del profesor: siempre usar userId (el User siempre existe)
     const [profesor, horarios, packs, accounts] = await Promise.all([
       getCachedProfesorConfig(userId),
-      getCachedHorarios(userId),
-      getCachedPacks(userId),
+      getCachedHorarios(resourceOwnerId, ownerType),
+      getCachedPacks(resourceOwnerId, ownerType),
       prisma.account.findMany({
         where: { userId },
         select: { provider: true }
@@ -53,7 +66,12 @@ export async function GET() {
         configuracionHorarios: features.configuracionHorarios,
         googleCalendarSync: features.googleCalendarSync,
         plan: profesor.plan
-      }
+      },
+      // Info del estudio para UI
+      estudioInfo: estudio ? {
+        estudioId: estudio.estudioId,
+        rol: estudio.rol
+      } : null
     })
   } catch (error) {
     return serverError(error)
@@ -69,43 +87,67 @@ export async function POST(request: NextRequest) {
       return tooManyRequests()
     }
 
-    const userId = await getCurrentUser()
-    if (!userId) {
+    const context = await getUserContext()
+    if (!context) {
       return unauthorized()
     }
+
+    const { userId, estudio } = context
+
+    // Filtro por estudio o profesor
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
 
     const body = await request.json()
     const { action, ...data } = body
 
     switch (action) {
       case 'saveHorario': {
+        // Verificar permiso para editar configuración
+        if (estudio && !hasPermission(estudio.rol, 'edit:configuracion')) {
+          return forbidden('No tienes permiso para modificar horarios')
+        }
+
         const { id, diaSemana, horaInicio, horaFin, esManiana } = data
 
         // Obtener horarios por defecto configurados y plan
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            horarioMananaInicio: true,
-            horarioMananaFin: true,
-            horarioTardeInicio: true,
-            horarioTardeFin: true,
-            plan: true,
-            trialEndsAt: true
-          }
-        })
+        const configData = estudio
+          ? await prisma.estudio.findUnique({
+              where: { id: estudio.estudioId },
+              select: {
+                horarioMananaInicio: true,
+                horarioMananaFin: true,
+                horarioTardeInicio: true,
+                horarioTardeFin: true,
+                plan: true,
+                trialEndsAt: true
+              }
+            })
+          : await prisma.user.findUnique({
+              where: { id: userId },
+              select: {
+                horarioMananaInicio: true,
+                horarioMananaFin: true,
+                horarioTardeInicio: true,
+                horarioTardeFin: true,
+                plan: true,
+                trialEndsAt: true
+              }
+            })
 
-        if (!user) {
-          return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+        if (!configData) {
+          return NextResponse.json({ error: 'Usuario/Estudio no encontrado' }, { status: 404 })
         }
 
         // Verificar que el plan permita configuración de horarios
-        if (!canUseFeature('configuracionHorarios', user.plan, user.trialEndsAt)) {
-          const suggestedPlan = getSuggestedUpgrade(user.plan, 'feature')
+        if (!canUseFeature('configuracionHorarios', configData.plan, configData.trialEndsAt)) {
+          const suggestedPlan = getSuggestedUpgrade(configData.plan, 'feature')
           return NextResponse.json({
             error: 'La configuración de horarios no está disponible en tu plan',
             code: 'FEATURE_NOT_AVAILABLE',
             feature: 'configuracionHorarios',
-            currentPlan: user.plan,
+            currentPlan: configData.plan,
             suggestedPlan,
             suggestedPlanName: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].name : null
           }, { status: 403 })
@@ -113,15 +155,15 @@ export async function POST(request: NextRequest) {
 
         // Validar que los horarios estén dentro del rango configurado
         if (esManiana) {
-          if (horaInicio < user.horarioMananaInicio || horaFin > user.horarioMananaFin) {
+          if (horaInicio < configData.horarioMananaInicio || horaFin > configData.horarioMananaFin) {
             return NextResponse.json({
-              error: `El horario de mañana debe estar entre ${user.horarioMananaInicio} y ${user.horarioMananaFin}`
+              error: `El horario de mañana debe estar entre ${configData.horarioMananaInicio} y ${configData.horarioMananaFin}`
             }, { status: 400 })
           }
         } else {
-          if (horaInicio < user.horarioTardeInicio || horaFin > user.horarioTardeFin) {
+          if (horaInicio < configData.horarioTardeInicio || horaFin > configData.horarioTardeFin) {
             return NextResponse.json({
-              error: `El horario de tarde debe estar entre ${user.horarioTardeInicio} y ${user.horarioTardeFin}`
+              error: `El horario de tarde debe estar entre ${configData.horarioTardeInicio} y ${configData.horarioTardeFin}`
             }, { status: 400 })
           }
         }
@@ -135,13 +177,20 @@ export async function POST(request: NextRequest) {
 
         let horario
         if (id) {
+          // Verificar que el horario pertenece al estudio/profesor
+          const horarioExistente = await prisma.horarioDisponible.findFirst({
+            where: { id, ...ownerFilter, deletedAt: null }
+          })
+          if (!horarioExistente) {
+            return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
+          }
           horario = await prisma.horarioDisponible.update({
             where: { id },
             data: { diaSemana, horaInicio, horaFin, esManiana }
           })
         } else {
           const existente = await prisma.horarioDisponible.findFirst({
-            where: { profesorId: userId, diaSemana, esManiana, deletedAt: null }
+            where: { ...ownerFilter, diaSemana, esManiana, deletedAt: null }
           })
 
           if (existente) {
@@ -151,7 +200,14 @@ export async function POST(request: NextRequest) {
             })
           } else {
             horario = await prisma.horarioDisponible.create({
-              data: { profesorId: userId, diaSemana, horaInicio, horaFin, esManiana }
+              data: {
+                profesorId: userId,
+                ...(estudio && { estudioId: estudio.estudioId }),
+                diaSemana,
+                horaInicio,
+                horaFin,
+                esManiana
+              }
             })
           }
         }
@@ -161,6 +217,11 @@ export async function POST(request: NextRequest) {
       }
 
       case 'saveHorariosBatch': {
+        // Verificar permiso para editar configuración
+        if (estudio && !hasPermission(estudio.rol, 'edit:configuracion')) {
+          return forbidden('No tienes permiso para modificar horarios')
+        }
+
         const { horarios: horariosData } = data as {
           horarios: Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }>
         }
@@ -170,18 +231,23 @@ export async function POST(request: NextRequest) {
         }
 
         // Verificar que el plan permita configuración de horarios
-        const userBatch = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { plan: true, trialEndsAt: true }
-        })
+        const configBatch = estudio
+          ? await prisma.estudio.findUnique({
+              where: { id: estudio.estudioId },
+              select: { plan: true, trialEndsAt: true }
+            })
+          : await prisma.user.findUnique({
+              where: { id: userId },
+              select: { plan: true, trialEndsAt: true }
+            })
 
-        if (userBatch && !canUseFeature('configuracionHorarios', userBatch.plan, userBatch.trialEndsAt)) {
-          const suggestedPlan = getSuggestedUpgrade(userBatch.plan, 'feature')
+        if (configBatch && !canUseFeature('configuracionHorarios', configBatch.plan, configBatch.trialEndsAt)) {
+          const suggestedPlan = getSuggestedUpgrade(configBatch.plan, 'feature')
           return NextResponse.json({
             error: 'La configuración de horarios no está disponible en tu plan',
             code: 'FEATURE_NOT_AVAILABLE',
             feature: 'configuracionHorarios',
-            currentPlan: userBatch.plan,
+            currentPlan: configBatch.plan,
             suggestedPlan,
             suggestedPlanName: suggestedPlan ? PLAN_CONFIGS[suggestedPlan].name : null
           }, { status: 403 })
@@ -201,7 +267,7 @@ export async function POST(request: NextRequest) {
           // Borrar solo los que vamos a reemplazar
           prisma.horarioDisponible.deleteMany({
             where: {
-              profesorId: userId,
+              ...ownerFilter,
               OR: horariosData.map(h => ({
                 diaSemana: h.diaSemana,
                 esManiana: h.esManiana
@@ -212,6 +278,7 @@ export async function POST(request: NextRequest) {
           prisma.horarioDisponible.createMany({
             data: horariosData.map(h => ({
               profesorId: userId,
+              ...(estudio && { estudioId: estudio.estudioId }),
               diaSemana: h.diaSemana,
               horaInicio: h.horaInicio,
               horaFin: h.horaFin,
@@ -223,7 +290,7 @@ export async function POST(request: NextRequest) {
         // Obtener los horarios creados para devolver
         const resultados = await prisma.horarioDisponible.findMany({
           where: {
-            profesorId: userId,
+            ...ownerFilter,
             OR: horariosData.map(h => ({
               diaSemana: h.diaSemana,
               esManiana: h.esManiana
@@ -236,11 +303,16 @@ export async function POST(request: NextRequest) {
       }
 
       case 'deleteHorario': {
+        // Verificar permiso para editar configuración
+        if (estudio && !hasPermission(estudio.rol, 'edit:configuracion')) {
+          return forbidden('No tienes permiso para eliminar horarios')
+        }
+
         const { id } = data
 
-        // Validar que el horario pertenece al profesor
+        // Validar que el horario pertenece al estudio/profesor
         const horario = await prisma.horarioDisponible.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+          where: { id, ...ownerFilter, deletedAt: null }
         })
         if (!horario) {
           return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
@@ -256,11 +328,16 @@ export async function POST(request: NextRequest) {
       }
 
       case 'toggleHorario': {
+        // Verificar permiso para editar configuración
+        if (estudio && !hasPermission(estudio.rol, 'edit:configuracion')) {
+          return forbidden('No tienes permiso para modificar horarios')
+        }
+
         const { id } = data
 
-        // Validar que el horario pertenece al profesor
+        // Validar que el horario pertenece al estudio/profesor
         const horario = await prisma.horarioDisponible.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+          where: { id, ...ownerFilter, deletedAt: null }
         })
         if (!horario) {
           return NextResponse.json({ error: 'Horario no encontrado' }, { status: 404 })
@@ -275,28 +352,22 @@ export async function POST(request: NextRequest) {
       }
 
       case 'savePack': {
-        const { id, nombre, clasesPorSemana, precio } = data
-
-        // Validar campos
-        if (!nombre?.trim()) {
-          return NextResponse.json({ error: 'El nombre del pack es obligatorio' }, { status: 400 })
+        // Verificar permiso para editar configuración
+        if (estudio && !hasPermission(estudio.rol, 'edit:configuracion')) {
+          return forbidden('No tienes permiso para modificar packs')
         }
 
-        const clasesPorSemanaNum = parseInt(clasesPorSemana)
-        if (isNaN(clasesPorSemanaNum) || clasesPorSemanaNum < 1) {
-          return NextResponse.json({ error: 'Las clases por semana deben ser al menos 1' }, { status: 400 })
+        const parsedPack = savePackSchema.safeParse(data)
+        if (!parsedPack.success) {
+          return badRequest(parsedPack.error.issues[0].message)
         }
-
-        const precioNum = parseFloat(precio)
-        if (isNaN(precioNum) || precioNum <= 0) {
-          return NextResponse.json({ error: 'El precio debe ser mayor a 0' }, { status: 400 })
-        }
+        const { id, nombre, clasesPorSemana, precio } = parsedPack.data
 
         let pack
         if (id) {
-          // Validar que el pack pertenece al profesor
+          // Validar que el pack pertenece al estudio/profesor
           const packExistente = await prisma.pack.findFirst({
-            where: { id, profesorId: userId, deletedAt: null }
+            where: { id, ...ownerFilter, deletedAt: null }
           })
           if (!packExistente) {
             return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
@@ -304,11 +375,17 @@ export async function POST(request: NextRequest) {
 
           pack = await prisma.pack.update({
             where: { id },
-            data: { nombre, clasesPorSemana: clasesPorSemanaNum, precio: precioNum }
+            data: { nombre, clasesPorSemana, precio }
           })
         } else {
           pack = await prisma.pack.create({
-            data: { profesorId: userId, nombre, clasesPorSemana: clasesPorSemanaNum, precio: precioNum }
+            data: {
+              profesorId: userId,
+              ...(estudio && { estudioId: estudio.estudioId }),
+              nombre,
+              clasesPorSemana,
+              precio
+            }
           })
         }
         invalidatePacks()
@@ -316,9 +393,18 @@ export async function POST(request: NextRequest) {
       }
 
       case 'deletePack': {
-        const { id } = data
+        // Verificar permiso para editar configuración
+        if (estudio && !hasPermission(estudio.rol, 'edit:configuracion')) {
+          return forbidden('No tienes permiso para eliminar packs')
+        }
+
+        const parsedDelete = deletePackSchema.safeParse(data)
+        if (!parsedDelete.success) {
+          return badRequest(parsedDelete.error.issues[0].message)
+        }
+        const { id } = parsedDelete.data
         const pack = await prisma.pack.findFirst({
-          where: { id, profesorId: userId, deletedAt: null }
+          where: { id, ...ownerFilter, deletedAt: null }
         })
         if (!pack) {
           return NextResponse.json({ error: 'Pack no encontrado' }, { status: 404 })
@@ -326,7 +412,7 @@ export async function POST(request: NextRequest) {
 
         // Verificar si hay alumnos usando este pack
         const alumnosConPack = await prisma.alumno.count({
-          where: { packType: id, profesorId: userId, deletedAt: null }
+          where: { packType: id, ...ownerFilter, deletedAt: null }
         })
         if (alumnosConPack > 0) {
           return NextResponse.json({
@@ -344,7 +430,11 @@ export async function POST(request: NextRequest) {
       }
 
       case 'updateProfile': {
-        const { nombre, telefono } = data
+        const parsedProfile = updateProfileSchema.safeParse(data)
+        if (!parsedProfile.success) {
+          return badRequest(parsedProfile.error.issues[0].message)
+        }
+        const { nombre, telefono } = parsedProfile.data
         await prisma.user.update({
           where: { id: userId },
           data: { nombre, telefono }
@@ -354,15 +444,11 @@ export async function POST(request: NextRequest) {
       }
 
       case 'changePassword': {
-        const { currentPassword, newPassword, confirmPassword } = data
-
-        if (newPassword !== confirmPassword) {
-          return NextResponse.json({ error: 'Las contraseñas no coinciden' }, { status: 400 })
+        const parsedPassword = changePasswordSchema.safeParse(data)
+        if (!parsedPassword.success) {
+          return badRequest(parsedPassword.error.issues[0].message)
         }
-
-        if (newPassword.length < 6) {
-          return NextResponse.json({ error: 'La contraseña debe tener al menos 6 caracteres' }, { status: 400 })
-        }
+        const { currentPassword, newPassword } = parsedPassword.data
 
         const user = await prisma.user.findUnique({ where: { id: userId } })
         if (!user || !user.password) {
@@ -383,6 +469,15 @@ export async function POST(request: NextRequest) {
       }
 
       case 'updatePreferencias': {
+        // Verificar permiso para editar configuración
+        if (estudio && !hasPermission(estudio.rol, 'edit:configuracion')) {
+          return forbidden('No tienes permiso para modificar preferencias')
+        }
+
+        const parsedPrefs = updatePreferenciasSchema.safeParse(data)
+        if (!parsedPrefs.success) {
+          return badRequest(parsedPrefs.error.issues[0].message)
+        }
         const {
           horasAnticipacionMinima,
           maxAlumnosPorClase,
@@ -394,53 +489,55 @@ export async function POST(request: NextRequest) {
           turnoTardeActivo,
           syncGoogleCalendar,
           precioPorClase
-        } = data
+        } = parsedPrefs.data
 
-        // Validar valores numéricos
-        if (horasAnticipacionMinima !== undefined && (isNaN(horasAnticipacionMinima) || horasAnticipacionMinima < 0)) {
-          return NextResponse.json({ error: 'Las horas de anticipación deben ser 0 o más' }, { status: 400 })
-        }
-
-        if (maxAlumnosPorClase !== undefined && (isNaN(maxAlumnosPorClase) || maxAlumnosPorClase < 1)) {
-          return NextResponse.json({ error: 'El máximo de alumnos debe ser al menos 1' }, { status: 400 })
-        }
-
-        // Validar horarios
+        // Validar horarios (relaciones entre campos)
         if (horarioMananaInicio && horarioMananaFin && horarioMananaInicio >= horarioMananaFin) {
-          return NextResponse.json({ error: 'El horario de mañana: inicio debe ser antes del fin' }, { status: 400 })
+          return badRequest('El horario de mañana: inicio debe ser antes del fin')
         }
 
         if (horarioTardeInicio && horarioTardeFin && horarioTardeInicio >= horarioTardeFin) {
-          return NextResponse.json({ error: 'El horario de tarde: inicio debe ser antes del fin' }, { status: 400 })
+          return badRequest('El horario de tarde: inicio debe ser antes del fin')
         }
 
         // Validar que mañana y tarde no se solapen
         if (horarioMananaFin && horarioTardeInicio && horarioMananaFin > horarioTardeInicio) {
-          return NextResponse.json({ error: 'El horario de mañana no puede solaparse con el de tarde' }, { status: 400 })
+          return badRequest('El horario de mañana no puede solaparse con el de tarde')
         }
 
-        if (precioPorClase !== undefined) {
-          const precioNum = parseFloat(precioPorClase)
-          if (isNaN(precioNum) || precioNum < 0) {
-            return NextResponse.json({ error: 'El precio por clase debe ser 0 o más' }, { status: 400 })
-          }
+        // Actualizar estudio o usuario según contexto
+        if (estudio) {
+          await prisma.estudio.update({
+            where: { id: estudio.estudioId },
+            data: {
+              horasAnticipacionMinima,
+              maxAlumnosPorClase,
+              horarioMananaInicio,
+              horarioMananaFin,
+              turnoMananaActivo,
+              horarioTardeInicio,
+              horarioTardeFin,
+              turnoTardeActivo,
+              precioPorClase
+            }
+          })
+        } else {
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              horasAnticipacionMinima,
+              maxAlumnosPorClase,
+              horarioMananaInicio,
+              horarioMananaFin,
+              turnoMananaActivo,
+              horarioTardeInicio,
+              horarioTardeFin,
+              turnoTardeActivo,
+              syncGoogleCalendar,
+              precioPorClase
+            }
+          })
         }
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            horasAnticipacionMinima,
-            maxAlumnosPorClase,
-            horarioMananaInicio,
-            horarioMananaFin,
-            turnoMananaActivo,
-            horarioTardeInicio,
-            horarioTardeFin,
-            turnoTardeActivo,
-            syncGoogleCalendar,
-            ...(precioPorClase !== undefined && { precioPorClase: parseFloat(precioPorClase) || 0 })
-          }
-        })
         invalidateConfig()
         return NextResponse.json({ success: true })
       }

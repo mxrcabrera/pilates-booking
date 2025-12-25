@@ -11,7 +11,6 @@ type Clase = {
   hora: string
   estado: string
   profesorNombre: string
-  profesorSlug: string
 }
 
 export default function MisClasesPage() {
@@ -38,12 +37,12 @@ export default function MisClasesPage() {
     loadClases()
   }, [])
 
-  const cancelarClase = async (claseId: string, profesorSlug: string) => {
+  const cancelarClase = async (claseId: string) => {
     setCancelando(claseId)
     setMessage(null)
 
     try {
-      const res = await fetch(`/api/portal/${profesorSlug}/reservar?id=${claseId}`, {
+      const res = await fetch(`/api/alumno/cancelar?id=${claseId}`, {
         method: 'DELETE'
       })
       const data = await res.json()
@@ -122,7 +121,7 @@ export default function MisClasesPage() {
                 <div className="clase-card-footer">
                   <button
                     className="btn-cancel"
-                    onClick={() => cancelarClase(clase.id, clase.profesorSlug)}
+                    onClick={() => cancelarClase(clase.id)}
                     disabled={cancelando === clase.id}
                   >
                     {cancelando === clase.id ? 'Cancelando...' : 'Cancelar reserva'}

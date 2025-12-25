@@ -1,20 +1,28 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getUserContext } from '@/lib/auth'
 import { startOfDay } from 'date-fns'
 import { getErrorMessage } from '@/lib/utils'
 import { getCachedProfesorConfig } from '@/lib/server-cache'
 import { logger } from '@/lib/logger'
 import { getEffectiveFeatures } from '@/lib/plans'
+import { unauthorized } from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
 
 export async function GET() {
   try {
-    const userId = await getCurrentUser()
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    const context = await getUserContext()
+    if (!context) {
+      return unauthorized()
     }
+
+    const { userId, estudio } = context
+
+    // Filtro por estudio o profesor
+    const ownerFilter = estudio
+      ? { estudioId: estudio.estudioId }
+      : { profesorId: userId }
 
     // Obtener inicio del día local y convertir a UTC
     const ahora = new Date()
@@ -41,13 +49,13 @@ export async function GET() {
       }),
       prisma.alumno.count({
         where: {
-          profesorId: userId,
+          ...ownerFilter,
           estaActivo: true
         }
       }),
       prisma.clase.findMany({
         where: {
-          profesorId: userId,
+          ...ownerFilter,
           fecha: fechaHoy
         },
         select: {
@@ -68,7 +76,7 @@ export async function GET() {
       }),
       prisma.clase.findMany({
         where: {
-          profesorId: userId,
+          ...ownerFilter,
           fecha: fechaManana
         },
         select: {
@@ -88,9 +96,7 @@ export async function GET() {
       }),
       prisma.pago.count({
         where: {
-          alumno: {
-            profesorId: userId
-          },
+          alumno: ownerFilter,
           estado: 'pendiente',
           fechaVencimiento: {
             lt: new Date()
@@ -98,10 +104,10 @@ export async function GET() {
         }
       }),
       prisma.horarioDisponible.count({
-        where: { profesorId: userId }
+        where: ownerFilter
       }),
       prisma.pack.count({
-        where: { profesorId: userId }
+        where: ownerFilter
       })
     ])
 

@@ -7,7 +7,7 @@ import { TimeInput } from '@/components/time-input'
 import { SelectInput } from '@/components/select-input'
 import { SectionWrapper } from '@/components/ui/section-wrapper'
 import { FormMessage } from '@/components/ui/form-field'
-import type { Pack } from '@/lib/types'
+import type { Pack, ConfigFeatures } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
 
 type PreferenciasProps = {
@@ -20,6 +20,7 @@ type PreferenciasProps = {
   syncGoogleCalendar: boolean
   hasGoogleAccount: boolean
   packs: Pack[]
+  features?: ConfigFeatures
 }
 
 export function PreferenciasSection({
@@ -29,9 +30,10 @@ export function PreferenciasSection({
   horarioMananaFin,
   horarioTardeInicio,
   horarioTardeFin,
-  syncGoogleCalendar: _syncGoogleCalendar,
-  hasGoogleAccount: _hasGoogleAccount,
-  packs
+  syncGoogleCalendar,
+  hasGoogleAccount,
+  packs,
+  features
 }: PreferenciasProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -135,25 +137,53 @@ export function PreferenciasSection({
 
           <div className="form-divider"></div>
 
-          <div className="form-group form-group-disabled">
-            <label className="label-with-badge">
-              Sincronizar con Google Calendar
-              <span className="coming-soon-badge">Próximamente</span>
-            </label>
-            <div className="sync-checkbox-group">
-              <input
-                type="checkbox"
-                disabled={true}
-                className="sync-checkbox-input"
-              />
-              <span className="sync-checkbox-label sync-label-disabled">
-                Agregar mis clases automáticamente a Google Calendar
-              </span>
+          {features?.googleCalendarSync && hasGoogleAccount ? (
+            <div className="form-group">
+              <label>Sincronizar con Google Calendar</label>
+              <div className="sync-checkbox-group">
+                <input
+                  type="checkbox"
+                  name="syncGoogleCalendar"
+                  defaultChecked={syncGoogleCalendar}
+                  disabled={isLoading}
+                  className="sync-checkbox-input"
+                />
+                <span className="sync-checkbox-label">
+                  Agregar mis clases automáticamente a Google Calendar
+                </span>
+              </div>
+              <p className="form-hint">
+                Las clases que crees se sincronizarán automáticamente con tu calendario de Google.
+              </p>
             </div>
-            <p className="form-hint">
-              Estamos trabajando en esta función. Próximamente podrás sincronizar tus clases con Google Calendar.
-            </p>
-          </div>
+          ) : features?.googleCalendarSync && !hasGoogleAccount ? (
+            <div className="form-group">
+              <label>Sincronizar con Google Calendar</label>
+              <p className="form-hint">
+                Iniciá sesión con Google para habilitar la sincronización con tu calendario.
+              </p>
+            </div>
+          ) : (
+            <div className="form-group form-group-disabled">
+              <label className="label-with-badge">
+                Sincronizar con Google Calendar
+                <span className="coming-soon-badge">Plan Pro</span>
+              </label>
+              <div className="sync-checkbox-group">
+                <input
+                  type="checkbox"
+                  disabled={true}
+                  className="sync-checkbox-input"
+                />
+                <span className="sync-checkbox-label sync-label-disabled">
+                  Agregar mis clases automáticamente a Google Calendar
+                </span>
+              </div>
+              <p className="form-hint">
+                Esta función está disponible a partir del plan Pro.
+              </p>
+            </div>
+          )}
 
           <div className="form-actions">
             <button type="submit" className="btn-primary" disabled={isLoading}>

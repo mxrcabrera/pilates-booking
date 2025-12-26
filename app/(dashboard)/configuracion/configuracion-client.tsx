@@ -248,6 +248,28 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
             </div>
           </div>
 
+          {/* Google Calendar - solo para plan Pro+ */}
+          {features.googleCalendarSync && profesor.hasGoogleAccount && (
+            <div className="form-group google-calendar-section">
+              <label>Sincronizar con Google Calendar</label>
+              <div className="sync-checkbox-group">
+                <input
+                  type="checkbox"
+                  name="syncGoogleCalendar"
+                  defaultChecked={profesor.syncGoogleCalendar}
+                  disabled={isLoading}
+                  className="sync-checkbox-input"
+                />
+                <span className="sync-checkbox-label">
+                  Agregar clases automáticamente a Google Calendar
+                </span>
+              </div>
+              <p className="form-hint">
+                Las clases que crees se sincronizarán con tu calendario de Google.
+              </p>
+            </div>
+          )}
+
           {/* Turnos disponibles */}
           <div className="turnos-section">
             <h3 className="turnos-title">Turnos en los que das clases</h3>

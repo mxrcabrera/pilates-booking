@@ -8,6 +8,8 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { getCachedPacks, getCachedAlumnosSimple, type OwnerType } from '@/lib/server-cache'
 import { unauthorized, notFound, tooManyRequests, serverError, forbidden, badRequest } from '@/lib/api-utils'
 import { canUseFeature, PLAN_CONFIGS, getSuggestedUpgrade, getEffectiveFeatures } from '@/lib/plans'
+import { createCalendarEvent, deleteCalendarEvent } from '@/lib/services/google-calendar'
+import { notifyClassEvent } from '@/lib/services/notifications'
 import type { Prisma } from '@prisma/client'
 import {
   createClaseSchema,
@@ -260,7 +262,8 @@ export async function POST(request: NextRequest) {
                 horarioTardeInicio: true,
                 horarioTardeFin: true,
                 plan: true,
-                trialEndsAt: true
+                trialEndsAt: true,
+                syncGoogleCalendar: true
               }
             })
           : await prisma.user.findUnique({
@@ -273,7 +276,8 @@ export async function POST(request: NextRequest) {
                 horarioTardeInicio: true,
                 horarioTardeFin: true,
                 plan: true,
-                trialEndsAt: true
+                trialEndsAt: true,
+                syncGoogleCalendar: true
               }
             })
 
@@ -434,6 +438,28 @@ export async function POST(request: NextRequest) {
             }
           })
           clasesCreadas.push(claseCreada)
+
+          // Crear evento en Google Calendar si está habilitado
+          if (configData.syncGoogleCalendar && claseCreada.alumno) {
+            createCalendarEvent(
+              userId,
+              claseCreada.id,
+              claseCreada.alumno.nombre,
+              fecha,
+              horaInicio
+            ).catch(() => {}) // Fire and forget, no bloqueamos si falla
+          }
+
+          // Enviar notificación de clase nueva
+          if (claseCreada.alumno) {
+            notifyClassEvent({
+              claseId: claseCreada.id,
+              tipo: 'CLASE_NUEVA',
+              profesorId: userId,
+              plan: configData.plan,
+              trialEndsAt: configData.trialEndsAt,
+            }).catch(() => {}) // Fire and forget
+          }
 
           // Crear clases recurrentes para este alumno
           if (esRecurrente && diasSemana.length > 0) {
@@ -679,7 +705,7 @@ export async function POST(request: NextRequest) {
         // Validar que la clase pertenece al estudio/profesor
         const clase = await prisma.clase.findFirst({
           where: { id, ...ownerFilter, deletedAt: null },
-          select: { id: true, profesorId: true }
+          select: { id: true, profesorId: true, googleEventId: true }
         })
 
         if (!clase) {
@@ -689,6 +715,11 @@ export async function POST(request: NextRequest) {
         // Si es INSTRUCTOR, solo puede eliminar sus propias clases
         if (estudio && estudio.rol === 'INSTRUCTOR' && clase.profesorId !== userId) {
           return forbidden('Solo puedes eliminar tus propias clases')
+        }
+
+        // Eliminar evento de Google Calendar si existe
+        if (clase.googleEventId) {
+          deleteCalendarEvent(userId, clase.googleEventId).catch(() => {})
         }
 
         // Soft delete: marcar como eliminado en lugar de borrar

@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Edit2, UserX, UserCheck, Trash2, Loader2 } from 'lucide-react'
+import { X, Edit2, UserX, UserCheck, Trash2, Loader2, MessageCircle } from 'lucide-react'
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
 import { useToast } from '@/components/ui/toast'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
 import { getPaymentStatus, getStatusText, getClasesRestantesDetalle } from '@/lib/alumno-utils'
 import { getErrorMessage } from '@/lib/utils'
+import { getWhatsAppLink, getMensajeGenericoMessage } from '@/lib/whatsapp-links'
 
 export function AlumnoDetailSheet({
   isOpen,
@@ -105,7 +106,20 @@ export function AlumnoDetailSheet({
             </div>
             <div className="detail-info-row">
               <span className="detail-info-label">Teléfono</span>
-              <a href={`tel:${alumno.telefono}`} className="detail-info-link">{alumno.telefono}</a>
+              <div className="detail-info-phone">
+                <a href={`tel:${alumno.telefono}`} className="detail-info-link">{alumno.telefono}</a>
+                {alumno.telefono && (
+                  <a
+                    href={getWhatsAppLink(alumno.telefono, getMensajeGenericoMessage(alumno.nombre))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="whatsapp-btn"
+                    title="Enviar WhatsApp"
+                  >
+                    <MessageCircle size={16} />
+                  </a>
+                )}
+              </div>
             </div>
             {alumno.clasesPorMes && (
               <div className="detail-info-row">

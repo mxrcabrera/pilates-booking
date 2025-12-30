@@ -2989,6 +2989,30 @@ button span {
   color: rgba(150, 190, 255, 1);
 }
 
+.detail-info-phone {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(37, 211, 102, 0.15);
+  color: rgb(37, 211, 102);
+  transition: all 0.15s ease;
+}
+
+.whatsapp-btn:hover {
+  background: rgba(37, 211, 102, 0.25);
+  color: rgb(50, 230, 115);
+  transform: scale(1.05);
+}
+
 /* Notes section */
 .detail-notes-section {
   margin-top: 1rem;

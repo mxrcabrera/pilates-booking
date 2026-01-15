@@ -319,4 +319,19 @@ export type ReportesData = {
       cantidad: number
     }>
   }
+  avanzados?: {
+    proyeccionIngresos: number
+    ingresosPorAlumno: number
+    tasaRetencion: number
+    comparativaAnual: {
+      ingresosEsteAño: number
+      ingresosAñoAnterior: number
+      variacion: number
+    }
+    topAlumnos: Array<{
+      nombre: string
+      clases: number
+      asistencia: number
+    }>
+  }
 }

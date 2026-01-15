@@ -338,6 +338,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
               <button
                 onClick={irDiaAnterior}
                 className="calendar-nav-btn"
+                aria-label="Día anterior"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -357,6 +358,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
               <button
                 onClick={irDiaSiguiente}
                 className="calendar-nav-btn"
+                aria-label="Día siguiente"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -574,6 +576,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
               <button
                 onClick={irSemanaAnterior}
                 className="calendar-nav-btn"
+                aria-label="Semana anterior"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -593,6 +596,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
               <button
                 onClick={irSemanaSiguiente}
                 className="calendar-nav-btn"
+                aria-label="Semana siguiente"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>

@@ -2,7 +2,8 @@ import { Resend } from 'resend'
 import { logger } from '../logger'
 import type { NotificationType } from '@prisma/client'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Only instantiate Resend if the API key is available
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'Pilates Studio <noreply@pilates.app>'
 
@@ -13,7 +14,7 @@ interface EmailParams {
 }
 
 async function sendEmail({ to, subject, html }: EmailParams): Promise<boolean> {
-  if (!process.env.RESEND_API_KEY) {
+  if (!resend) {
     logger.warn('RESEND_API_KEY not configured, skipping email')
     return false
   }

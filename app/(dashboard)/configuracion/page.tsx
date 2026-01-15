@@ -27,7 +27,7 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container" data-testid="configuracion-page">
       <div className="page-header">
         <div>
           <h1>Configuración</h1>

@@ -161,6 +161,6 @@ export async function GET() {
     })
   } catch (error) {
     logger.error('Dashboard GET error', error)
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

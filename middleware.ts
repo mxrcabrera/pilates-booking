@@ -63,7 +63,6 @@ export async function middleware(request: NextRequest) {
     '/api/auth/session',
     '/api/auth/csrf',
     '/api/auth/providers',
-    '/api/portal',
     '/reservar',
     '/privacy',
     '/terms',
@@ -129,7 +128,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Rutas de PROFESOR (dashboard, calendario, alumnos, etc.) - Solo para rol PROFESOR
-  const profesorPaths = ['/dashboard', '/calendario', '/alumnos', '/pagos', '/configuracion', '/planes']
+  const profesorPaths = ['/dashboard', '/calendario', '/alumnos', '/pagos', '/configuracion', '/planes', '/reportes', '/equipo', '/perfil', '/onboarding']
   const profesorApiPaths = ['/api/v1/']
 
   const isProfesorRoute = profesorPaths.some(path => pathname.startsWith(path))

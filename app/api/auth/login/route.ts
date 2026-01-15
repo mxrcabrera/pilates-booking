@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, verifyPassword, createToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
-import { getErrorMessage } from '@/lib/utils'
 import { rateLimit, getClientIP, rateLimitExceeded } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 

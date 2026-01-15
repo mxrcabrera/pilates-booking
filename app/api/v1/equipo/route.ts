@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission } from '@/lib/auth/auth-utils'
-import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { invitarMiembroSchema, cambiarRolSchema } from '@/lib/schemas/equipo.schema'
 import { badRequest } from '@/lib/api-utils'

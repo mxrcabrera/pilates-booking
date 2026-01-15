@@ -314,10 +314,16 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
       </div>
 
       {filteredAlumnos.length === 0 ? (
-        searchTerm ? (
+        searchTerm || filter !== 'todos' ? (
           <div className="empty-state">
-            <Users size={48} strokeWidth={1} />
+            <Search size={48} strokeWidth={1} />
             <p>No se encontraron alumnos</p>
+            <span className="empty-state-hint">
+              {searchTerm && `No hay resultados para "${searchTerm}"`}
+              {searchTerm && filter !== 'todos' && ' en '}
+              {filter === 'activos' && 'alumnos activos'}
+              {filter === 'inactivos' && 'alumnos inactivos'}
+            </span>
           </div>
         ) : (
           <EmptyState

@@ -128,8 +128,13 @@ export function ClaseDialog({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    if (esRecurrente && (!frecuencia || diasSeleccionados.length !== frecuencia)) {
-      setError(`Debes seleccionar exactamente ${frecuencia} día${frecuencia === 1 ? '' : 's'}`)
+    if (esRecurrente && !frecuencia) {
+      setError('Seleccioná una frecuencia')
+      return
+    }
+
+    if (esRecurrente && frecuencia && diasSeleccionados.length !== frecuencia) {
+      setError(`Seleccioná exactamente ${frecuencia} día${frecuencia === 1 ? '' : 's'}`)
       return
     }
 
@@ -335,7 +340,6 @@ export function ClaseDialog({
           <div className="form-group">
             <label>Frecuencia</label>
             <SelectInput
-              required
               disabled={isLoading}
               value={frecuencia?.toString() || ''}
               onChange={(e) => {

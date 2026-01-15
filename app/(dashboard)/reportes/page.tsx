@@ -56,5 +56,9 @@ export default function ReportesPage() {
     )
   }
 
-  return <ReportesClient data={data} />
+  return (
+    <div data-testid="reportes-page">
+      <ReportesClient data={data} />
+    </div>
+  )
 }

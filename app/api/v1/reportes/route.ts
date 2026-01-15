@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserContext } from '@/lib/auth'
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
+import { startOfMonth, endOfMonth, subMonths, format, startOfYear, endOfYear, subYears } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
@@ -252,6 +252,125 @@ export async function GET(request: Request) {
       .slice(0, 6)
       .map(([hora, cantidad]) => ({ hora, cantidad }))
 
+    // ===== REPORTES AVANZADOS (solo plan ESTUDIO) =====
+    let avanzados = undefined
+    if (features.reportesAvanzados) {
+      const inicioAñoActual = startOfYear(new Date())
+      const finAñoActual = endOfYear(new Date())
+      const inicioAñoAnterior = startOfYear(subYears(new Date(), 1))
+      const finAñoAnterior = endOfYear(subYears(new Date(), 1))
+
+      const [
+        ingresosAñoActual,
+        ingresosAñoAnterior,
+        alumnosHace3Meses,
+        topAlumnosData
+      ] = await Promise.all([
+        // Ingresos este año
+        prisma.pago.aggregate({
+          where: {
+            alumno: ownerFilter,
+            estado: 'pagado',
+            fechaPago: { gte: inicioAñoActual, lte: finAñoActual }
+          },
+          _sum: { monto: true }
+        }),
+        // Ingresos año anterior
+        prisma.pago.aggregate({
+          where: {
+            alumno: ownerFilter,
+            estado: 'pagado',
+            fechaPago: { gte: inicioAñoAnterior, lte: finAñoAnterior }
+          },
+          _sum: { monto: true }
+        }),
+        // Alumnos hace 3 meses (para calcular retención)
+        prisma.alumno.count({
+          where: {
+            ...ownerFilter,
+            estaActivo: true,
+            createdAt: { lte: subMonths(new Date(), 3) }
+          }
+        }),
+        // Top alumnos por clases
+        prisma.alumno.findMany({
+          where: {
+            ...ownerFilter,
+            estaActivo: true
+          },
+          select: {
+            id: true,
+            nombre: true,
+            _count: {
+              select: {
+                clases: {
+                  where: {
+                    fecha: { gte: fechaInicio, lte: fechaFin },
+                    asistencia: 'presente'
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            clases: { _count: 'desc' }
+          },
+          take: 5
+        })
+      ])
+
+      // Calcular métricas
+      const ingresosEsteAño = Number(ingresosAñoActual._sum.monto || 0)
+      const ingresosAñoAnt = Number(ingresosAñoAnterior._sum.monto || 0)
+      const variacionAnual = ingresosAñoAnt > 0
+        ? Math.round(((ingresosEsteAño - ingresosAñoAnt) / ingresosAñoAnt) * 100)
+        : 0
+
+      // Proyección: promedio mensual de últimos 3 meses * 12
+      const promedioMensual = historico.slice(-3).reduce((sum, h) => sum + h.ingresos, 0) / 3
+      const proyeccionIngresos = Math.round(promedioMensual * 12)
+
+      // Ingreso por alumno
+      const ingresosPorAlumno = alumnosActivos > 0
+        ? Math.round(ingresosMes / alumnosActivos)
+        : 0
+
+      // Tasa de retención: alumnos activos que estaban hace 3 meses / total hace 3 meses
+      const tasaRetencion = alumnosHace3Meses > 0
+        ? Math.round((Math.min(alumnosActivos, alumnosHace3Meses) / alumnosHace3Meses) * 100)
+        : 100
+
+      // Top alumnos con cálculo de asistencia
+      const topAlumnos = await Promise.all(
+        topAlumnosData.map(async (a) => {
+          const totalClases = await prisma.clase.count({
+            where: {
+              alumnoId: a.id,
+              fecha: { gte: fechaInicio, lte: fechaFin }
+            }
+          })
+          const clasesPresente = a._count.clases
+          return {
+            nombre: a.nombre,
+            clases: clasesPresente,
+            asistencia: totalClases > 0 ? Math.round((clasesPresente / totalClases) * 100) : 0
+          }
+        })
+      )
+
+      avanzados = {
+        proyeccionIngresos,
+        ingresosPorAlumno,
+        tasaRetencion,
+        comparativaAnual: {
+          ingresosEsteAño,
+          ingresosAñoAnterior: ingresosAñoAnt,
+          variacion: variacionAnual
+        },
+        topAlumnos
+      }
+    }
+
     return NextResponse.json({
       canAccess: true,
       metricas: {
@@ -283,7 +402,9 @@ export async function GET(request: Request) {
         asistenciaPorDia,
         distribucionPacks,
         horarios: horariosData
-      }
+      },
+      // Reportes avanzados (solo plan ESTUDIO)
+      avanzados
     })
   } catch (error) {
     logger.error('Reportes GET error', error)

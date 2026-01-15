@@ -26,5 +26,9 @@ export default function PagosPage() {
     return <PageLoading />
   }
 
-  return <PagosClient pagos={data.pagos} alumnos={data.alumnos} features={data.features} />
+  return (
+    <div data-testid="pagos-page">
+      <PagosClient pagos={data.pagos} alumnos={data.alumnos} features={data.features} />
+    </div>
+  )
 }

@@ -74,7 +74,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container" data-testid="dashboard-page">
       <div className="dashboard-header">
         <div>
           <h1>Hoy</h1>

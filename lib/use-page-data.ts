@@ -29,6 +29,8 @@ export function usePageData<T>({
   })
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(!data)
+  // Track the current cacheKey to detect page changes
+  const [currentKey, setCurrentKey] = useState(cacheKey)
 
   const fetchData = async () => {
     setIsLoading(true)
@@ -43,7 +45,6 @@ export function usePageData<T>({
       } else if (responseData.redirect) {
         router.push(responseData.redirect)
       } else if (responseData.preferencesIncomplete) {
-        // Devolver como está para que la página lo maneje
         setData(responseData as T)
       } else {
         setCachedData(cacheKey, responseData)
@@ -56,9 +57,26 @@ export function usePageData<T>({
     }
   }
 
-  // Intencionalmente solo se ejecuta al montar para evitar refetch innecesarios
+  // Reset state when cacheKey changes (page navigation)
   useEffect(() => {
-    if (!data) {
+    if (cacheKey !== currentKey) {
+      setCurrentKey(cacheKey)
+      const cached = getCachedData<T>(cacheKey)
+      if (cached) {
+        setData(transform ? transform(cached) : cached)
+        setIsLoading(false)
+      } else {
+        setData(null)
+        setIsLoading(true)
+        fetchData()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey, currentKey])
+
+  // Initial fetch on mount if no cached data
+  useEffect(() => {
+    if (!data && cacheKey === currentKey) {
       fetchData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

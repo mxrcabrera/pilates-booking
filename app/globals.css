@@ -8882,6 +8882,187 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 }
 
 /* ========================================
+   REPORTES AVANZADOS (Plan ESTUDIO)
+   ======================================== */
+.reportes-avanzados {
+  border: 1px solid rgba(147, 155, 245, 0.3);
+  background: linear-gradient(135deg, rgba(147, 155, 245, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.reportes-avanzados-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  color: rgba(147, 155, 245, 0.9);
+}
+
+.reportes-avanzados-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.reportes-avanzados-header .plan-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(147, 155, 245, 0.2);
+  border-radius: 4px;
+  color: rgba(147, 155, 245, 0.9);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reportes-card-icon.proyeccion {
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(59, 130, 246);
+}
+
+.reportes-card-icon.ingreso-alumno {
+  background: rgba(16, 185, 129, 0.1);
+  color: rgb(16, 185, 129);
+}
+
+.reportes-card-icon.retencion {
+  background: rgba(249, 115, 22, 0.1);
+  color: rgb(249, 115, 22);
+}
+
+.reportes-card-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Comparativa Anual */
+.reportes-comparativa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(147, 155, 245, 0.05);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.reportes-comparativa-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.reportes-comparativa-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.reportes-comparativa-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.reportes-comparativa-vs {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+.reportes-comparativa-result {
+  margin-left: 1rem;
+}
+
+.reportes-comparativa-variacion {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.reportes-comparativa-variacion.up {
+  background: rgba(16, 185, 129, 0.15);
+  color: rgb(16, 185, 129);
+}
+
+.reportes-comparativa-variacion.down {
+  background: rgba(239, 68, 68, 0.15);
+  color: rgb(239, 68, 68);
+}
+
+/* Top Alumnos */
+.reportes-top-alumnos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reportes-top-alumno {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(147, 155, 245, 0.05);
+  border-radius: 8px;
+}
+
+.reportes-top-rank {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.reportes-top-rank .gold {
+  color: rgb(250, 204, 21);
+}
+
+.reportes-top-rank .silver {
+  color: rgb(156, 163, 175);
+}
+
+.reportes-top-rank .bronze {
+  color: rgb(217, 119, 6);
+}
+
+.reportes-top-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.reportes-top-nombre {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.reportes-top-stats {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+  .reportes-comparativa {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .reportes-comparativa-result {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}
+
+/* ========================================
    PREMIUM GATE
    ======================================== */
 .premium-gate {

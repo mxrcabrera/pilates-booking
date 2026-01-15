@@ -1,6 +1,7 @@
 'use client'
 
 import { useRequireRole } from '@/lib/use-session'
+import { usePathname } from 'next/navigation'
 import { DashboardNav } from './dashboard/dashboard-nav'
 
 export default function DashboardLayout({
@@ -9,6 +10,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const { user, loading } = useRequireRole(['PROFESOR'], '/alumno')
+  const pathname = usePathname()
 
   // Mostrar loading placeholder mientras carga
   if (loading || !user) {
@@ -25,7 +27,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav profesor={user} features={features} />
-      <main style={{ paddingTop: '5rem' }}>{children}</main>
+      <main key={pathname} style={{ paddingTop: '5rem' }}>{children}</main>
     </div>
   )
 }

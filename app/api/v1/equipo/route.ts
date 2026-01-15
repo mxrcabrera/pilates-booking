@@ -1,11 +1,15 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission } from '@/lib/auth/auth-utils'
 import { logger } from '@/lib/logger'
 import { invitarMiembroSchema, cambiarRolSchema } from '@/lib/schemas/equipo.schema'
-import { badRequest } from '@/lib/api-utils'
+import { badRequest, tooManyRequests } from '@/lib/api-utils'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
+
+const WRITE_LIMIT = 10
+const WINDOW_MS = 60 * 1000
 
 // GET: Listar miembros del equipo
 export async function GET() {
@@ -61,8 +65,15 @@ export async function GET() {
 }
 
 // POST: Invitar nuevo miembro
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    if (!success) {
+      return tooManyRequests()
+    }
+
     const context = await getUserContext()
     if (!context) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -173,8 +184,15 @@ export async function POST(request: Request) {
 }
 
 // PUT: Cambiar rol de miembro
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    if (!success) {
+      return tooManyRequests()
+    }
+
     const context = await getUserContext()
     if (!context) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -243,8 +261,15 @@ export async function PUT(request: Request) {
 }
 
 // DELETE: Remover miembro
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    if (!success) {
+      return tooManyRequests()
+    }
+
     const context = await getUserContext()
     if (!context) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
-import { getErrorMessage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { PLAN_CONFIGS, getDaysLeftInTrial, isTrialActive, getEffectiveFeatures, getEffectiveMaxAlumnos } from '@/lib/plans'
 

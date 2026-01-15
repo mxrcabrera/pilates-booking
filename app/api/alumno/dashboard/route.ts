@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -97,7 +98,7 @@ export async function GET() {
       }))
     })
   } catch (error) {
-    console.error('Error fetching alumno dashboard:', error)
+    logger.error('Error fetching alumno dashboard', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

@@ -1,9 +1,21 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
+
+const WRITE_LIMIT = 5
+const WINDOW_MS = 60 * 1000
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`alumno-cancelar:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    if (!success) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429 })
+    }
+
     const userId = await getCurrentUser()
 
     if (!userId) {
@@ -64,7 +76,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Clase cancelada correctamente' })
   } catch (error) {
-    console.error('Error cancelando clase:', error)
+    logger.error('Error cancelando clase', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

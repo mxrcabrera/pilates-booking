@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
       }))
     })
   } catch (error) {
-    console.error('Error fetching horarios:', error)
+    logger.error('Error fetching horarios', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

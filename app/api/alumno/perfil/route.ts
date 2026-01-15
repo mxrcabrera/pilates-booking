@@ -1,6 +1,12 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
+import { updateAlumnoPerfilSchema } from '@/lib/schemas/alumno-perfil.schema'
+
+const WRITE_LIMIT = 10
+const WINDOW_MS = 60 * 1000
 
 export async function GET() {
   try {
@@ -38,7 +44,7 @@ export async function GET() {
       }
     })
   } catch (error) {
-    console.error('Error fetching alumno perfil:', error)
+    logger.error('Error fetching alumno perfil', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -46,8 +52,15 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIP(request)
+    const { success } = rateLimit(`alumno-perfil:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    if (!success) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429 })
+    }
+
     const userId = await getCurrentUser()
 
     if (!userId) {
@@ -64,28 +77,26 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { nombre, telefono, genero } = body
+    const parsed = updateAlumnoPerfilSchema.safeParse(body)
 
-    if (!nombre || nombre.length < 2) {
-      return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 })
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    if (!telefono || telefono.length < 8) {
-      return NextResponse.json({ error: 'El teléfono es requerido' }, { status: 400 })
-    }
+    const { nombre, telefono, genero } = parsed.data
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         nombre,
         telefono,
-        genero: genero || 'F'
+        genero
       }
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating alumno perfil:', error)
+    logger.error('Error updating alumno perfil', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

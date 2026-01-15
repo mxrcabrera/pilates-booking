@@ -57,7 +57,7 @@ export async function GET() {
     })
   } catch (error) {
     logger.error('Equipo GET error', error)
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
 
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     logger.error('Equipo POST error', error)
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
 
@@ -239,7 +239,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true, miembro: actualizado })
   } catch (error) {
     logger.error('Equipo PUT error', error)
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
 
@@ -303,6 +303,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Equipo DELETE error', error)
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

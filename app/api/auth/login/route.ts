@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logger.error('Auth login error', error)
     return NextResponse.json(
-      { error: getErrorMessage(error) || 'Error interno del servidor' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     )
   }

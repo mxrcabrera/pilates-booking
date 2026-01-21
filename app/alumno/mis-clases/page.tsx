@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Calendar, Clock, User, X, Check, AlertCircle } from 'lucide-react'
 import { PageLoading } from '@/components/ui/loading'
 import { EmptyState } from '@/components/ui/empty-state'
+import { logger } from '@/lib/logger'
 
 type Clase = {
   id: string
@@ -27,7 +28,7 @@ export default function MisClasesPage() {
         setClases(data.clases)
       }
     } catch (error) {
-      console.error('Error loading clases:', error)
+      logger.error('Error loading clases:', error)
     } finally {
       setLoading(false)
     }

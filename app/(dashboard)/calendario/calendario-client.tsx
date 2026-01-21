@@ -147,7 +147,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
     })
 
     return grupos
-  }, [clasesDelDia])
+  }, [clasesDelDia, horarioTardeInicio])
 
   // Helper para obtener resumen de alumnos en un turno (para vista previa)
   const obtenerResumenTurno = (turno: { hora: string; clases: Clase[] }[]) => {

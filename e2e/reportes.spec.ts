@@ -31,8 +31,7 @@ test.describe('Reportes', () => {
 
     if (hasMetrics) {
       const asistenciaSection = page.getByText(/asistencia/i)
-      const exists = await asistenciaSection.first().isVisible().catch(() => false)
-      // Just verify no error - section may or may not exist based on data
+      await asistenciaSection.first().isVisible().catch(() => false)
     }
   })
 
@@ -41,8 +40,7 @@ test.describe('Reportes', () => {
 
     if (hasMetrics) {
       const pagosSection = page.getByText(/pagos/i)
-      const exists = await pagosSection.first().isVisible().catch(() => false)
-      // Just verify no error
+      await pagosSection.first().isVisible().catch(() => false)
     }
   })
 })

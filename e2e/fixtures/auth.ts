@@ -16,6 +16,7 @@ export const test = base.extend<{ authenticatedPage: void }>({
     // Wait for navigation to complete - either dashboard or any other authenticated route
     await expect(page).toHaveURL(/dashboard|alumnos|calendario|pagos|configuracion|reportes/, { timeout: 20000 })
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use()
   }
 })

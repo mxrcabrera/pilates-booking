@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { auth } from './auth'
 import { prisma } from '@/lib/prisma'
 import type { EstudioRol } from '@prisma/client'

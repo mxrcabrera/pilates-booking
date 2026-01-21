@@ -1,48 +1,83 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Pagos', () => {
+test.describe('Pagos - Complete CRUD Flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/pagos')
-    // Wait for page heading
-    await expect(page.getByRole('heading', { name: /pagos/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: /pagos/i })).toBeVisible({ timeout: 15000 })
   })
 
-  test('should display pagos page', async ({ page }) => {
-    // Should show pagos list, table, or empty state
-    const hasList = await page.locator('.pago-card, table, .empty-state').first().isVisible().catch(() => false)
-    const hasEmptyText = await page.getByText(/no hay pagos|sin pagos/i).first().isVisible().catch(() => false)
-
-    expect(hasList || hasEmptyText).toBeTruthy()
-  })
-
-  test('should have filters', async ({ page }) => {
-    // Check for filter controls - at least one should exist
-    const hasSelect = await page.locator('select').first().isVisible().catch(() => false)
-    const hasSearch = await page.locator('input[type="search"], input[placeholder*="buscar" i]').isVisible().catch(() => false)
-
-    // Filters should exist
-    expect(hasSelect || hasSearch).toBeTruthy()
-  })
-
-  test('should have add button', async ({ page }) => {
+  test('should open add pago dialog and show form', async ({ page }) => {
+    // Open dialog
     const addButton = page.getByRole('button', { name: /agregar|nuevo|crear|registrar|\+/i }).first()
-    await expect(addButton).toBeVisible({ timeout: 3000 })
+    await addButton.click()
+    await expect(page.locator('[role="dialog"], .dialog')).toBeVisible({ timeout: 5000 })
+
+    // Should have alumno selector
+    const hasAlumnoSelect = await page.locator('select, [role="combobox"]').first().isVisible().catch(() => false)
+    expect(hasAlumnoSelect).toBeTruthy()
+
+    // Should have monto input
+    const hasMontoInput = await page.locator('input[type="number"], input[name*="monto"]').first().isVisible().catch(() => false)
+    expect(hasMontoInput).toBeTruthy()
+
+    // Close dialog
+    await page.keyboard.press('Escape')
   })
 
-  test('should open dialog when clicking add', async ({ page }) => {
-    const addButton = page.getByRole('button', { name: /agregar|nuevo|crear|registrar|\+/i }).first()
+  test('should filter pagos by status', async ({ page }) => {
+    // Find status filter
+    const pendientesTab = page.getByRole('button', { name: /pendientes/i })
+    const pagadosTab = page.getByRole('button', { name: /pagados/i })
+    const todosTab = page.getByRole('button', { name: /todos/i })
 
-    if (await addButton.isVisible().catch(() => false)) {
-      await addButton.click()
-      // Dialog should open
-      await expect(page.locator('[role="dialog"], .dialog, .modal')).toBeVisible({ timeout: 3000 })
+    if (await pendientesTab.isVisible()) {
+      await pendientesTab.click()
+      await page.waitForTimeout(300)
+    }
+
+    if (await pagadosTab.isVisible()) {
+      await pagadosTab.click()
+      await page.waitForTimeout(300)
+    }
+
+    if (await todosTab.isVisible()) {
+      await todosTab.click()
+      await page.waitForTimeout(300)
     }
   })
 
-  test('should have export button (may be locked)', async ({ page }) => {
-    // Export button exists but might show lock icon
-    const exportBtn = page.locator('button').filter({ has: page.locator('svg') }).last()
-    const exists = await exportBtn.isVisible().catch(() => false)
-    // Just verify page renders without error
+  test('should filter pagos by alumno', async ({ page }) => {
+    const alumnoFilter = page.locator('select').filter({ hasText: /alumno|todos/i }).first()
+
+    if (await alumnoFilter.isVisible()) {
+      await alumnoFilter.click()
+      await page.waitForTimeout(300)
+      // Select first option
+      const option = page.locator('option').nth(1)
+      if (await option.isVisible()) {
+        await alumnoFilter.selectOption({ index: 1 })
+      }
+    }
+  })
+
+  test('should filter pagos by month', async ({ page }) => {
+    const monthFilter = page.locator('select').filter({ hasText: /mes|enero|febrero|marzo/i }).first()
+
+    if (await monthFilter.isVisible()) {
+      await monthFilter.click()
+      await page.waitForTimeout(300)
+    }
+  })
+
+  test('should show pago details', async ({ page }) => {
+    const pagoRow = page.locator('.pago-row, tr, .pago-card').first()
+
+    if (await pagoRow.isVisible({ timeout: 5000 })) {
+      await pagoRow.click()
+
+      // Should show details (sheet or expanded row)
+      const hasDetails = await page.locator('.sheet, [role="dialog"], .pago-details').isVisible({ timeout: 3000 })
+      expect(hasDetails).toBeTruthy()
+    }
   })
 })

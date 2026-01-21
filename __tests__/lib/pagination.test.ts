@@ -1,13 +1,5 @@
 import { paginatedResponse, PaginationParams } from '@/lib/pagination'
 
-// Mock NextRequest since it's not available in jsdom environment
-class MockNextRequest {
-  url: string
-  constructor(url: string) {
-    this.url = url
-  }
-}
-
 // Re-implement getPaginationParams logic for testing
 function getPaginationParamsFromUrl(url: string): PaginationParams {
   const { searchParams } = new URL(url)

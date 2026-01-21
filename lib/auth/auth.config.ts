@@ -1,6 +1,6 @@
 import Google from 'next-auth/providers/google'
 import Credentials from 'next-auth/providers/credentials'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import type { NextAuthConfig, User } from 'next-auth'
 
 export const authConfig: NextAuthConfig = {

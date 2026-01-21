@@ -1,7 +1,6 @@
 import { prisma } from '../prisma'
 import { logger } from '../logger'
 import { sendNotificationEmail } from './email'
-// import { sendWhatsAppNotification } from './whatsapp' // Desactivado - usar links wa.me
 import { canUseFeature } from '../plans'
 import type { NotificationType, PlanType } from '@prisma/client'
 import { format } from 'date-fns'
@@ -49,7 +48,7 @@ interface NotifyClassEventParams {
 export async function notifyClassEvent({
   claseId,
   tipo,
-  profesorId,
+  profesorId: _profesorId,
   plan,
   trialEndsAt,
 }: NotifyClassEventParams): Promise<void> {
@@ -126,12 +125,6 @@ export async function notifyClassEvent({
         })
       }
     }
-
-    // WhatsApp automático desactivado - usar links manuales wa.me en su lugar
-    // TODO: Reactivar cuando se configure WhatsApp Business API
-    // if (canUseFeature('notificacionesWhatsApp', plan, trialEndsAt) && clase.alumno.telefono) {
-    //   sendWhatsAppNotification(clase.alumno.telefono, notificationData).catch(() => {})
-    // }
   } catch (error) {
     logger.error('Error notifying class event', error)
   }
@@ -139,7 +132,7 @@ export async function notifyClassEvent({
 
 export async function notifyWaitlistAvailable(
   listaEsperaId: string,
-  profesorId: string,
+  _profesorId: string,
   plan: PlanType,
   trialEndsAt: Date | null
 ): Promise<void> {
@@ -180,12 +173,6 @@ export async function notifyWaitlistAvailable(
     if (canUseFeature('notificacionesEmail', plan, trialEndsAt)) {
       await sendNotificationEmail(entrada.alumno.email, notificationData)
     }
-
-    // WhatsApp automático desactivado - usar links manuales wa.me en su lugar
-    // TODO: Reactivar cuando se configure WhatsApp Business API
-    // if (canUseFeature('notificacionesWhatsApp', plan, trialEndsAt) && entrada.alumno.telefono) {
-    //   sendWhatsAppNotification(entrada.alumno.telefono, notificationData).catch(() => {})
-    // }
 
     // Actualizar estado de lista de espera
     await prisma.listaEspera.update({

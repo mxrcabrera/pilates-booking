@@ -53,9 +53,16 @@ export const toggleStatusSchema = z.object({
   id: z.string().uuid('ID inválido')
 })
 
+export const resetPasswordSchema = z.object({
+  action: z.literal('resetPassword'),
+  id: z.string().uuid('ID inválido'),
+  newPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres')
+})
+
 export const alumnoActionSchema = z.discriminatedUnion('action', [
   createAlumnoSchema,
   updateAlumnoSchema,
   deleteAlumnoSchema,
-  toggleStatusSchema
+  toggleStatusSchema,
+  resetPasswordSchema
 ])

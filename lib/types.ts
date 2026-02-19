@@ -5,6 +5,7 @@
 // ----- ALUMNO -----
 export type Alumno = {
   id: string
+  userId: string | null
   nombre: string
   email: string
   telefono: string

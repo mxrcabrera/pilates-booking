@@ -121,6 +121,10 @@ export async function deleteAlumnoAPI(id: string) {
   return apiCallTo('/api/v1/alumnos', 'delete', { id })
 }
 
+export async function resetPasswordAlumnoAPI(data: { id: string; newPassword: string }) {
+  return apiCallTo('/api/v1/alumnos', 'resetPassword', data)
+}
+
 // Clases
 export async function createClaseAPI(data: {
   alumnoIds: string[]

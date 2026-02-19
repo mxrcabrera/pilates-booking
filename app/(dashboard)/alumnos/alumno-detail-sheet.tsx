@@ -1,14 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { X, Edit2, UserX, UserCheck, Trash2, Loader2, MessageCircle } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { X, Edit2, UserX, UserCheck, Trash2, Loader2, MessageCircle, Lock } from 'lucide-react'
 import { toggleAlumnoStatus, deleteAlumno } from './actions'
+import { resetPasswordAlumnoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
+import { DialogBase } from '@/components/ui/dialog-base'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
 import { getPaymentStatus, getStatusText, getClasesRestantesDetalle } from '@/lib/alumno-utils'
 import { getErrorMessage } from '@/lib/utils'
 import { getWhatsAppLink, getMensajeGenericoMessage } from '@/lib/whatsapp-links'
+
+const MIN_PASSWORD_LENGTH = 6
 
 export function AlumnoDetailSheet({
   isOpen,
@@ -21,7 +25,10 @@ export function AlumnoDetailSheet({
   alumno: Alumno | null
   onEdit: () => void
 }) {
-  const [isLoading, setIsLoading] = useState<'toggle' | 'delete' | null>(null)
+  const [isLoading, setIsLoading] = useState<'toggle' | 'delete' | 'resetPassword' | null>(null)
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
   const { showSuccess, showError } = useToast()
 
   if (!isOpen || !alumno) return null
@@ -48,6 +55,26 @@ export function AlumnoDetailSheet({
       onClose()
     } catch (err) {
       showError(getErrorMessage(err) || 'Error al eliminar')
+    } finally {
+      setIsLoading(null)
+    }
+  }
+
+  const handleResetPassword = async () => {
+    const newPassword = passwordRef.current?.value?.trim()
+    if (!newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+      setResetError(`La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`)
+      return
+    }
+
+    setIsLoading('resetPassword')
+    setResetError(null)
+    try {
+      await resetPasswordAlumnoAPI({ id: alumno.id, newPassword })
+      showSuccess(`Contraseña de ${alumno.nombre} actualizada`)
+      setShowResetDialog(false)
+    } catch (err) {
+      setResetError(getErrorMessage(err) || 'Error al resetear contraseña')
     } finally {
       setIsLoading(null)
     }
@@ -143,6 +170,16 @@ export function AlumnoDetailSheet({
               <Edit2 size={16} />
               <span>Editar</span>
             </button>
+            {alumno.userId && (
+              <button
+                onClick={() => { setShowResetDialog(true); setResetError(null) }}
+                className="detail-action-btn"
+                disabled={isLoading !== null}
+              >
+                <Lock size={16} />
+                <span>Resetear contraseña</span>
+              </button>
+            )}
             <button onClick={handleToggleStatus} className="detail-action-btn" disabled={isLoading !== null}>
               {isLoading === 'toggle' ? <Loader2 size={16} className="spin" /> : alumno.estaActivo ? <UserX size={16} /> : <UserCheck size={16} />}
               <span>{isLoading === 'toggle' ? 'Procesando...' : alumno.estaActivo ? 'Desactivar' : 'Activar'}</span>
@@ -154,6 +191,45 @@ export function AlumnoDetailSheet({
           </div>
         </div>
       </div>
+
+      <DialogBase
+        isOpen={showResetDialog}
+        onClose={() => setShowResetDialog(false)}
+        title={`Resetear contraseña de ${alumno.nombre}`}
+        size="sm"
+        footer={
+          <>
+            <button
+              className="btn-primary"
+              onClick={handleResetPassword}
+              disabled={isLoading === 'resetPassword'}
+            >
+              {isLoading === 'resetPassword' ? 'Guardando...' : 'Guardar'}
+            </button>
+            <button
+              className="btn-ghost"
+              onClick={() => setShowResetDialog(false)}
+              disabled={isLoading === 'resetPassword'}
+            >
+              Cancelar
+            </button>
+          </>
+        }
+      >
+        <div className="form-group">
+          <label htmlFor="new-password">Nueva contraseña</label>
+          <input
+            ref={passwordRef}
+            id="new-password"
+            type="text"
+            placeholder="Min. 6 caracteres"
+            autoFocus
+          />
+          {resetError && (
+            <p className="field-error">{resetError}</p>
+          )}
+        </div>
+      </DialogBase>
     </>
   )
 }

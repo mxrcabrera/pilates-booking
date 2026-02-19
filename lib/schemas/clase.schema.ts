@@ -17,6 +17,7 @@ export const createClaseSchema = z.object({
     z.array(z.number().min(0).max(6)),
     z.string().transform(v => JSON.parse(v) as number[])
   ]).optional().default([]),
+  alumnosDias: z.record(z.string(), z.array(z.number().min(0).max(6))).optional(),
   fecha: z.string().regex(fechaRegex, 'Formato de fecha inválido (YYYY-MM-DD)')
 })
 

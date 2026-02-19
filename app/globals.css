@@ -4948,6 +4948,60 @@ input[type="checkbox"]:disabled {
   flex-shrink: 0;
 }
 
+.student-days-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.student-days-section .section-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.25rem;
+}
+
+.student-day-card {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+}
+
+.student-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.student-day-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.student-day-freq {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dias-grid.compact {
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.dias-grid.compact .dia-option span {
+  font-size: 0.75rem;
+  padding: 0.375rem 0;
+}
+
+@media (max-width: 380px) {
+  .dias-grid.compact {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .turno-grid {
   display: grid;
   gap: 0.5rem;

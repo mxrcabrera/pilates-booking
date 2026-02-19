@@ -132,7 +132,7 @@ export async function createClaseAPI(data: {
   horaRecurrente?: string
   esClasePrueba: boolean
   esRecurrente: boolean
-  diasSemana?: number[]
+  alumnosDias?: Record<string, number[]>
   fecha: string
 }) {
   return apiCallTo('/api/v1/clases', 'create', data)
@@ -146,7 +146,6 @@ export async function updateClaseAPI(data: {
   estado: string
   esClasePrueba: boolean
   esRecurrente: boolean
-  frecuenciaSemanal?: number
   diasSemana?: number[]
   fecha: string
 }) {

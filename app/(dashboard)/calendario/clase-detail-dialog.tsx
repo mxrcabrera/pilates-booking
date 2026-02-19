@@ -228,7 +228,7 @@ export function ClaseDetailDialog({
             <div className="detail-item">
               <span className="detail-label">Frecuencia</span>
               <span className="detail-value">
-                🔁 {clase.frecuenciaSemanal}x por semana
+                {clase.diasSemana.length}x por semana
               </span>
             </div>
           )}

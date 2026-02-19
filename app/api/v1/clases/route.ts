@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
           horaRecurrente: horaRecurrenteInput,
           esClasePrueba,
           esRecurrente,
-          diasSemana: diasSemanaParsed,
+          alumnosDias,
           fecha: fechaStr
         } = parsed.data
 
@@ -308,43 +308,43 @@ export async function POST(request: NextRequest) {
           }, { status: 403 })
         }
         const horaRecurrente = horaRecurrenteInput || horaInicio
-        const diasSemana = diasSemanaParsed
 
         // Asegurar que alumnoIds es un array
         const alumnosArray: string[] = Array.isArray(alumnoIds) ? alumnoIds : []
 
-        // Resolve frequency from alumno's pack (not from frontend)
-        let frecuenciaSemanal: number | null = null
+        // Build per-student dias map from alumnosDias or fallback
+        const perStudentDias: Record<string, number[]> = alumnosDias || {}
+
+        // Validate per-student dias when recurrent
         if (esRecurrente && alumnosArray.length > 0) {
           const alumnosConPack = await prisma.alumno.findMany({
             where: { id: { in: alumnosArray }, ...ownerFilter, deletedAt: null },
             select: { id: true, nombre: true, packType: true }
           })
 
-          const packIds = alumnosConPack
-            .map(a => a.packType)
-            .filter(pt => pt !== 'por_clase')
-
-          if (packIds.length === 0) {
-            return badRequest('Para clases recurrentes, los alumnos necesitan un pack asignado')
-          }
-
-          if (packIds.length !== alumnosConPack.length) {
-            const sinPack = alumnosConPack.filter(a => a.packType === 'por_clase')
+          const sinPack = alumnosConPack.filter(a => a.packType === 'por_clase')
+          if (sinPack.length > 0) {
             return badRequest(`${sinPack.map(a => a.nombre).join(', ')} no tiene pack asignado`)
           }
 
-          const packs = await prisma.pack.findMany({
+          // Fetch pack frequencies for validation
+          const packIds = [...new Set(alumnosConPack.map(a => a.packType))]
+          const packsData = await prisma.pack.findMany({
             where: { id: { in: packIds }, deletedAt: null },
             select: { id: true, clasesPorSemana: true }
           })
+          const packFreqMap = new Map(packsData.map(p => [p.id, p.clasesPorSemana]))
 
-          const frequencies = packs.map(p => p.clasesPorSemana)
-          if (new Set(frequencies).size > 1) {
-            return badRequest('Los alumnos seleccionados tienen packs con diferente frecuencia')
+          for (const alumno of alumnosConPack) {
+            const dias = perStudentDias[alumno.id]
+            const expectedFreq = packFreqMap.get(alumno.packType)
+            if (!dias || !expectedFreq) {
+              return badRequest(`Faltan los dias de clase para ${alumno.nombre}`)
+            }
+            if (dias.length !== expectedFreq) {
+              return badRequest(`${alumno.nombre} debe tener exactamente ${expectedFreq} dia(s) seleccionado(s)`)
+            }
           }
-
-          frecuenciaSemanal = frequencies[0] ?? null
         }
 
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
@@ -450,6 +450,9 @@ export async function POST(request: NextRequest) {
         // Crear una clase por cada alumno seleccionado
         const clasesCreadas = []
         for (const alumnoId of alumnosArray) {
+          const alumnoDias = perStudentDias[alumnoId] || []
+          const frecuenciaSemanal = alumnoDias.length > 0 ? alumnoDias.length : null
+
           const claseCreada = await prisma.clase.create({
             data: {
               profesorId: userId,
@@ -461,7 +464,7 @@ export async function POST(request: NextRequest) {
               esClasePrueba,
               esRecurrente,
               frecuenciaSemanal,
-              diasSemana,
+              diasSemana: alumnoDias,
               estado: 'reservada'
             },
             include: {
@@ -479,7 +482,7 @@ export async function POST(request: NextRequest) {
               claseCreada.alumno.nombre,
               fecha,
               horaInicio
-            ).catch(() => {}) // Fire and forget, no bloqueamos si falla
+            ).catch(() => {})
           }
 
           // Enviar notificación de clase nueva
@@ -490,15 +493,15 @@ export async function POST(request: NextRequest) {
               profesorId: userId,
               plan: configData.plan,
               trialEndsAt: configData.trialEndsAt,
-            }).catch(() => {}) // Fire and forget
+            }).catch(() => {})
           }
 
-          // Crear clases recurrentes para este alumno
-          if (esRecurrente && diasSemana.length > 0) {
+          // Crear clases recurrentes para este alumno with their own dias
+          if (esRecurrente && alumnoDias.length > 0) {
             const clasesACrear: Prisma.ClaseCreateManyInput[] = []
             const diaInicialSeleccionado = fecha.getUTCDay()
 
-            for (const diaSeleccionado of diasSemana) {
+            for (const diaSeleccionado of alumnoDias) {
               let diasHastaProximoDia = diaSeleccionado - diaInicialSeleccionado
               if (diasHastaProximoDia <= 0) diasHastaProximoDia += 7
 
@@ -518,7 +521,7 @@ export async function POST(request: NextRequest) {
                   esClasePrueba,
                   esRecurrente: true,
                   frecuenciaSemanal,
-                  diasSemana,
+                  diasSemana: alumnoDias,
                   estado: 'reservada'
                 })
               }
@@ -585,13 +588,12 @@ export async function POST(request: NextRequest) {
           estado,
           esClasePrueba,
           esRecurrente,
-          frecuenciaSemanal: frecuenciaSemanalParsed,
           diasSemana: diasSemanaParsed,
           fecha: fechaStr
         } = parsedUpdate.data
         const horaRecurrente = horaRecurrenteInput || horaInicio
-        const frecuenciaSemanal = esRecurrente ? frecuenciaSemanalParsed : null
         const diasSemana = diasSemanaParsed
+        const frecuenciaSemanal = esRecurrente ? diasSemana.length || null : null
 
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 

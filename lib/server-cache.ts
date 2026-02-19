@@ -76,14 +76,29 @@ export const getCachedProfesorConfig = unstable_cache(
   { revalidate: 1800, tags: ['config'] } // 30 min
 )
 
-// Cache de alumnos activos (para selects) - cambia moderadamente
+// Cache de alumnos activos (with pack info for calendario) - cambia moderadamente
 export const getCachedAlumnosSimple = unstable_cache(
   async (ownerId: string, ownerType: OwnerType = 'profesor') => {
-    return prisma.alumno.findMany({
-      where: { ...buildOwnerFilter(ownerId, ownerType), estaActivo: true, deletedAt: null },
-      select: { id: true, nombre: true },
-      orderBy: { nombre: 'asc' }
-    })
+    const [alumnos, packs] = await Promise.all([
+      prisma.alumno.findMany({
+        where: { ...buildOwnerFilter(ownerId, ownerType), estaActivo: true, deletedAt: null },
+        select: { id: true, nombre: true, packType: true },
+        orderBy: { nombre: 'asc' }
+      }),
+      prisma.pack.findMany({
+        where: { ...buildOwnerFilter(ownerId, ownerType), deletedAt: null },
+        select: { id: true, clasesPorSemana: true }
+      })
+    ])
+
+    const packsMap = new Map(packs.map(p => [p.id, p.clasesPorSemana]))
+
+    return alumnos.map(a => ({
+      id: a.id,
+      nombre: a.nombre,
+      packType: a.packType,
+      clasesPorSemana: packsMap.get(a.packType) ?? null
+    }))
   },
   ['alumnos-simple'],
   { revalidate: 300, tags: ['alumnos'] } // 5 min

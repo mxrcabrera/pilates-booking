@@ -92,14 +92,14 @@ describe('clase.schema', () => {
       }
     })
 
-    it('should transform frecuenciaSemanal from string', () => {
+    it('should not include frecuenciaSemanal (resolved from pack on backend)', () => {
       const result = createClaseSchema.safeParse({
         ...validData,
         frecuenciaSemanal: '2'
       })
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.frecuenciaSemanal).toBe(2)
+        expect('frecuenciaSemanal' in result.data).toBe(false)
       }
     })
 

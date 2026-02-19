@@ -291,7 +291,6 @@ export async function POST(request: NextRequest) {
           horaRecurrente: horaRecurrenteInput,
           esClasePrueba,
           esRecurrente,
-          frecuenciaSemanal: frecuenciaSemanalParsed,
           diasSemana: diasSemanaParsed,
           fecha: fechaStr
         } = parsed.data
@@ -309,11 +308,44 @@ export async function POST(request: NextRequest) {
           }, { status: 403 })
         }
         const horaRecurrente = horaRecurrenteInput || horaInicio
-        const frecuenciaSemanal = esRecurrente ? frecuenciaSemanalParsed : null
         const diasSemana = diasSemanaParsed
 
         // Asegurar que alumnoIds es un array
         const alumnosArray: string[] = Array.isArray(alumnoIds) ? alumnoIds : []
+
+        // Resolve frequency from alumno's pack (not from frontend)
+        let frecuenciaSemanal: number | null = null
+        if (esRecurrente && alumnosArray.length > 0) {
+          const alumnosConPack = await prisma.alumno.findMany({
+            where: { id: { in: alumnosArray }, ...ownerFilter, deletedAt: null },
+            select: { id: true, nombre: true, packType: true }
+          })
+
+          const packIds = alumnosConPack
+            .map(a => a.packType)
+            .filter(pt => pt !== 'por_clase')
+
+          if (packIds.length === 0) {
+            return badRequest('Para clases recurrentes, los alumnos necesitan un pack asignado')
+          }
+
+          if (packIds.length !== alumnosConPack.length) {
+            const sinPack = alumnosConPack.filter(a => a.packType === 'por_clase')
+            return badRequest(`${sinPack.map(a => a.nombre).join(', ')} no tiene pack asignado`)
+          }
+
+          const packs = await prisma.pack.findMany({
+            where: { id: { in: packIds }, deletedAt: null },
+            select: { id: true, clasesPorSemana: true }
+          })
+
+          const frequencies = packs.map(p => p.clasesPorSemana)
+          if (new Set(frequencies).size > 1) {
+            return badRequest('Los alumnos seleccionados tienen packs con diferente frecuencia')
+          }
+
+          frecuenciaSemanal = frequencies[0] ?? null
+        }
 
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 

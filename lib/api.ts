@@ -105,6 +105,14 @@ export async function updateAlumnoAPI(data: {
   return apiCallTo('/api/v1/alumnos', 'update', data)
 }
 
+export async function assignPackToAlumnoAPI(data: {
+  id: string
+  packType: string
+  precio: number
+}) {
+  return apiCallTo('/api/v1/alumnos', 'update', data)
+}
+
 export async function toggleAlumnoStatusAPI(id: string) {
   return apiCallTo('/api/v1/alumnos', 'toggleStatus', { id })
 }
@@ -120,7 +128,6 @@ export async function createClaseAPI(data: {
   horaRecurrente?: string
   esClasePrueba: boolean
   esRecurrente: boolean
-  frecuenciaSemanal?: number
   diasSemana?: number[]
   fecha: string
 }) {

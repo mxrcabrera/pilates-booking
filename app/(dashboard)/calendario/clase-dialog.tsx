@@ -20,75 +20,33 @@ const PLAN_NAMES: Record<string, string> = {
 }
 
 const DIAS_SEMANA = [
-  { value: 1, label: 'Lunes' },
-  { value: 2, label: 'Martes' },
-  { value: 3, label: 'Miercoles' },
-  { value: 4, label: 'Jueves' },
-  { value: 5, label: 'Viernes' },
-  { value: 6, label: 'Sabado' },
-  { value: 0, label: 'Domingo' },
+  { value: 1, label: 'Lunes', short: 'Lun' },
+  { value: 2, label: 'Martes', short: 'Mar' },
+  { value: 3, label: 'Miercoles', short: 'Mie' },
+  { value: 4, label: 'Jueves', short: 'Jue' },
+  { value: 5, label: 'Viernes', short: 'Vie' },
+  { value: 6, label: 'Sabado', short: 'Sab' },
+  { value: 0, label: 'Domingo', short: 'Dom' },
 ]
 
 type TipoClase = 'prueba' | 'recurrente'
 
-type PackValidation = {
-  type: 'needs_pack'
-  alumnosSinPack: AlumnoSimple[]
-} | {
-  type: 'different_frequency'
-  message: string
-} | null
-
-function getPackValidation(
-  esRecurrente: boolean,
-  selectedIds: string[],
-  alumnos: AlumnoSimple[],
-  isEditMode: boolean
-): PackValidation {
-  if (!esRecurrente || selectedIds.length === 0 || isEditMode) return null
-
-  const selected = selectedIds
-    .map(id => alumnos.find(a => a.id === id))
-    .filter((a): a is AlumnoSimple => a !== undefined)
-
-  const sinPack = selected.filter(a => a.clasesPorSemana === null)
-
-  if (sinPack.length > 0) {
-    return { type: 'needs_pack', alumnosSinPack: sinPack }
-  }
-
-  const frequencies = selected.map(a => a.clasesPorSemana)
-  if (new Set(frequencies).size > 1) {
-    return {
-      type: 'different_frequency',
-      message: 'Los alumnos seleccionados tienen packs con diferente frecuencia. Selecciona alumnos con el mismo pack.'
-    }
-  }
-
-  return null
-}
-
-function getDerivedFrecuencia(
-  clase: Clase | null,
+function getAlumnosSinPack(
   selectedIds: string[],
   alumnos: AlumnoSimple[]
-): number | null {
-  if (clase) return clase.frecuenciaSemanal
-
-  if (selectedIds.length === 0) return null
-
-  const selected = selectedIds
+): AlumnoSimple[] {
+  return selectedIds
     .map(id => alumnos.find(a => a.id === id))
-    .filter((a): a is AlumnoSimple => a !== undefined)
+    .filter((a): a is AlumnoSimple => a !== undefined && a.clasesPorSemana === null)
+}
 
-  const frequencies = selected
-    .map(a => a.clasesPorSemana)
-    .filter((f): f is number => f !== null)
-
-  if (frequencies.length === 0 || frequencies.length !== selected.length) return null
-  if (new Set(frequencies).size > 1) return null
-
-  return frequencies[0]
+function getAlumnosConPack(
+  selectedIds: string[],
+  alumnos: AlumnoSimple[]
+): AlumnoSimple[] {
+  return selectedIds
+    .map(id => alumnos.find(a => a.id === id))
+    .filter((a): a is AlumnoSimple => a !== undefined && a.clasesPorSemana !== null)
 }
 
 export function ClaseDialog({
@@ -126,34 +84,46 @@ export function ClaseDialog({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tipoClase, setTipoClase] = useState<TipoClase>('recurrente')
-  const [diasSeleccionados, setDiasSeleccionados] = useState<number[]>([])
   const [alumnosSeleccionados, setAlumnosSeleccionados] = useState<string[]>([])
   const [localAlumnos, setLocalAlumnos] = useState<AlumnoSimple[]>(alumnos)
   const [assigningPackFor, setAssigningPackFor] = useState<string | null>(null)
   const [assignError, setAssignError] = useState<string | null>(null)
   const [packSelections, setPackSelections] = useState<Record<string, string>>({})
 
+  // Per-student day selections (only for create mode)
+  const [diasPorAlumno, setDiasPorAlumno] = useState<Record<string, number[]>>({})
+
+  // Edit mode: single student day selector
+  const [diasSeleccionados, setDiasSeleccionados] = useState<number[]>([])
+
   const esClasePrueba = tipoClase === 'prueba'
   const esRecurrente = tipoClase === 'recurrente'
   const isEditMode = clase !== null
 
-  const frecuencia = useMemo(
-    () => getDerivedFrecuencia(clase, alumnosSeleccionados, localAlumnos),
-    [clase, alumnosSeleccionados, localAlumnos]
+  const alumnosSinPack = useMemo(
+    () => esRecurrente && !isEditMode ? getAlumnosSinPack(alumnosSeleccionados, localAlumnos) : [],
+    [esRecurrente, isEditMode, alumnosSeleccionados, localAlumnos]
   )
 
-  const packValidation = useMemo(
-    () => getPackValidation(esRecurrente, alumnosSeleccionados, localAlumnos, isEditMode),
-    [esRecurrente, alumnosSeleccionados, localAlumnos, isEditMode]
+  const alumnosConPack = useMemo(
+    () => esRecurrente && !isEditMode ? getAlumnosConPack(alumnosSeleccionados, localAlumnos) : [],
+    [esRecurrente, isEditMode, alumnosSeleccionados, localAlumnos]
   )
 
-  const hasPackError = packValidation !== null
+  const hasPackError = alumnosSinPack.length > 0
+
+  // Get the weekday of the clicked date for pre-selection
+  const clickedDayOfWeek = fecha ? fecha.getDay() : null
+
+  // Edit mode: derive frequency from the class data
+  const editFrecuencia = clase?.frecuenciaSemanal ?? (clase?.diasSemana?.length || null)
 
   useEffect(() => {
     if (isOpen) {
       setLocalAlumnos(alumnos)
       setAssignError(null)
       setPackSelections({})
+      setDiasPorAlumno({})
       if (clase) {
         const tipoActual = clase.esClasePrueba ? 'prueba' : 'recurrente'
         setTipoClase(tipoActual === 'recurrente' && !canUseRecurrentes ? 'prueba' : tipoActual)
@@ -193,6 +163,13 @@ export function ClaseDialog({
         delete next[alumnoId]
         return next
       })
+      // Pre-select clicked day for newly assigned pack student
+      if (clickedDayOfWeek !== null) {
+        setDiasPorAlumno(prev => ({
+          ...prev,
+          [alumnoId]: [clickedDayOfWeek]
+        }))
+      }
     } catch (err) {
       setAssignError(getErrorMessage(err) || 'Error al asignar pack')
     } finally {
@@ -200,12 +177,29 @@ export function ClaseDialog({
     }
   }
 
+  const handleDiaToggleForAlumno = (alumnoId: string, dia: number) => {
+    const alumno = localAlumnos.find(a => a.id === alumnoId)
+    const maxDias = alumno?.clasesPorSemana || 1
+
+    setDiasPorAlumno(prev => {
+      const current = prev[alumnoId] || []
+      if (current.includes(dia)) {
+        return { ...prev, [alumnoId]: current.filter(d => d !== dia) }
+      }
+      if (current.length >= maxDias) {
+        return { ...prev, [alumnoId]: [...current.slice(1), dia] }
+      }
+      return { ...prev, [alumnoId]: [...current, dia] }
+    })
+  }
+
+  // Edit mode: single student day toggle
   const handleDiaToggle = (dia: number) => {
     setDiasSeleccionados(prev => {
       if (prev.includes(dia)) {
         return prev.filter(d => d !== dia)
       }
-      if (frecuencia && prev.length >= frecuencia) {
+      if (editFrecuencia && prev.length >= editFrecuencia) {
         return [...prev.slice(1), dia]
       }
       return [...prev, dia]
@@ -214,25 +208,50 @@ export function ClaseDialog({
 
   const handleAlumnoToggle = (alumnoId: string) => {
     setAlumnosSeleccionados(prev => {
-      if (prev.includes(alumnoId)) return prev.filter(id => id !== alumnoId)
+      if (prev.includes(alumnoId)) {
+        // Remove student -> clean up their dias
+        setDiasPorAlumno(prevDias => {
+          const next = { ...prevDias }
+          delete next[alumnoId]
+          return next
+        })
+        return prev.filter(id => id !== alumnoId)
+      }
       if (prev.length >= maxAlumnosPorClase) return prev
+
+      // Pre-select clicked day for new student
+      if (!isEditMode && clickedDayOfWeek !== null) {
+        setDiasPorAlumno(prevDias => ({
+          ...prevDias,
+          [alumnoId]: [clickedDayOfWeek]
+        }))
+      }
       return [...prev, alumnoId]
     })
-    if (!isEditMode) setDiasSeleccionados([])
   }
+
+  // Calculate total classes for summary
+  const totalClassesSummary = useMemo(() => {
+    if (!esRecurrente || isEditMode) return null
+    let total = 0
+    for (const alumno of alumnosConPack) {
+      const dias = diasPorAlumno[alumno.id] || []
+      total += dias.length > 0 ? 1 + dias.length * 8 : 1
+    }
+    return total
+  }, [esRecurrente, isEditMode, alumnosConPack, diasPorAlumno])
+
+  // Check if all students have their dias complete
+  const allDiasComplete = useMemo(() => {
+    if (!esRecurrente || isEditMode) return true
+    return alumnosConPack.every(a => {
+      const dias = diasPorAlumno[a.id] || []
+      return dias.length === (a.clasesPorSemana || 0)
+    })
+  }, [esRecurrente, isEditMode, alumnosConPack, diasPorAlumno])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-
-    if (esRecurrente && !frecuencia) {
-      setError('Los alumnos seleccionados necesitan un pack con frecuencia definida')
-      return
-    }
-
-    if (esRecurrente && frecuencia && diasSeleccionados.length !== frecuencia) {
-      setError(`Selecciona exactamente ${frecuencia} dia${frecuencia === 1 ? '' : 's'}`)
-      return
-    }
 
     if (alumnosSeleccionados.length === 0) {
       setError('Debes seleccionar al menos un alumno')
@@ -240,6 +259,16 @@ export function ClaseDialog({
     }
 
     if (hasPackError) return
+
+    if (esRecurrente && !isEditMode && !allDiasComplete) {
+      setError('Selecciona los dias de clase para todos los alumnos')
+      return
+    }
+
+    if (isEditMode && esRecurrente && editFrecuencia && diasSeleccionados.length !== editFrecuencia) {
+      setError(`Selecciona exactamente ${editFrecuencia} dia${editFrecuencia === 1 ? '' : 's'}`)
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -259,7 +288,6 @@ export function ClaseDialog({
           estado: clase.estado,
           esClasePrueba,
           esRecurrente,
-          frecuenciaSemanal: frecuencia || undefined,
           diasSemana: esRecurrente ? diasSeleccionados : undefined,
           fecha: fechaStr
         })
@@ -272,10 +300,10 @@ export function ClaseDialog({
           horaRecurrente: horaRecurrente || undefined,
           esClasePrueba,
           esRecurrente,
-          diasSemana: esRecurrente ? diasSeleccionados : undefined,
+          alumnosDias: esRecurrente ? diasPorAlumno : undefined,
           fecha: fechaStr
         })
-        const numClases = alumnosSeleccionados.length * (esRecurrente ? 1 + diasSeleccionados.length * 8 : 1)
+        const numClases = totalClassesSummary || alumnosSeleccionados.length
         showSuccess(numClases > 1 ? `${numClases} clases creadas` : 'Clase creada')
         onSuccess?.({ clases: result.clases, isNew: true })
       }
@@ -300,7 +328,7 @@ export function ClaseDialog({
         type="submit"
         form="clase-form"
         className="btn-primary"
-        disabled={isLoading || hasPackError}
+        disabled={isLoading || hasPackError || (esRecurrente && !isEditMode && !allDiasComplete)}
       >
         {isLoading ? 'Guardando...' : 'Guardar'}
       </button>
@@ -342,7 +370,7 @@ export function ClaseDialog({
                     disabled={isLoading}
                   >
                     {alumno.nombre}
-                    <span className="chip-remove">×</span>
+                    <span className="chip-remove">&times;</span>
                   </button>
                 ) : null
               })}
@@ -385,7 +413,7 @@ export function ClaseDialog({
             <button
               type="button"
               className={`segmented-option ${tipoClase === 'prueba' ? 'active' : ''}`}
-              onClick={() => { setTipoClase('prueba'); setDiasSeleccionados([]) }}
+              onClick={() => { setTipoClase('prueba'); setDiasSeleccionados([]); setDiasPorAlumno({}) }}
               disabled={isLoading}
             >
               Prueba
@@ -408,13 +436,10 @@ export function ClaseDialog({
           )}
         </div>
 
-        {esRecurrente && packValidation?.type === 'different_frequency' && (
-          <div className="form-message error">{packValidation.message}</div>
-        )}
-
-        {esRecurrente && packValidation?.type === 'needs_pack' && (
+        {/* Pack assignment for students without pack */}
+        {esRecurrente && !isEditMode && alumnosSinPack.length > 0 && (
           <div className="pack-assignment-section">
-            {packValidation.alumnosSinPack.map(alumno => (
+            {alumnosSinPack.map(alumno => (
               <div key={alumno.id} className="pack-assignment-row">
                 <span className="pack-assignment-name">{alumno.nombre} no tiene pack</span>
                 <div className="pack-assignment-controls">
@@ -447,22 +472,60 @@ export function ClaseDialog({
           </div>
         )}
 
-        {esRecurrente && frecuencia && !hasPackError && (
+        {/* Per-student day selection cards (create mode only) */}
+        {esRecurrente && !isEditMode && alumnosConPack.length > 0 && (
+          <div className="student-days-section">
+            <label className="section-label">Dias de clase por alumno</label>
+            {alumnosConPack.map(alumno => {
+              const freq = alumno.clasesPorSemana || 0
+              const selectedDias = diasPorAlumno[alumno.id] || []
+              return (
+                <div key={alumno.id} className="student-day-card">
+                  <div className="student-day-header">
+                    <span className="student-day-name">{alumno.nombre}</span>
+                    <span className="student-day-freq">
+                      {selectedDias.length}/{freq}x/sem
+                    </span>
+                  </div>
+                  <div className="dias-grid compact">
+                    {DIAS_SEMANA.map((dia) => (
+                      <label key={dia.value} className="dia-option" htmlFor={`dia-${alumno.id}-${dia.value}`}>
+                        <input
+                          type="checkbox"
+                          id={`dia-${alumno.id}-${dia.value}`}
+                          checked={selectedDias.includes(dia.value)}
+                          onChange={() => handleDiaToggleForAlumno(alumno.id, dia.value)}
+                          disabled={isLoading}
+                        />
+                        <span>{dia.short}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Summary */}
+            {allDiasComplete && totalClassesSummary !== null && totalClassesSummary > 0 && (
+              <div className="form-hint-info">
+                Se crearan {totalClassesSummary} clases en total (incluye 8 semanas de recurrencia por alumno)
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Edit mode: single student day selector */}
+        {esRecurrente && isEditMode && editFrecuencia && (
           <>
             <div className="form-group">
-              <label>Frecuencia: {frecuencia}x por semana</label>
-              {!isEditMode && (
-                <small style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', display: 'block' }}>
-                  Definida por el pack del alumno
-                </small>
-              )}
+              <label>Frecuencia: {editFrecuencia}x por semana</label>
             </div>
 
             <div className="form-group">
               <label>
-                Que dia{frecuencia > 1 ? 's' : ''}?
+                Que dia{editFrecuencia > 1 ? 's' : ''}?
                 <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
-                  ({diasSeleccionados.length}/{frecuencia} seleccionado{frecuencia > 1 ? 's' : ''})
+                  ({diasSeleccionados.length}/{editFrecuencia} seleccionado{editFrecuencia > 1 ? 's' : ''})
                 </span>
               </label>
               <div className="dias-grid">
@@ -493,13 +556,23 @@ export function ClaseDialog({
                 Deja vacio para usar la misma hora que la clase inicial
               </small>
             </div>
-
-            {!clase && diasSeleccionados.length === frecuencia && (
-              <div className="form-hint-info">
-                Se crearan {diasSeleccionados.length} clases por semana durante las proximas 8 semanas (total: {diasSeleccionados.length * 8} clases recurrentes + 1 clase inicial)
-              </div>
-            )}
           </>
+        )}
+
+        {/* Create mode: hora recurrente */}
+        {esRecurrente && !isEditMode && alumnosConPack.length > 0 && (
+          <div className="form-group">
+            <label>Hora de las clases recurrentes</label>
+            <TimeInput
+              name="horaRecurrente"
+              defaultValue={horarioMananaInicio}
+              disabled={isLoading}
+              required={false}
+            />
+            <small style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem', display: 'block' }}>
+              Deja vacio para usar la misma hora que la clase inicial
+            </small>
+          </div>
         )}
       </form>
     </DialogBase>

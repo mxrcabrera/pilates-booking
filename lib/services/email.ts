@@ -200,6 +200,27 @@ export async function sendWelcomeEmail(
   return sendEmail({ to, subject, html })
 }
 
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string
+): Promise<boolean> {
+  const subject = 'Restablecer contraseña - Pilates Booking'
+  const content = `
+    <h2>Restablecer contraseña</h2>
+    <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+    <p>Hacé click en el siguiente enlace para crear una nueva contraseña:</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${resetUrl}" style="background: #6366f1; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+        Restablecer contraseña
+      </a>
+    </div>
+    <p style="color: #666; font-size: 14px;">Este enlace expira en 1 hora.</p>
+    <p style="color: #666; font-size: 14px;">Si no solicitaste restablecer tu contraseña, ignorá este email.</p>
+  `
+  const html = getEmailTemplate(content)
+  return sendEmail({ to, subject, html })
+}
+
 export async function sendPaymentReminderEmail(
   to: string,
   alumnoNombre: string,

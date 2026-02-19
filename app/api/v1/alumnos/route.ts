@@ -7,6 +7,7 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { alumnoActionSchema } from '@/lib/schemas/alumno.schema'
 import { calcularRangoCiclo, calcularPrecioImplicitoPorClase } from '@/lib/alumno-utils'
 import { invalidateAlumnos } from '@/lib/cache-utils'
+import { hashPassword } from '@/lib/auth'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
 import { getEffectiveMaxAlumnos, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
 import type { PlanType } from '@prisma/client'
@@ -113,6 +114,7 @@ export async function GET(request: NextRequest) {
 
     const alumnosSerializados = alumnos.map(alumno => ({
       ...alumno,
+      userId: alumno.userId ?? null,
       precio: alumno.precio.toString(),
       saldoAFavor: alumno.saldoAFavor.toString(),
       cumpleanos: alumno.cumpleanos ? alumno.cumpleanos.toISOString() : null,
@@ -412,6 +414,48 @@ export async function POST(request: NextRequest) {
           data: { deletedAt: new Date() }
         })
         invalidateAlumnos()
+        return NextResponse.json({ success: true })
+      }
+
+      case 'resetPassword': {
+        if (estudio && !hasPermission(estudio.rol, 'edit:alumnos')) {
+          return forbidden('No tienes permiso para resetear contraseñas')
+        }
+
+        const { id, newPassword } = parsed.data
+
+        const ownerFilter = estudio
+          ? { estudioId: estudio.estudioId }
+          : { profesorId: userId }
+
+        const alumno = await prisma.alumno.findFirst({
+          where: { id, ...ownerFilter, deletedAt: null },
+          select: { id: true, userId: true, nombre: true }
+        })
+
+        if (!alumno) {
+          return notFound('Alumno no encontrado')
+        }
+
+        if (!alumno.userId) {
+          return badRequest('Este alumno no tiene cuenta de login')
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { id: alumno.userId },
+          select: { password: true }
+        })
+
+        if (!user || !user.password) {
+          return badRequest('Este alumno usa Google para iniciar sesión. No se puede resetear la contraseña.')
+        }
+
+        const hashedPassword = await hashPassword(newPassword)
+        await prisma.user.update({
+          where: { id: alumno.userId },
+          data: { password: hashedPassword }
+        })
+
         return NextResponse.json({ success: true })
       }
 

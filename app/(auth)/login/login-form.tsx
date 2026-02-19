@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { loginWithGoogle } from './actions'
 import { getErrorMessage } from '@/lib/utils'
 
@@ -14,6 +15,8 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [rol, setRol] = useState<Rol>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const resetSuccess = searchParams.get('reset') === 'success'
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -87,6 +90,10 @@ export function LoginForm() {
         <p className="auth-subtitle">
           {isSignup ? 'Creá tu cuenta' : 'Iniciá sesión en tu cuenta'}
         </p>
+
+        {resetSuccess && (
+          <div className="auth-success">Contraseña actualizada. Ya podes iniciar sesión.</div>
+        )}
 
         {error && (
           <div className="auth-error">{error}</div>
@@ -178,6 +185,14 @@ export function LoginForm() {
               </button>
             </div>
           </div>
+
+          {!isSignup && (
+            <div style={{ textAlign: 'right', marginTop: '-0.25rem' }}>
+              <Link href="/forgot-password" className="auth-forgot-link">
+                Olvidé mi contraseña
+              </Link>
+            </div>
+          )}
 
           <button type="submit" className="auth-submit" disabled={isLoading}>
             {isLoading ? 'Cargando...' : (isSignup ? 'Crear cuenta' : 'Iniciar sesión')}

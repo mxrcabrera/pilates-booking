@@ -26,10 +26,12 @@ export type Alumno = {
   }
 }
 
-// Versión simplificada para selects y listas
+// Versión simplificada para selects y listas (includes pack info for calendario)
 export type AlumnoSimple = {
   id: string
   nombre: string
+  packType: string
+  clasesPorSemana: number | null
 }
 
 // Versión para clases (con datos del pack)

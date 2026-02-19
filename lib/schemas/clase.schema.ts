@@ -13,10 +13,6 @@ export const createClaseSchema = z.object({
   horaRecurrente: z.string().regex(horaRegex, 'Formato de hora inválido (HH:MM)').optional(),
   esClasePrueba: z.boolean().optional().default(false),
   esRecurrente: z.boolean().optional().default(false),
-  frecuenciaSemanal: z.union([z.string(), z.number()]).optional().nullable().transform(v => {
-    if (v === undefined || v === null) return null
-    return typeof v === 'string' ? parseInt(v) : v
-  }),
   diasSemana: z.union([
     z.array(z.number().min(0).max(6)),
     z.string().transform(v => JSON.parse(v) as number[])

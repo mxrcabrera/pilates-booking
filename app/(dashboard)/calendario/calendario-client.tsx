@@ -21,7 +21,6 @@ interface CalendarioClientProps {
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
-  precioPorClase: string
   maxAlumnosPorClase: number
   horasAnticipacionMinima: number
   features: CalendarioFeatures
@@ -31,7 +30,7 @@ type Vista = 'dia' | 'semana'
 
 const HORAS_DIA = Array.from({ length: 16 }, (_, i) => i + 7) // 7:00 a 22:00
 
-export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserId: _currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin, precioPorClase, maxAlumnosPorClase, horasAnticipacionMinima, features }: CalendarioClientProps) {
+export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserId: _currentUserId, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin, maxAlumnosPorClase, horasAnticipacionMinima, features }: CalendarioClientProps) {
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
@@ -707,7 +706,6 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
         fecha={fechaActual}
         alumnos={alumnos}
         packs={packs}
-        precioPorClase={precioPorClase}
         horarioMananaInicio={horarioMananaInicio}
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}
@@ -725,7 +723,6 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
         fecha={null}
         alumnos={alumnos}
         packs={packs}
-        precioPorClase={precioPorClase}
         horarioMananaInicio={horarioMananaInicio}
         horarioMananaFin={horarioMananaFin}
         horarioTardeInicio={horarioTardeInicio}

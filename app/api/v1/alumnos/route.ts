@@ -351,11 +351,45 @@ export async function POST(request: NextRequest) {
         })
 
         invalidateAlumnos()
+
+        // Detect active series when pack frequency changes
+        let seriesInfo: { activeSeries: Array<{ serieId: string; horaInicio: string }>; newClasesPorSemana: number } | null = null
+
+        if (packCambio && packType) {
+          const [oldPack, newPack] = await Promise.all([
+            prisma.pack.findUnique({ where: { id: alumnoExistente.packType }, select: { clasesPorSemana: true } }),
+            prisma.pack.findUnique({ where: { id: packType }, select: { clasesPorSemana: true } })
+          ])
+
+          if (oldPack && newPack && oldPack.clasesPorSemana !== newPack.clasesPorSemana) {
+            const series = await prisma.clase.findMany({
+              where: {
+                alumnoId: id,
+                esRecurrente: true,
+                serieId: { not: null },
+                fecha: { gte: new Date() },
+                deletedAt: null
+              },
+              select: { serieId: true, horaInicio: true },
+              distinct: ['serieId']
+            })
+
+            const uniqueSeries = series
+              .filter((s): s is typeof s & { serieId: string } => s.serieId !== null)
+              .map(s => ({ serieId: s.serieId, horaInicio: s.horaInicio }))
+
+            if (uniqueSeries.length > 0) {
+              seriesInfo = { activeSeries: uniqueSeries, newClasesPorSemana: newPack.clasesPorSemana }
+            }
+          }
+        }
+
         return NextResponse.json({
           success: true,
           alumno,
           prorrateoAplicado: packCambio,
-          nuevoSaldo: nuevoSaldoAFavor.toString()
+          nuevoSaldo: nuevoSaldoAFavor.toString(),
+          ...(seriesInfo && seriesInfo)
         })
       }
 

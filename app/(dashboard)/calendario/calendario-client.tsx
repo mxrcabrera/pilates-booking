@@ -5,6 +5,7 @@ import { Plus, ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon,
 import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
+import { SerieEditDialog } from './serie-edit-dialog'
 import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
@@ -38,6 +39,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
   const [dialogOpen, setDialogOpen] = useState(false)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [serieEditOpen, setSerieEditOpen] = useState(false)
   const [claseSeleccionada, setClaseSeleccionada] = useState<Clase | null>(null)
   const [selectedClases, setSelectedClases] = useState<Set<string>>(new Set())
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
@@ -187,6 +189,17 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
   const handleEdit = () => {
     setDetailDialogOpen(false)
     setEditDialogOpen(true)
+  }
+
+  const handleEditSeries = () => {
+    setDetailDialogOpen(false)
+    setSerieEditOpen(true)
+  }
+
+  const handleSerieEditSuccess = () => {
+    setSerieEditOpen(false)
+    setClaseSeleccionada(null)
+    window.location.reload()
   }
 
   // Handler para actualizar estado local cuando se crea/edita una clase
@@ -739,11 +752,19 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, currentUserI
           onClose={handleCloseDetailDialog}
           clase={claseSeleccionada}
           onEdit={handleEdit}
+          onEditSeries={handleEditSeries}
           onDelete={handleDeleteClase}
           onStatusChange={handleStatusChange}
           horasAnticipacionMinima={horasAnticipacionMinima}
         />
       )}
+
+      <SerieEditDialog
+        isOpen={serieEditOpen}
+        onClose={() => { setSerieEditOpen(false); setClaseSeleccionada(null) }}
+        clase={claseSeleccionada}
+        onSuccess={handleSerieEditSuccess}
+      />
 
       <ConfirmModal
         isOpen={bulkDeleteConfirm}

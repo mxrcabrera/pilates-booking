@@ -16,7 +16,8 @@ import {
   updateClaseSchema,
   deleteClaseSchema,
   changeStatusSchema,
-  changeAsistenciaSchema
+  changeAsistenciaSchema,
+  editSeriesSchema
 } from '@/lib/schemas/clase.schema'
 
 export const runtime = 'nodejs'
@@ -133,6 +134,7 @@ export async function GET(request: NextRequest) {
           esRecurrente: true,
           frecuenciaSemanal: true,
           diasSemana: true,
+          serieId: true,
           profesorId: true,
           alumnoId: true,
           alumno: {
@@ -452,6 +454,7 @@ export async function POST(request: NextRequest) {
         for (const alumnoId of alumnosArray) {
           const alumnoDias = perStudentDias[alumnoId] || []
           const frecuenciaSemanal = alumnoDias.length > 0 ? alumnoDias.length : null
+          const serieId = esRecurrente && alumnoDias.length > 0 ? crypto.randomUUID() : null
 
           const claseCreada = await prisma.clase.create({
             data: {
@@ -465,6 +468,7 @@ export async function POST(request: NextRequest) {
               esRecurrente,
               frecuenciaSemanal,
               diasSemana: alumnoDias,
+              serieId,
               estado: 'reservada'
             },
             include: {
@@ -522,6 +526,7 @@ export async function POST(request: NextRequest) {
                   esRecurrente: true,
                   frecuenciaSemanal,
                   diasSemana: alumnoDias,
+                  serieId,
                   estado: 'reservada'
                 })
               }
@@ -839,6 +844,156 @@ export async function POST(request: NextRequest) {
         })
 
         return NextResponse.json({ success: true })
+      }
+
+      case 'editSeries': {
+        if (estudio && !hasPermission(estudio.rol, 'edit:clases')) {
+          return forbidden('No tienes permiso para editar clases')
+        }
+
+        const parsedSeries = editSeriesSchema.safeParse({ action, ...body })
+        if (!parsedSeries.success) {
+          return badRequest(parsedSeries.error.issues[0].message)
+        }
+
+        const { serieId, diasSemana: newDias, horaInicio: newHora, scope } = parsedSeries.data
+        const today = new Date()
+        today.setUTCHours(0, 0, 0, 0)
+
+        // Find all classes in this series
+        const seriesFilter: Record<string, unknown> = {
+          serieId,
+          ...ownerFilter,
+          deletedAt: null
+        }
+
+        if (scope === 'future') {
+          seriesFilter.fecha = { gte: today }
+        }
+
+        const seriesClases = await prisma.clase.findMany({
+          where: seriesFilter,
+          select: { id: true, fecha: true, asistencia: true, horaInicio: true, diasSemana: true },
+          orderBy: { fecha: 'asc' }
+        })
+
+        if (seriesClases.length === 0) {
+          return badRequest('No se encontraron clases en esta serie')
+        }
+
+        // Filter out attended classes when scope is all_unattended
+        const clasesToUpdate = scope === 'all_unattended'
+          ? seriesClases.filter(c => c.asistencia !== 'presente')
+          : seriesClases
+
+        if (clasesToUpdate.length === 0) {
+          return badRequest('No hay clases para actualizar (todas tienen asistencia)')
+        }
+
+        // Determine what changed
+        const oldDias = seriesClases[0].diasSemana
+        const oldHora = seriesClases[0].horaInicio
+        const daysChanged = JSON.stringify([...newDias].sort()) !== JSON.stringify([...oldDias].sort())
+        const horaChanged = newHora !== oldHora
+
+        if (!daysChanged && !horaChanged) {
+          return NextResponse.json({ success: true, updated: 0 })
+        }
+
+        // Simple case: only time changed (no day restructuring needed)
+        if (!daysChanged) {
+          const result = await prisma.clase.updateMany({
+            where: { id: { in: clasesToUpdate.map(c => c.id) } },
+            data: {
+              horaInicio: newHora,
+              horaRecurrente: newHora !== oldHora ? newHora : null
+            }
+          })
+          return NextResponse.json({ success: true, updated: result.count })
+        }
+
+        // Days changed: soft-delete old classes and create new ones on the correct days
+        const frecuenciaSemanal = newDias.length
+
+        // Get template from first class for shared fields
+        const templateClase = await prisma.clase.findFirst({
+          where: { serieId, ...ownerFilter, deletedAt: null },
+          select: {
+            profesorId: true, estudioId: true, alumnoId: true,
+            esClasePrueba: true, esRecurrente: true
+          }
+        })
+
+        if (!templateClase) {
+          return badRequest('No se pudo obtener datos de la serie')
+        }
+
+        // Soft-delete the classes we're replacing
+        await prisma.clase.updateMany({
+          where: { id: { in: clasesToUpdate.map(c => c.id) } },
+          data: { deletedAt: new Date() }
+        })
+
+        // Group old classes by week to maintain the same date range
+        const weekStarts = new Set<string>()
+        for (const clase of clasesToUpdate) {
+          const d = new Date(clase.fecha)
+          // Get Monday of that week
+          const day = d.getUTCDay()
+          const diff = day === 0 ? -6 : 1 - day
+          const monday = new Date(d)
+          monday.setUTCDate(d.getUTCDate() + diff)
+          weekStarts.add(monday.toISOString().split('T')[0])
+        }
+
+        // Create new classes for each week on the new days
+        const newClases: Prisma.ClaseCreateManyInput[] = []
+        for (const weekStart of weekStarts) {
+          const monday = new Date(weekStart + 'T00:00:00.000Z')
+          for (const dia of newDias) {
+            // Calculate date for this day of week (1=Mon, 0=Sun)
+            const offset = dia === 0 ? 6 : dia - 1
+            const fecha = new Date(monday)
+            fecha.setUTCDate(monday.getUTCDate() + offset)
+
+            // Skip past dates when scope is future
+            if (scope === 'future' && fecha < today) continue
+
+            newClases.push({
+              profesorId: templateClase.profesorId,
+              ...(templateClase.estudioId && { estudioId: templateClase.estudioId }),
+              alumnoId: templateClase.alumnoId,
+              fecha,
+              horaInicio: newHora,
+              horaRecurrente: newHora,
+              esClasePrueba: templateClase.esClasePrueba,
+              esRecurrente: true,
+              frecuenciaSemanal,
+              diasSemana: newDias,
+              serieId,
+              estado: 'reservada'
+            })
+          }
+        }
+
+        if (newClases.length > 0) {
+          await prisma.clase.createMany({ data: newClases, skipDuplicates: true })
+        }
+
+        // Also update remaining classes in series (attended ones) to reflect new dias metadata
+        if (scope === 'all_unattended') {
+          const attendedIds = seriesClases
+            .filter(c => c.asistencia === 'presente')
+            .map(c => c.id)
+          if (attendedIds.length > 0) {
+            await prisma.clase.updateMany({
+              where: { id: { in: attendedIds } },
+              data: { diasSemana: newDias, frecuenciaSemanal, horaInicio: newHora }
+            })
+          }
+        }
+
+        return NextResponse.json({ success: true, updated: newClases.length })
       }
 
       default:

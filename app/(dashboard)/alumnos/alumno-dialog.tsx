@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createAlumnoAPI, updateAlumnoAPI } from '@/lib/api'
+import { createAlumnoAPI, updateAlumnoAPI, editSeriesAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/utils'
 import { DialogBase } from '@/components/ui/dialog-base'
@@ -9,6 +9,23 @@ import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import { Lock } from 'lucide-react'
 import type { Alumno, Pack } from '@/lib/types'
+
+type DialogStep = 'form' | 'seriesPrompt'
+
+type SeriesData = {
+  activeSeries: Array<{ serieId: string; horaInicio: string }>
+  newClasesPorSemana: number
+}
+
+const DIAS_SEMANA_OPTIONS = [
+  { value: 1, label: 'Lun' },
+  { value: 2, label: 'Mar' },
+  { value: 3, label: 'Mie' },
+  { value: 4, label: 'Jue' },
+  { value: 5, label: 'Vie' },
+  { value: 6, label: 'Sab' },
+  { value: 0, label: 'Dom' },
+]
 
 const PLAN_NAMES: Record<string, string> = {
   FREE: 'Free',
@@ -36,9 +53,13 @@ export function AlumnoDialog({
   canUseProrrateo?: boolean
   currentPlan?: string
 }) {
-  const { showSuccess } = useToast()
+  const { showSuccess, showError: showErrorToast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState<DialogStep>('form')
+  const [seriesData, setSeriesData] = useState<SeriesData | null>(null)
+  const [seriesDias, setSeriesDias] = useState<number[]>([])
+  const [isUpdatingSeries, setIsUpdatingSeries] = useState(false)
   const [packType, setPackType] = useState<'mensual' | 'por_clase'>(
     alumno?.packType === 'por_clase' ? 'por_clase' : 'mensual'
   )
@@ -62,6 +83,9 @@ export function AlumnoDialog({
       setConsentimientoTutor(false)
       setEsMenor(false)
       setDiaInicioCiclo('1')
+      setStep('form')
+      setSeriesData(null)
+      setSeriesDias([])
     } else if (alumno) {
       // Determinar si es por_clase o mensual
       if (alumno.packType === 'por_clase') {
@@ -152,6 +176,18 @@ export function AlumnoDialog({
         const result = await updateAlumnoAPI({ id: alumno.id, ...data })
         showSuccess('Alumno actualizado')
         onSuccess?.(result.alumno, true)
+
+        // Check if pack change requires series update
+        if (result.activeSeries?.length > 0 && result.newClasesPorSemana) {
+          setSeriesData({
+            activeSeries: result.activeSeries,
+            newClasesPorSemana: result.newClasesPorSemana
+          })
+          setSeriesDias([])
+          setStep('seriesPrompt')
+          setIsLoading(false)
+          return
+        }
       } else {
         const result = await createAlumnoAPI(data)
         showSuccess('Alumno creado')
@@ -197,6 +233,93 @@ export function AlumnoDialog({
     return hoy.toISOString().split('T')[0]
   }
 
+  const handleSeriesDiaToggle = (dia: number) => {
+    setSeriesDias(prev =>
+      prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia]
+    )
+  }
+
+  const handleSkipSeries = () => {
+    setStep('form')
+    setSeriesData(null)
+    onClose()
+  }
+
+  const handleUpdateSeries = async () => {
+    if (!seriesData) return
+    setIsUpdatingSeries(true)
+    try {
+      await Promise.all(
+        seriesData.activeSeries.map(s =>
+          editSeriesAPI({
+            serieId: s.serieId,
+            diasSemana: seriesDias,
+            horaInicio: s.horaInicio,
+            scope: 'future'
+          })
+        )
+      )
+      showSuccess('Clases futuras actualizadas')
+      setStep('form')
+      setSeriesData(null)
+      onClose()
+    } catch (err) {
+      showErrorToast(getErrorMessage(err))
+    } finally {
+      setIsUpdatingSeries(false)
+    }
+  }
+
+  if (step === 'seriesPrompt' && seriesData) {
+    return (
+      <DialogBase
+        isOpen={isOpen}
+        onClose={handleSkipSeries}
+        title="Actualizar clases"
+        footer={
+          <>
+            <button onClick={handleSkipSeries} className="btn-ghost" disabled={isUpdatingSeries}>
+              No, dejar como estan
+            </button>
+            <button
+              onClick={handleUpdateSeries}
+              className="btn-primary"
+              disabled={seriesDias.length !== seriesData.newClasesPorSemana || isUpdatingSeries}
+            >
+              {isUpdatingSeries ? 'Actualizando...' : 'Actualizar clases'}
+            </button>
+          </>
+        }
+      >
+        <div className="serie-update-prompt">
+          <p className="serie-update-text">
+            El pack cambio a <strong>{seriesData.newClasesPorSemana}x por semana</strong>.
+            Selecciona los nuevos dias de clase para actualizar las clases futuras.
+          </p>
+
+          <div className="form-group">
+            <label>
+              Dias de clase ({seriesDias.length}/{seriesData.newClasesPorSemana})
+            </label>
+            <div className="dias-grid compact">
+              {DIAS_SEMANA_OPTIONS.map(dia => (
+                <label key={dia.value} className="dia-option" htmlFor={`series-dia-${dia.value}`}>
+                  <input
+                    type="checkbox"
+                    id={`series-dia-${dia.value}`}
+                    checked={seriesDias.includes(dia.value)}
+                    onChange={() => handleSeriesDiaToggle(dia.value)}
+                    disabled={isUpdatingSeries || (!seriesDias.includes(dia.value) && seriesDias.length >= seriesData.newClasesPorSemana)}
+                  />
+                  <span>{dia.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DialogBase>
+    )
+  }
 
   return (
     <DialogBase

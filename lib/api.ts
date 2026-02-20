@@ -164,6 +164,15 @@ export async function changeAsistenciaAPI(id: string, asistencia: string) {
   return apiCallTo('/api/v1/clases', 'changeAsistencia', { id, asistencia })
 }
 
+export async function editSeriesAPI(data: {
+  serieId: string
+  diasSemana: number[]
+  horaInicio: string
+  scope: 'future' | 'all_unattended'
+}) {
+  return apiCallTo('/api/v1/clases', 'editSeries', data)
+}
+
 // Pagos
 export async function createPagoAPI(data: {
   alumnoId: string

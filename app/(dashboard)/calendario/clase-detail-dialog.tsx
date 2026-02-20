@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Edit2, Trash2, CheckCircle, XCircle, UserX, RefreshCw } from 'lucide-react'
+import { Edit2, Trash2, CheckCircle, XCircle, UserX, RefreshCw, Repeat } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { deleteClaseAPI, changeClaseStatusAPI, changeAsistenciaAPI } from '@/lib/api'
@@ -22,6 +22,7 @@ export function ClaseDetailDialog({
   onClose,
   clase,
   onEdit,
+  onEditSeries,
   onDelete,
   onStatusChange,
   horasAnticipacionMinima = 1
@@ -30,6 +31,7 @@ export function ClaseDetailDialog({
   onClose: () => void
   clase: Clase | null
   onEdit: () => void
+  onEditSeries?: () => void
   onDelete?: (id: string) => Promise<void>
   onStatusChange?: (id: string, estado: string) => Promise<void>
   horasAnticipacionMinima?: number
@@ -292,6 +294,13 @@ export function ClaseDetailDialog({
                       </>
                     )}
                   </>
+                )}
+
+                {clase.serieId && onEditSeries && (
+                  <button onClick={onEditSeries} className="action-btn primary">
+                    <Repeat size={18} />
+                    <span>Editar serie</span>
+                  </button>
                 )}
 
                 <button

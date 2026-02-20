@@ -64,6 +64,7 @@ export type ClaseAPI = {
   esRecurrente: boolean
   frecuenciaSemanal: number | null
   diasSemana: number[]
+  serieId: string | null
   profesorId: string
   alumnoId: string | null
   alumno: AlumnoClase | null

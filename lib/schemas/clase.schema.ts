@@ -62,10 +62,21 @@ export const changeAsistenciaSchema = z.object({
   })
 })
 
+export const editSeriesSchema = z.object({
+  action: z.literal('editSeries'),
+  serieId: z.string().uuid('ID de serie inválido'),
+  diasSemana: z.array(z.number().min(0).max(6)).min(1, 'Selecciona al menos un día'),
+  horaInicio: z.string().regex(horaRegex, 'Formato de hora inválido (HH:MM)'),
+  scope: z.enum(['future', 'all_unattended'], {
+    message: 'Scope no válido'
+  })
+})
+
 export const claseActionSchema = z.discriminatedUnion('action', [
   createClaseSchema,
   updateClaseSchema,
   deleteClaseSchema,
   changeStatusSchema,
-  changeAsistenciaSchema
+  changeAsistenciaSchema,
+  editSeriesSchema
 ])

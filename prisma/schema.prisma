@@ -127,6 +127,7 @@ model Clase {
   estado            String    @default("reservada") // reservada, completada, cancelada
   asistencia        String    @default("pendiente") // pendiente, presente, ausente
   esClasePrueba     Boolean   @default(false) @map("es_clase_prueba")
+  serieId           String?   @map("serie_id")
   googleEventId     String?   @map("google_event_id")
   createdAt         DateTime  @default(now()) @map("created_at")
   deletedAt         DateTime? @map("deleted_at")

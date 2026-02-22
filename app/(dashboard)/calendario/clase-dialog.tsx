@@ -253,11 +253,6 @@ export function ClaseDialog({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    if (alumnosSeleccionados.length === 0) {
-      setError('Debes seleccionar al menos un alumno')
-      return
-    }
-
     if (hasPackError) return
 
     if (esRecurrente && !isEditMode && !allDiasComplete) {

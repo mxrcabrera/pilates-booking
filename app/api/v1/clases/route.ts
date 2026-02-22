@@ -415,12 +415,13 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Validar cantidad de clases en el mismo horario
+        // Validar cantidad de clases en el mismo horario (only count assigned students)
         const clasesEnMismoHorario = await prisma.clase.count({
           where: {
             ...ownerFilter,
             fecha,
             horaInicio,
+            alumnoId: { not: null },
             estado: { not: 'cancelada' },
             deletedAt: null
           }
@@ -449,8 +450,32 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Crear una clase por cada alumno seleccionado
+        // Create classes: one per student, or a single empty slot if no students
         const clasesCreadas = []
+
+        // Special slot: no students selected → create open slot
+        if (alumnosArray.length === 0) {
+          const claseCreada = await prisma.clase.create({
+            data: {
+              profesorId: userId,
+              ...(estudio && { estudioId: estudio.estudioId }),
+              alumnoId: null,
+              fecha,
+              horaInicio,
+              horaRecurrente: horaRecurrente !== horaInicio ? horaRecurrente : null,
+              esClasePrueba,
+              esRecurrente: false,
+              estado: 'reservada'
+            },
+            include: {
+              alumno: { select: { id: true, nombre: true } },
+              profesor: { select: { id: true, nombre: true } }
+            }
+          })
+          clasesCreadas.push(claseCreada)
+          return NextResponse.json({ success: true, clases: clasesCreadas })
+        }
+
         for (const alumnoId of alumnosArray) {
           const alumnoDias = perStudentDias[alumnoId] || []
           const frecuenciaSemanal = alumnoDias.length > 0 ? alumnoDias.length : null
@@ -666,12 +691,13 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Validar cantidad de clases en el mismo horario (una sola query)
+        // Validar cantidad de clases en el mismo horario (only count assigned students)
         const clasesEnMismoHorario = await prisma.clase.count({
           where: {
             ...ownerFilter,
             fecha,
             horaInicio,
+            alumnoId: { not: null },
             estado: { not: 'cancelada' },
             id: { not: id },
             deletedAt: null
@@ -830,6 +856,11 @@ export async function POST(request: NextRequest) {
         // Si es INSTRUCTOR, solo puede cambiar asistencia de sus propias clases
         if (estudio && estudio.rol === 'INSTRUCTOR' && claseAsistencia.profesorId !== userId) {
           return forbidden('Solo puedes cambiar la asistencia de tus propias clases')
+        }
+
+        // Cannot mark attendance on an unassigned slot
+        if (!claseAsistencia.alumnoId) {
+          return badRequest('No se puede marcar asistencia en una clase sin alumno asignado')
         }
 
         // Cuando marcamos asistencia, también completamos la clase

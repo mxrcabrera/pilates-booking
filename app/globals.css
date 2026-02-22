@@ -9414,3 +9414,138 @@ input[type="date"]::-webkit-datetime-edit-year-field {
     grid-template-columns: 1fr;
   }
 }
+
+/* Alumno - Slots Booking */
+.slot-pack-info {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(110, 125, 245, 0.08);
+  border-radius: var(--radius);
+  color: rgba(255, 255, 255, var(--opacity-text-secondary));
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-md);
+}
+
+.slot-horarios-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  color: rgba(255, 255, 255, var(--opacity-text-tertiary));
+  font-size: var(--font-xs);
+  margin-bottom: var(--space-lg);
+}
+
+.slots-by-date {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.slot-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.slot-date-title {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: rgba(255, 255, 255, var(--opacity-text-secondary));
+  text-transform: capitalize;
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid rgba(100, 130, 200, 0.08);
+}
+
+.slot-time-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.slot-time-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius);
+  border: 1px solid rgba(100, 130, 200, 0.08);
+  transition: all 0.2s;
+}
+
+.slot-time-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.slot-time-card.booked {
+  border-color: rgba(110, 125, 245, 0.3);
+  background: rgba(110, 125, 245, 0.06);
+}
+
+.slot-time-card.full {
+  opacity: 0.5;
+}
+
+.slot-time-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: rgba(255, 255, 255, var(--opacity-text-secondary));
+}
+
+.slot-hora {
+  font-weight: 600;
+  color: rgba(255, 255, 255, var(--opacity-text-primary));
+}
+
+.slot-capacity {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-xs);
+  color: rgba(255, 255, 255, var(--opacity-text-tertiary));
+}
+
+.slot-badge {
+  font-size: var(--font-xs);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.slot-badge.booked {
+  background: rgba(110, 125, 245, 0.15);
+  color: rgba(147, 155, 245, 0.9);
+}
+
+.slot-badge.full {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, var(--opacity-text-tertiary));
+}
+
+.slot-book-btn {
+  padding: 4px 12px;
+  background: rgba(110, 125, 245, 0.15);
+  border: 1px solid rgba(110, 125, 245, 0.3);
+  border-radius: var(--radius);
+  color: rgba(147, 155, 245, 0.9);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.slot-book-btn:hover:not(:disabled) {
+  background: rgba(110, 125, 245, 0.25);
+  border-color: rgba(110, 125, 245, 0.5);
+}
+
+.slot-book-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profesor-card.selected {
+  border-color: rgba(110, 125, 245, 0.4);
+  background: rgba(110, 125, 245, 0.08);
+}

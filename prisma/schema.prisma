@@ -44,6 +44,7 @@ model User {
   pagosRecibidos          Pago[]
   listaEspera             ListaEspera[]
   estudios                EstudioMiembro[]
+  fechasBloqueadas        FechaBloqueada[]
 
   @@map("users")
 }
@@ -267,6 +268,7 @@ model Estudio {
   horariosDisponibles HorarioDisponible[]
   packs               Pack[]
   listaEspera         ListaEspera[]
+  fechasBloqueadas    FechaBloqueada[]
 
   @@map("estudios")
 }
@@ -304,6 +306,20 @@ model ListaEspera {
 
   @@unique([alumnoId, profesorId, fecha, horaInicio])
   @@map("lista_espera")
+}
+
+model FechaBloqueada {
+  id         String   @id @default(uuid())
+  profesorId String   @map("profesor_id")
+  estudioId  String?  @map("estudio_id")
+  fecha      DateTime @db.Date
+  motivo     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  profesor   User     @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  estudio    Estudio? @relation(fields: [estudioId], references: [id])
+
+  @@unique([profesorId, fecha])
+  @@map("fechas_bloqueadas")
 }
 
 enum NotificationType {

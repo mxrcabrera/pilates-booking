@@ -53,25 +53,24 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
     }
 
-    // Verificar que la clase no sea en el pasado
+    // Verify class is in the future (Argentina UTC-3)
     const ahora = new Date()
+    const [hora, minuto] = clase.horaInicio.split(':').map(Number)
     const fechaClase = new Date(clase.fecha)
-    fechaClase.setHours(
-      parseInt(clase.horaInicio.split(':')[0]),
-      parseInt(clase.horaInicio.split(':')[1])
-    )
+    const fechaHoraUTC = new Date(Date.UTC(
+      fechaClase.getUTCFullYear(), fechaClase.getUTCMonth(), fechaClase.getUTCDate(),
+      hora - 3, minuto
+    ))
 
-    if (fechaClase < ahora) {
+    if (fechaHoraUTC < ahora) {
       return NextResponse.json({ error: 'No se puede cancelar una clase pasada' }, { status: 400 })
     }
 
-    // Cancelar la clase (soft delete o cambiar estado)
+    // Cancel: mark as cancelled, keep alumnoId for history
+    // Capacity is freed because occupied count excludes cancelled classes
     await prisma.clase.update({
       where: { id: claseId },
-      data: {
-        estado: 'cancelada',
-        deletedAt: new Date()
-      }
+      data: { estado: 'cancelada' }
     })
 
     return NextResponse.json({ success: true, message: 'Clase cancelada correctamente' })

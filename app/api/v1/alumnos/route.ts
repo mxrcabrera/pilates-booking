@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
 
         const alumno = await prisma.alumno.create({
           data: {
-            profesorId: userId,
+            profesorId: estudio ? null : userId,
             ...(estudio && { estudioId: estudio.estudioId }),
             nombre,
             email,

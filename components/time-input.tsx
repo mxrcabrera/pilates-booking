@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { Clock } from 'lucide-react'
 
 interface TimeInputProps {
+  id?: string
   name: string
   value?: string
   defaultValue?: string
@@ -14,6 +15,7 @@ interface TimeInputProps {
 }
 
 export function TimeInput({
+  id,
   name,
   value,
   defaultValue,
@@ -34,6 +36,7 @@ export function TimeInput({
     <div className="input-with-icon-wrapper">
       <input
         ref={inputRef}
+        id={id}
         type="time"
         name={name}
         value={value}

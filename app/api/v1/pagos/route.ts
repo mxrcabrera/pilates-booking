@@ -6,6 +6,7 @@ import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { pagoActionSchema } from '@/lib/schemas/pago.schema'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
 import { getEffectiveFeatures } from '@/lib/plans'
+import type { PagoEstado } from '@prisma/client'
 
 export const runtime = 'nodejs'
 
@@ -16,7 +17,7 @@ const WINDOW_MS = 60 * 1000
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const alumnoId = searchParams.get('alumnoId')
-  const estado = searchParams.get('estado')
+  const estado = searchParams.get('estado') as PagoEstado | null
 
   try {
     const context = await getUserContext()

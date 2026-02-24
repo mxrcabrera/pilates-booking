@@ -12,15 +12,9 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { exportToCSV, ALUMNOS_COLUMNS } from '@/lib/export'
 import type { Alumno, Pack, PlanInfo, AlumnosFeatures } from '@/lib/types'
+import { PLAN_NAMES } from '@/lib/constants'
 
 type FilterType = 'todos' | 'activos' | 'inactivos'
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Estudio'
-}
 
 export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, planInfo, features }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string, planInfo: PlanInfo, features: AlumnosFeatures }) {
   const { showSuccess, showError } = useToast()

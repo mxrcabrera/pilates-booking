@@ -340,7 +340,7 @@ export function HorarioDialog({
           {!horario && (
             <>
               <div className="form-group">
-                <label>¿Qué días?</label>
+                <span className="form-label">¿Qué días?</span>
                 <div className="rango-grid">
                   {RANGOS_DIAS.map(rango => (
                     <button
@@ -357,7 +357,7 @@ export function HorarioDialog({
 
               {rangoSeleccionado === 'single' && (
                 <div className="form-group">
-                  <label>Elegí el día</label>
+                  <span className="form-label">Elegí el día</span>
                   <div className="dias-grid">
                     {DIAS_INDIVIDUALES.map(dia => (
                       <label key={dia.value} className="dia-option">
@@ -375,7 +375,7 @@ export function HorarioDialog({
               )}
 
               <div className="form-group">
-                <label>Turno</label>
+                <span className="form-label">Turno</span>
                 <div className="turno-grid">
                   {TURNOS.map(turno => (
                     <button
@@ -395,7 +395,7 @@ export function HorarioDialog({
 
           {horario && (
             <div className="form-group">
-              <label>Turno</label>
+              <span className="form-label">Turno</span>
               <div className="turno-grid">
                 <button
                   type="button"
@@ -420,7 +420,7 @@ export function HorarioDialog({
           {turnoSeleccionado === 'ambos' && !horario && (
             <>
               <div className="form-group">
-                <label className="label-with-icon"><Sun size={16} className="turno-icon-sun" /> Horario Mañana</label>
+                <span className="form-label label-with-icon"><Sun size={16} className="turno-icon-sun" /> Horario Mañana</span>
                 <div className="form-row">
                   <TimeInput
                     name="horaInicioManiana"
@@ -436,7 +436,7 @@ export function HorarioDialog({
               </div>
 
               <div className="form-group">
-                <label className="label-with-icon"><Moon size={16} className="turno-icon-moon" /> Horario Tarde</label>
+                <span className="form-label label-with-icon"><Moon size={16} className="turno-icon-moon" /> Horario Tarde</span>
                 <div className="form-row">
                   <TimeInput
                     name="horaInicioTarde"
@@ -456,8 +456,9 @@ export function HorarioDialog({
           {turnoSeleccionado !== 'ambos' && (
             <div className="form-row">
               <div className="form-group">
-                <label>Desde</label>
+                <label htmlFor="horario-hora-inicio">Desde</label>
                 <TimeInput
+                  id="horario-hora-inicio"
                   name="horaInicio"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
@@ -466,8 +467,9 @@ export function HorarioDialog({
               </div>
 
               <div className="form-group">
-                <label>Hasta</label>
+                <label htmlFor="horario-hora-fin">Hasta</label>
                 <TimeInput
+                  id="horario-hora-fin"
                   name="horaFin"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}

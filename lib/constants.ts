@@ -25,6 +25,13 @@ export const MESES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ]
 
+export const PLAN_NAMES: Record<string, string> = {
+  FREE: 'Free',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  ESTUDIO: 'Max'
+}
+
 export const ESTADO_LABELS: Record<string, string> = {
   reservada: 'Reservada',
   completada: 'Completada',

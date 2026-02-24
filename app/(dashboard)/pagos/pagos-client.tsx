@@ -11,15 +11,9 @@ import { formatMes, diasDiferencia } from '@/lib/dates'
 import { exportToCSV, PAGOS_COLUMNS } from '@/lib/export'
 import type { Pago, AlumnoPago, PagosFeatures } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
+import { PLAN_NAMES } from '@/lib/constants'
 
 type FilterType = 'todos' | 'pendientes' | 'pagados'
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Max'
-}
 
 export function PagosClient({
   pagos: initialPagos,

@@ -9,6 +9,7 @@ import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import { Lock } from 'lucide-react'
 import type { Alumno, Pack } from '@/lib/types'
+import { PLAN_NAMES } from '@/lib/constants'
 
 type DialogStep = 'form' | 'seriesPrompt'
 
@@ -26,13 +27,6 @@ const DIAS_SEMANA_OPTIONS = [
   { value: 6, label: 'Sab' },
   { value: 0, label: 'Dom' },
 ]
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Max'
-}
 
 export function AlumnoDialog({
   isOpen,
@@ -298,9 +292,9 @@ export function AlumnoDialog({
           </p>
 
           <div className="form-group">
-            <label>
+            <span className="form-label">
               Dias de clase ({seriesDias.length}/{seriesData.newClasesPorSemana})
-            </label>
+            </span>
             <div className="dias-grid compact">
               {DIAS_SEMANA_OPTIONS.map(dia => (
                 <label key={dia.value} className="dia-option" htmlFor={`series-dia-${dia.value}`}>
@@ -356,8 +350,9 @@ export function AlumnoDialog({
 
       <form id="alumno-form" onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Nombre Completo</label>
+          <label htmlFor="alumno-nombre">Nombre Completo</label>
           <input
+            id="alumno-nombre"
             type="text"
             name="nombre"
             placeholder="María García"
@@ -368,8 +363,9 @@ export function AlumnoDialog({
         </div>
 
         <div className="form-group">
-          <label>Email</label>
+          <label htmlFor="alumno-email">Email</label>
           <input
+            id="alumno-email"
             type="email"
             name="email"
             placeholder="maria@email.com"
@@ -380,8 +376,9 @@ export function AlumnoDialog({
         </div>
 
         <div className="form-group">
-          <label>Teléfono</label>
+          <label htmlFor="alumno-telefono">Teléfono</label>
           <input
+            id="alumno-telefono"
             type="tel"
             name="telefono"
             placeholder="+54 9 11 1234-5678"
@@ -392,8 +389,9 @@ export function AlumnoDialog({
         </div>
 
         <div className="form-group">
-          <label>Cumpleaños</label>
+          <label htmlFor="alumno-cumpleanos">Cumpleaños</label>
           <DateInput
+            id="alumno-cumpleanos"
             name="cumpleanos"
             max={getMaxDate()}
             defaultValue={formatDateForInput(alumno?.cumpleanos || null)}
@@ -418,8 +416,9 @@ export function AlumnoDialog({
         )}
 
         <div className="form-group">
-          <label>Patologías / Observaciones</label>
+          <label htmlFor="alumno-patologias">Patologías / Observaciones</label>
           <textarea
+              id="alumno-patologias"
               name="patologias"
               placeholder="Lesiones, condiciones médicas, limitaciones físicas..."
               rows={3}
@@ -430,7 +429,7 @@ export function AlumnoDialog({
         </div>
 
         <div className="form-group">
-          <label>Género</label>
+          <span className="form-label">Género</span>
           <div className="genero-grid">
             <button
               type="button"
@@ -452,7 +451,7 @@ export function AlumnoDialog({
         </div>
 
         <div className="form-group">
-          <label>Tipo de Pago</label>
+          <span className="form-label">Tipo de Pago</span>
           {!puedeMensual && !puedePorClase ? (
             <div className="form-warning-box">
               <p className="form-warning-text">
@@ -488,7 +487,7 @@ export function AlumnoDialog({
         {packType === 'mensual' && (
           <>
             <div className="form-group">
-              <label>Pack Mensual</label>
+              <span className="form-label">Pack Mensual</span>
               {packs.length === 0 ? (
                 <p className="form-warning-text">
                   No tenés packs configurados. Crealos en Configuracion &gt; Packs y Precios
@@ -521,13 +520,14 @@ export function AlumnoDialog({
             </div>
 
             <div className="form-group">
-              <label className={!canUseProrrateo ? 'label-with-lock' : ''}>
+              <label htmlFor="alumno-dia-inicio-ciclo" className={!canUseProrrateo ? 'label-with-lock' : ''}>
                 Día de inicio de ciclo
                 {!canUseProrrateo && <Lock size={14} className="label-lock-icon" />}
               </label>
               {canUseProrrateo ? (
                 <>
                   <SelectInput
+                    id="alumno-dia-inicio-ciclo"
                     value={diaInicioCiclo}
                     onChange={(e) => setDiaInicioCiclo(e.target.value)}
                     disabled={isLoading}
@@ -556,7 +556,7 @@ export function AlumnoDialog({
 
         {packType === 'por_clase' && (
           <div className="form-group">
-            <label>Precio por Clase</label>
+            <span className="form-label">Precio por Clase</span>
             <div className="precio-info-box">
               <div className="precio-info-amount">
                 ${parseFloat(precioPorClase).toLocaleString('es-AR')}

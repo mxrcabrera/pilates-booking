@@ -133,8 +133,9 @@ export function PagoDialog({
 
       <form id="pago-form" onSubmit={handleSubmit} className="dialog-body">
         <div className="form-group">
-          <label>Alumno</label>
+          <label htmlFor="pago-alumno">Alumno</label>
           <SelectInput
+            id="pago-alumno"
             name="alumnoId"
             required
             value={selectedAlumnoId}
@@ -152,8 +153,8 @@ export function PagoDialog({
 
         <div className="form-row">
           <div className="form-group">
-            <label>Mes</label>
-            <SelectInput name="mes" required disabled={isLoading} defaultValue={currentMonth.toString()}>
+            <label htmlFor="pago-mes">Mes</label>
+            <SelectInput id="pago-mes" name="mes" required disabled={isLoading} defaultValue={currentMonth.toString()}>
               {MESES.map((mes, idx) => (
                 <option key={mes} value={idx}>{mes}</option>
               ))}
@@ -161,8 +162,8 @@ export function PagoDialog({
           </div>
 
           <div className="form-group">
-            <label>Año</label>
-            <SelectInput name="anio" required disabled={isLoading} defaultValue={currentYear.toString()}>
+            <label htmlFor="pago-anio">Año</label>
+            <SelectInput id="pago-anio" name="anio" required disabled={isLoading} defaultValue={currentYear.toString()}>
               <option value={currentYear - 1}>{currentYear - 1}</option>
               <option value={currentYear}>{currentYear}</option>
               <option value={currentYear + 1}>{currentYear + 1}</option>
@@ -171,8 +172,9 @@ export function PagoDialog({
         </div>
 
         <div className="form-group">
-          <label>Día de vencimiento</label>
+          <label htmlFor="pago-dia-vencimiento">Día de vencimiento</label>
           <SelectInput
+            id="pago-dia-vencimiento"
             name="diaVencimiento"
             required
             value={diaVencimiento}
@@ -186,8 +188,9 @@ export function PagoDialog({
         </div>
 
         <div className="form-group">
-          <label>Monto (ARS)</label>
+          <label htmlFor="pago-monto">Monto (ARS)</label>
           <input
+            id="pago-monto"
             type="number"
             name="monto"
             value={monto}

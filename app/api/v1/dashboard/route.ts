@@ -49,13 +49,15 @@ export async function GET() {
       prisma.alumno.count({
         where: {
           ...ownerFilter,
-          estaActivo: true
+          estaActivo: true,
+          deletedAt: null
         }
       }),
       prisma.clase.findMany({
         where: {
           ...ownerFilter,
-          fecha: fechaHoy
+          fecha: fechaHoy,
+          deletedAt: null
         },
         select: {
           id: true,
@@ -76,7 +78,8 @@ export async function GET() {
       prisma.clase.findMany({
         where: {
           ...ownerFilter,
-          fecha: fechaManana
+          fecha: fechaManana,
+          deletedAt: null
         },
         select: {
           id: true,
@@ -97,16 +100,17 @@ export async function GET() {
         where: {
           alumno: ownerFilter,
           estado: 'pendiente',
+          deletedAt: null,
           fechaVencimiento: {
             lt: new Date()
           }
         }
       }),
       prisma.horarioDisponible.count({
-        where: ownerFilter
+        where: { ...ownerFilter, deletedAt: null }
       }),
       prisma.pack.count({
-        where: ownerFilter
+        where: { ...ownerFilter, deletedAt: null }
       })
     ])
 

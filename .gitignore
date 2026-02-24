@@ -52,6 +52,7 @@ nul
 
 # Local config
 .*/
+!.github/
 
 # Local Netlify folder
 .netlify

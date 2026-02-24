@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs'
 import { auth } from './auth'
 import { prisma } from '@/lib/prisma'
 import type { EstudioRol } from '@prisma/client'
+// Re-export permission utilities
+export { hasPermission, canEditClase } from './permissions'
 
 // Tipos para contexto de estudio
 export interface EstudioContext {
@@ -21,36 +23,12 @@ export interface UserContext {
   estudio: EstudioContext | null
 }
 
-// Permisos por rol
-const PERMISSIONS = {
-  OWNER: [
-    'view:all', 'create:alumnos', 'edit:alumnos', 'delete:alumnos',
-    'create:clases', 'edit:clases', 'edit:clases:all', 'delete:clases',
-    'create:pagos', 'edit:pagos', 'delete:pagos',
-    'edit:configuracion', 'manage:equipo', 'view:billing'
-  ],
-  ADMIN: [
-    'view:all', 'create:alumnos', 'edit:alumnos', 'delete:alumnos',
-    'create:clases', 'edit:clases', 'edit:clases:all', 'delete:clases',
-    'create:pagos', 'edit:pagos', 'delete:pagos',
-    'edit:configuracion', 'manage:equipo'
-  ],
-  INSTRUCTOR: [
-    'view:all', 'create:alumnos', 'edit:alumnos',
-    'create:clases', 'edit:clases', // Solo sus propias clases
-  ],
-  VIEWER: [
-    'view:all'
-  ]
-} as const
-
-type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS][number]
-
-// JWT_SECRET es requerido - no usar fallback inseguro
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
+function getJwtSecret() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required')
+  }
+  return new TextEncoder().encode(process.env.JWT_SECRET)
 }
-const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10)
@@ -65,12 +43,12 @@ export async function createToken(userId: string, role: string = 'PROFESOR') {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(secret)
+    .sign(getJwtSecret())
 }
 
 export async function verifyToken(token: string) {
   try {
-    const verified = await jwtVerify(token, secret)
+    const verified = await jwtVerify(token, getJwtSecret())
     return verified.payload as { userId: string; role?: string }
   } catch {
     return null
@@ -135,7 +113,7 @@ export async function getUserContext(): Promise<UserContext | null> {
 
   // Buscar el estudio del usuario
   const miembro = await prisma.estudioMiembro.findFirst({
-    where: { userId: userWithRole.userId },
+    where: { userId: userWithRole.userId, deletedAt: null },
     include: {
       estudio: {
         select: {
@@ -161,24 +139,6 @@ export async function getUserContext(): Promise<UserContext | null> {
       trialEndsAt: miembro.estudio.trialEndsAt
     } : null
   }
-}
-
-/**
- * Verifica si el usuario tiene un permiso específico
- */
-export function hasPermission(rol: EstudioRol, permission: Permission): boolean {
-  const permisos = PERMISSIONS[rol]
-  return permisos.includes(permission as never)
-}
-
-/**
- * Verifica si el usuario puede editar una clase específica
- * INSTRUCTOR solo puede editar sus propias clases
- */
-export function canEditClase(rol: EstudioRol, claseProfesorId: string, userId: string): boolean {
-  if (rol === 'OWNER' || rol === 'ADMIN') return true
-  if (rol === 'INSTRUCTOR') return claseProfesorId === userId
-  return false
 }
 
 /**

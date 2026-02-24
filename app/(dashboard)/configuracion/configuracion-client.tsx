@@ -218,8 +218,9 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
 
           <div className="config-grid-2">
             <div className="form-group">
-              <label>Capacidad máxima por clase</label>
+              <label htmlFor="config-max-alumnos">Capacidad máxima por clase</label>
               <SelectInput
+                id="config-max-alumnos"
                 name="maxAlumnosPorClase"
                 defaultValue={profesor.maxAlumnosPorClase.toString()}
                 required
@@ -233,8 +234,9 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
             </div>
 
             <div className="form-group">
-              <label>Anticipación mínima para reservar</label>
+              <label htmlFor="config-horas-anticipacion">Anticipación mínima para reservar</label>
               <SelectInput
+                id="config-horas-anticipacion"
                 name="horasAnticipacionMinima"
                 defaultValue={profesor.horasAnticipacionMinima.toString()}
                 required
@@ -251,9 +253,10 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
           {/* Google Calendar - solo para plan Pro+ */}
           {features.googleCalendarSync && profesor.hasGoogleAccount && (
             <div className="form-group google-calendar-section">
-              <label>Sincronizar con Google Calendar</label>
+              <label htmlFor="config-sync-google-calendar">Sincronizar con Google Calendar</label>
               <div className="sync-checkbox-group">
                 <input
+                  id="config-sync-google-calendar"
                   type="checkbox"
                   name="syncGoogleCalendar"
                   defaultChecked={profesor.syncGoogleCalendar}
@@ -368,10 +371,11 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         <div className="clase-suelta-section">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Clase suelta</label>
+              <label htmlFor="config-precio-por-clase">Clase suelta</label>
               <div className="price-input-wrapper">
                 <span className="price-symbol">$</span>
                 <input
+                  id="config-precio-por-clase"
                   type="number"
                   name="precioPorClase"
                   defaultValue={profesor.precioPorClase}

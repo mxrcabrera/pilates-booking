@@ -3,6 +3,7 @@
 import { ChevronDown } from 'lucide-react'
 
 interface SelectInputProps {
+  id?: string
   name?: string
   value?: string
   defaultValue?: string
@@ -14,6 +15,7 @@ interface SelectInputProps {
 }
 
 export function SelectInput({
+  id,
   name,
   value,
   defaultValue,
@@ -26,6 +28,7 @@ export function SelectInput({
   return (
     <div className="input-with-icon-wrapper">
       <select
+        id={id}
         name={name}
         value={value}
         defaultValue={defaultValue}

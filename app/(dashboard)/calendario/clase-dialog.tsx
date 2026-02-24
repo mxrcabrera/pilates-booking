@@ -345,7 +345,7 @@ export function ClaseDialog({
         <input type="hidden" name="esRecurrente" value={esRecurrente ? 'true' : 'false'} />
 
         <div className="form-group">
-          <label>
+          <label htmlFor="clase-alumno-select">
             Alumnos
             <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
               ({alumnosSeleccionados.length}/{maxAlumnosPorClase})
@@ -374,6 +374,7 @@ export function ClaseDialog({
 
           {alumnosSeleccionados.length < maxAlumnosPorClase && (
             <SelectInput
+              id="clase-alumno-select"
               value=""
               onChange={(e) => { if (e.target.value) handleAlumnoToggle(e.target.value) }}
               disabled={isLoading}
@@ -389,13 +390,14 @@ export function ClaseDialog({
         </div>
 
         <div className="form-group">
-          <label>Fecha</label>
-          <DateInput name="fecha" required defaultValue={defaultFecha} disabled={isLoading} />
+          <label htmlFor="clase-fecha">Fecha</label>
+          <DateInput id="clase-fecha" name="fecha" required defaultValue={defaultFecha} disabled={isLoading} />
         </div>
 
         <div className="form-group">
-          <label>Hora inicial</label>
+          <label htmlFor="clase-hora-inicio">Hora inicial</label>
           <TimeInput
+            id="clase-hora-inicio"
             name="horaInicio"
             defaultValue={clase?.horaInicio || horarioMananaInicio}
             disabled={isLoading}
@@ -403,7 +405,7 @@ export function ClaseDialog({
         </div>
 
         <div className="form-group">
-          <label>Tipo de clase</label>
+          <span className="form-label">Tipo de clase</span>
           <div className="segmented-control">
             <button
               type="button"
@@ -470,7 +472,7 @@ export function ClaseDialog({
         {/* Per-student day selection cards (create mode only) */}
         {esRecurrente && !isEditMode && alumnosConPack.length > 0 && (
           <div className="student-days-section">
-            <label className="section-label">Dias de clase por alumno</label>
+            <span className="form-label section-label">Dias de clase por alumno</span>
             {alumnosConPack.map(alumno => {
               const freq = alumno.clasesPorSemana || 0
               const selectedDias = diasPorAlumno[alumno.id] || []
@@ -513,16 +515,16 @@ export function ClaseDialog({
         {esRecurrente && isEditMode && editFrecuencia && (
           <>
             <div className="form-group">
-              <label>Frecuencia: {editFrecuencia}x por semana</label>
+              <span className="form-label">Frecuencia: {editFrecuencia}x por semana</span>
             </div>
 
             <div className="form-group">
-              <label>
+              <span className="form-label">
                 Que dia{editFrecuencia > 1 ? 's' : ''}?
                 <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
                   ({diasSeleccionados.length}/{editFrecuencia} seleccionado{editFrecuencia > 1 ? 's' : ''})
                 </span>
-              </label>
+              </span>
               <div className="dias-grid">
                 {DIAS_SEMANA.map((dia) => (
                   <label key={dia.value} className="dia-option" htmlFor={`dia-${dia.value}`}>
@@ -540,8 +542,9 @@ export function ClaseDialog({
             </div>
 
             <div className="form-group">
-              <label>Hora de las clases recurrentes</label>
+              <label htmlFor="clase-hora-recurrente-edit">Hora de las clases recurrentes</label>
               <TimeInput
+                id="clase-hora-recurrente-edit"
                 name="horaRecurrente"
                 defaultValue={clase?.horaRecurrente || horarioMananaInicio}
                 disabled={isLoading}
@@ -557,8 +560,9 @@ export function ClaseDialog({
         {/* Create mode: hora recurrente */}
         {esRecurrente && !isEditMode && alumnosConPack.length > 0 && (
           <div className="form-group">
-            <label>Hora de las clases recurrentes</label>
+            <label htmlFor="clase-hora-recurrente-create">Hora de las clases recurrentes</label>
             <TimeInput
+              id="clase-hora-recurrente-create"
               name="horaRecurrente"
               defaultValue={horarioMananaInicio}
               disabled={isLoading}

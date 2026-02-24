@@ -19,25 +19,37 @@ async function sendEmail({ to, subject, html }: EmailParams): Promise<boolean> {
     return false
   }
 
-  try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      html,
-    })
+  const MAX_RETRIES = 2
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const { error } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to,
+        subject,
+        html,
+      })
 
-    if (error) {
-      logger.error('Error sending email', { error, to })
+      if (error) {
+        logger.error('Error sending email', { error, to, attempt })
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)))
+          continue
+        }
+        return false
+      }
+
+      logger.info('Email sent', { to, subject })
+      return true
+    } catch (error) {
+      logger.error('Error sending email', { error, to, attempt })
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)))
+        continue
+      }
       return false
     }
-
-    logger.info('Email sent', { to, subject })
-    return true
-  } catch (error) {
-    logger.error('Error sending email', error)
-    return false
   }
+  return false
 }
 
 interface NotificationEmailData {

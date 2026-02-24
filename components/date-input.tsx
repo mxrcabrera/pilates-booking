@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { Calendar } from 'lucide-react'
 
 interface DateInputProps {
+  id?: string
   name: string
   value?: string
   defaultValue?: string
@@ -16,6 +17,7 @@ interface DateInputProps {
 }
 
 export function DateInput({
+  id,
   name,
   value,
   defaultValue,
@@ -38,6 +40,7 @@ export function DateInput({
     <div className="input-with-icon-wrapper">
       <input
         ref={inputRef}
+        id={id}
         type="date"
         name={name}
         value={value}

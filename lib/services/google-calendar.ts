@@ -1,5 +1,6 @@
 import { prisma } from '../prisma'
 import { logger } from '../logger'
+import { fetchWithRetry } from '../fetch-retry'
 
 const CALENDAR_API_BASE = 'https://www.googleapis.com/calendar/v3'
 
@@ -104,14 +105,14 @@ export async function createCalendarEvent(
   }
 
   try {
-    const response = await fetch(`${CALENDAR_API_BASE}/calendars/primary/events`, {
+    const response = await fetchWithRetry(`${CALENDAR_API_BASE}/calendars/primary/events`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(event),
-    })
+    }, 'Google Calendar create')
 
     if (!response.ok) {
       const error = await response.text()
@@ -165,14 +166,14 @@ export async function updateCalendarEvent(
   }
 
   try {
-    const response = await fetch(`${CALENDAR_API_BASE}/calendars/primary/events/${eventId}`, {
+    const response = await fetchWithRetry(`${CALENDAR_API_BASE}/calendars/primary/events/${eventId}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(event),
-    })
+    }, 'Google Calendar update')
 
     return response.ok
   } catch (error) {
@@ -186,12 +187,12 @@ export async function deleteCalendarEvent(userId: string, eventId: string): Prom
   if (!accessToken) return false
 
   try {
-    const response = await fetch(`${CALENDAR_API_BASE}/calendars/primary/events/${eventId}`, {
+    const response = await fetchWithRetry(`${CALENDAR_API_BASE}/calendars/primary/events/${eventId}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    })
+    }, 'Google Calendar delete')
 
     return response.ok || response.status === 404
   } catch (error) {

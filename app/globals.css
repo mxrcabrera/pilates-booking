@@ -3412,7 +3412,8 @@ button span {
   margin-bottom: 0;
 }
 
-.form-group label {
+.form-group label,
+.form-group .form-label {
   font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.8125rem;
   font-weight: 400;
@@ -3426,7 +3427,8 @@ button span {
     gap: 0.5rem;
   }
 
-  .form-group label {
+  .form-group label,
+  .form-group .form-label {
     font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
@@ -7796,7 +7798,9 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 
 /* Labels consistentes */
 .settings-section label,
-.form-group label {
+.form-group label,
+.settings-section .form-label,
+.form-group .form-label {
   font-family: var(--font-body), Raleway, -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;

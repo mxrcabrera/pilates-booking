@@ -89,8 +89,9 @@ export function PackDialog({
 
       <form id="pack-form" onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Nombre del Pack</label>
+          <label htmlFor="pack-nombre">Nombre del Pack</label>
           <input
+            id="pack-nombre"
             type="text"
             name="nombre"
             placeholder="Pack Semanal"
@@ -101,8 +102,9 @@ export function PackDialog({
         </div>
 
         <div className="form-group">
-          <label>Clases por Semana</label>
+          <label htmlFor="pack-clases-por-semana">Clases por Semana</label>
           <SelectInput
+            id="pack-clases-por-semana"
             name="clasesPorSemana"
             required
             defaultValue={pack?.clasesPorSemana?.toString()}
@@ -118,8 +120,9 @@ export function PackDialog({
         </div>
 
         <div className="form-group">
-          <label>Precio (ARS)</label>
+          <label htmlFor="pack-precio">Precio (ARS)</label>
           <input
+            id="pack-precio"
             type="number"
             name="precio"
             placeholder="8000"

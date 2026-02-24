@@ -284,70 +284,73 @@ export async function POST(request: NextRequest) {
         const diaCiclo = diaInicioCiclo ?? alumnoExistente.diaInicioCiclo
 
         // Detectar cambio de pack para calcular prorrateo
-        let nuevoSaldoAFavor = alumnoExistente.saldoAFavor
         const packCambio = packType && packType !== alumnoExistente.packType &&
                           alumnoExistente.packType !== 'por_clase' && packType !== 'por_clase'
 
-        if (packCambio) {
-          const packAnterior = await prisma.pack.findUnique({
-            where: { id: alumnoExistente.packType }
+        let nuevoSaldoAFavor = alumnoExistente.saldoAFavor
+
+        const alumno = await prisma.$transaction(async (tx) => {
+          if (packCambio) {
+            const packAnterior = await tx.pack.findUnique({
+              where: { id: alumnoExistente.packType }
+            })
+
+            if (packAnterior) {
+              const { inicio, fin } = calcularRangoCiclo(alumnoExistente.diaInicioCiclo)
+
+              const clasesTomadas = await tx.clase.count({
+                where: {
+                  alumnoId: id,
+                  fecha: { gte: inicio, lte: fin },
+                  estado: { in: ['completada', 'reservada'] },
+                  deletedAt: null
+                }
+              })
+
+              const precioImplicitoPorClase = calcularPrecioImplicitoPorClase(
+                Number(packAnterior.precio),
+                packAnterior.clasesPorSemana
+              )
+
+              const valorConsumido = clasesTomadas * precioImplicitoPorClase
+
+              const ultimoPago = await tx.pago.findFirst({
+                where: {
+                  alumnoId: id,
+                  estado: 'pagado',
+                  fechaPago: { gte: inicio, lte: fin },
+                  deletedAt: null
+                },
+                orderBy: { fechaPago: 'desc' }
+              })
+              const montoPagado = ultimoPago ? Number(ultimoPago.monto) : 0
+
+              const saldoCalculado = montoPagado - valorConsumido
+              nuevoSaldoAFavor = new Decimal(Number(alumnoExistente.saldoAFavor) + saldoCalculado)
+            }
+          }
+
+          return tx.alumno.update({
+            where: { id },
+            data: {
+              ...(nombre && { nombre }),
+              ...(email && { email }),
+              ...(telefono && { telefono }),
+              ...(genero && { genero }),
+              cumpleanos: cumpleanos !== undefined
+                ? (cumpleanos ? new Date(cumpleanos + 'T00:00:00') : null)
+                : undefined,
+              ...(patologias !== undefined && { patologias: patologias || null }),
+              ...(packType && { packType }),
+              ...(precio !== undefined && { precio: new Decimal(precio) }),
+              ...(consentimientoTutor !== undefined && { consentimientoTutor }),
+              diaInicioCiclo: diaCiclo,
+              saldoAFavor: nuevoSaldoAFavor
+            },
+            include: {
+              _count: { select: { clases: true, pagos: true } }
+            }
           })
-
-          if (packAnterior) {
-            const { inicio, fin } = calcularRangoCiclo(alumnoExistente.diaInicioCiclo)
-
-            const clasesTomadas = await prisma.clase.count({
-              where: {
-                alumnoId: id,
-                fecha: { gte: inicio, lte: fin },
-                estado: { in: ['completada', 'reservada'] },
-                deletedAt: null
-              }
-            })
-
-            const precioImplicitoPorClase = calcularPrecioImplicitoPorClase(
-              Number(packAnterior.precio),
-              packAnterior.clasesPorSemana
-            )
-
-            const valorConsumido = clasesTomadas * precioImplicitoPorClase
-
-            const ultimoPago = await prisma.pago.findFirst({
-              where: {
-                alumnoId: id,
-                estado: 'pagado',
-                fechaPago: { gte: inicio, lte: fin },
-                deletedAt: null
-              },
-              orderBy: { fechaPago: 'desc' }
-            })
-            const montoPagado = ultimoPago ? Number(ultimoPago.monto) : 0
-
-            const saldoCalculado = montoPagado - valorConsumido
-            nuevoSaldoAFavor = new Decimal(Number(alumnoExistente.saldoAFavor) + saldoCalculado)
-          }
-        }
-
-        const alumno = await prisma.alumno.update({
-          where: { id },
-          data: {
-            ...(nombre && { nombre }),
-            ...(email && { email }),
-            ...(telefono && { telefono }),
-            ...(genero && { genero }),
-            cumpleanos: cumpleanos !== undefined
-              ? (cumpleanos ? new Date(cumpleanos + 'T00:00:00') : null)
-              : undefined,
-            ...(patologias !== undefined && { patologias: patologias || null }),
-            ...(packType && { packType }),
-            ...(precio !== undefined && { precio: new Decimal(precio) }),
-            ...(consentimientoTutor !== undefined && { consentimientoTutor }),
-            diaInicioCiclo: diaCiclo,
-            saldoAFavor: nuevoSaldoAFavor
-          },
-          include: {
-            _count: { select: { clases: true, pagos: true } }
-          }
         })
 
         invalidateAlumnos()
@@ -443,10 +446,21 @@ export async function POST(request: NextRequest) {
           return notFound('Alumno no encontrado')
         }
 
-        await prisma.alumno.update({
-          where: { id },
-          data: { deletedAt: new Date() }
-        })
+        const now = new Date()
+        await prisma.$transaction([
+          prisma.alumno.update({
+            where: { id },
+            data: { deletedAt: now }
+          }),
+          prisma.pago.updateMany({
+            where: { alumnoId: id, estado: 'pendiente', deletedAt: null },
+            data: { deletedAt: now }
+          }),
+          prisma.clase.updateMany({
+            where: { alumnoId: id, estado: 'reservada', fecha: { gte: now }, deletedAt: null },
+            data: { estado: 'cancelada' }
+          }),
+        ])
         invalidateAlumnos()
         return NextResponse.json({ success: true })
       }

@@ -6,15 +6,9 @@ import { ReportesClient } from './reportes-client'
 import { Lock } from 'lucide-react'
 import Link from 'next/link'
 import type { ReportesData } from '@/lib/types'
+import { PLAN_NAMES } from '@/lib/constants'
 
 const CACHE_KEY = 'reportes-data'
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Max'
-}
 
 export default function ReportesPage() {
   const { data, error, isLoading } = usePageData<ReportesData>({

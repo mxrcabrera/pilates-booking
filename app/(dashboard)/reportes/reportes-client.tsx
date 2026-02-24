@@ -1,15 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Users, DollarSign, Calendar, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, Target, Award, BarChart3 } from 'lucide-react'
 import type { ReportesData } from '@/lib/types'
-import {
-  IngresosChart,
-  ClasesAlumnosChart,
-  AsistenciaPorDiaChart,
-  DistribucionPacksChart,
-  HorariosPopularesChart
-} from '@/components/charts'
+
+const IngresosChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.IngresosChart })), { ssr: false })
+const ClasesAlumnosChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.ClasesAlumnosChart })), { ssr: false })
+const AsistenciaPorDiaChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.AsistenciaPorDiaChart })), { ssr: false })
+const DistribucionPacksChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.DistribucionPacksChart })), { ssr: false })
+const HorariosPopularesChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.HorariosPopularesChart })), { ssr: false })
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 

@@ -559,10 +559,32 @@ export async function POST(request: NextRequest) {
               }
 
               if (clasesACrear.length > 0) {
-                await prisma.clase.createMany({
-                  data: clasesACrear,
-                  skipDuplicates: true
+                // H4: Validate capacity for each future date
+                const maxCap = configData.maxAlumnosPorClase
+                const futureDates = clasesACrear.map(c => c.fecha as Date)
+                const existingCounts = await prisma.clase.groupBy({
+                  by: ['fecha'],
+                  where: {
+                    profesorId: userId,
+                    horaInicio: horaRecurrente,
+                    fecha: { in: futureDates },
+                    estado: { not: 'cancelada' },
+                    deletedAt: null
+                  },
+                  _count: true
                 })
+                const countMap = new Map(existingCounts.map(e => [e.fecha.toISOString(), e._count]))
+                const filtered = clasesACrear.filter(c => {
+                  const count = countMap.get((c.fecha as Date).toISOString()) || 0
+                  return count < maxCap
+                })
+
+                if (filtered.length > 0) {
+                  await prisma.clase.createMany({
+                    data: filtered,
+                    skipDuplicates: true
+                  })
+                }
               }
             }
           }

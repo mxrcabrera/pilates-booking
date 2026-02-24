@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, ChevronDown, ChevronRight, Pencil, Trash2, Lock } from 'lucide-react'
+import { PLAN_NAMES } from '@/lib/constants'
 
 interface HorarioGrupo {
   id: string
@@ -20,13 +21,6 @@ interface Props {
   onAgregarDisponibilidad: (dia: string) => void
   canConfigureHorarios?: boolean
   currentPlan?: string
-}
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Max'
 }
 
 export function HorariosDisponibles({

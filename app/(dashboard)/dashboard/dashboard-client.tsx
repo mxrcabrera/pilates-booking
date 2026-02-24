@@ -8,6 +8,7 @@ import { changeAsistenciaAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import type { ClaseHoy, SiguienteClase, DashboardFeatures } from '@/lib/types'
 import { formatearHora, getErrorMessage } from '@/lib/utils'
+import { PLAN_NAMES } from '@/lib/constants'
 
 interface DashboardClientProps {
   clasesHoy: ClaseHoy[]
@@ -36,13 +37,6 @@ function getTimeStatus(minutosHasta: number): { isPast: boolean; isNow: boolean;
     return { isPast: false, isNow: false, isSoon: true }
   }
   return { isPast: false, isNow: false, isSoon: false }
-}
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Estudio'
 }
 
 export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, maxAlumnosPorClase, siguienteClase, features }: DashboardClientProps) {

@@ -67,6 +67,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No estas vinculado a ningun profesor' }, { status: 403 })
     }
 
+    // Validate profesorId belongs to the alumno's profesor or studio
+    if (alumno.profesorId && alumno.profesorId !== profesorId) {
+      return NextResponse.json({ error: 'Profesor no autorizado' }, { status: 403 })
+    }
+    if (alumno.estudioId && !alumno.profesorId) {
+      const isStudioProfesor = await prisma.estudioMiembro.findFirst({
+        where: { estudioId: alumno.estudioId, userId: profesorId, deletedAt: null },
+        select: { id: true }
+      })
+      if (!isStudioProfesor) {
+        return NextResponse.json({ error: 'Profesor no pertenece a tu estudio' }, { status: 403 })
+      }
+    }
+
     // Get pack for weekly limit
     let clasesPorSemana: number | null = null
     if (alumno.packType && alumno.packType !== 'por_clase') {

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { argentinaToUTC } from '@/lib/dates'
 
 const WRITE_LIMIT = 5
 const WINDOW_MS = 60 * 1000
@@ -53,14 +54,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
     }
 
-    // Verify class is in the future (Argentina UTC-3)
+    // Verify class is in the future
     const ahora = new Date()
-    const [hora, minuto] = clase.horaInicio.split(':').map(Number)
     const fechaClase = new Date(clase.fecha)
-    const fechaHoraUTC = new Date(Date.UTC(
-      fechaClase.getUTCFullYear(), fechaClase.getUTCMonth(), fechaClase.getUTCDate(),
-      hora - 3, minuto
-    ))
+    const fechaStr = fechaClase.toISOString().split('T')[0]
+    const fechaHoraUTC = argentinaToUTC(fechaStr, clase.horaInicio)
 
     if (fechaHoraUTC < ahora) {
       return NextResponse.json({ error: 'No se puede cancelar una clase pasada' }, { status: 400 })

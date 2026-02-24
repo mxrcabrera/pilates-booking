@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { argentinaToUTC } from '@/lib/dates'
 import { Prisma } from '@prisma/client'
 
 const WRITE_LIMIT = 5
@@ -50,11 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Must be in the future
     const now = new Date()
-    const [hora, minuto] = horaInicio.split(':').map(Number)
-    const fechaHoraUTC = new Date(Date.UTC(
-      fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate(),
-      hora - 3, minuto // Argentina UTC-3
-    ))
+    const fechaHoraUTC = argentinaToUTC(fechaStr, horaInicio)
 
     if (fechaHoraUTC <= now) {
       return NextResponse.json({ error: 'No se puede reservar una clase en el pasado' }, { status: 400 })

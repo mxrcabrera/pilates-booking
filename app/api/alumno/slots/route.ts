@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { logger } from '@/lib/logger'
+import { getNowArgentinaHour } from '@/lib/dates'
 
 const WEEKS_AHEAD = 4
 const MS_PER_DAY = 86400000
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
     const maxCapacity = config?.maxAlumnosPorClase ?? 4
 
     const now = new Date()
-    const nowArgHour = now.getUTCHours() + 3 // Argentina UTC-3
+    const nowArgHour = getNowArgentinaHour()
     const today = new Date(now)
     today.setUTCHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]

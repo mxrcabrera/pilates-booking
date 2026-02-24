@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
+import { argentinaToUTC } from '@/lib/dates'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
@@ -352,15 +353,7 @@ export async function POST(request: NextRequest) {
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
         // Validar que la clase sea al menos X horas en el futuro
-        // Usar UTC para evitar problemas de timezone
-        const [hora, minuto] = horaInicio.split(':').map(Number)
-        const fechaHoraClaseUTC = new Date(Date.UTC(
-          fecha.getUTCFullYear(),
-          fecha.getUTCMonth(),
-          fecha.getUTCDate(),
-          hora - 3, // Argentina es UTC-3
-          minuto
-        ))
+        const fechaHoraClaseUTC = argentinaToUTC(fechaStr, horaInicio)
 
         const ahora = new Date()
         const tiempoMinimoAnticipacion = new Date(ahora.getTime() + configData.horasAnticipacionMinima * 60 * 60 * 1000)
@@ -637,15 +630,7 @@ export async function POST(request: NextRequest) {
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
         // Validar que la clase sea al menos X horas en el futuro
-        // Usar UTC para evitar problemas de timezone
-        const [hora, minuto] = horaInicio.split(':').map(Number)
-        const fechaHoraClaseUTC = new Date(Date.UTC(
-          fecha.getUTCFullYear(),
-          fecha.getUTCMonth(),
-          fecha.getUTCDate(),
-          hora - 3, // Argentina es UTC-3
-          minuto
-        ))
+        const fechaHoraClaseUTC = argentinaToUTC(fechaStr, horaInicio)
 
         const ahora = new Date()
         const tiempoMinimoAnticipacion = new Date(ahora.getTime() + updateConfigData.horasAnticipacionMinima * 60 * 60 * 1000)

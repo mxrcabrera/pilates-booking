@@ -10,6 +10,8 @@ type Profesor = { id: string; nombre: string }
 type SlotInfo = {
   fecha: string
   horaInicio: string
+  profesorId: string
+  profesorNombre: string
   available: number
   total: number
   isBooked: boolean
@@ -104,7 +106,7 @@ export default function AlumnoReservarPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          profesorId: selectedProfesor,
+          profesorId: slot.profesorId,
           fecha: slot.fecha,
           horaInicio: slot.horaInicio
         })
@@ -232,6 +234,7 @@ export default function AlumnoReservarPage() {
                       <div className="slot-time-info">
                         <Clock size={16} />
                         <span className="slot-hora">{slot.horaInicio}</span>
+                        <span className="slot-profe">con {slot.profesorNombre}</span>
                         <span className="slot-capacity">
                           <Users size={14} />
                           {slot.available}/{slot.total}

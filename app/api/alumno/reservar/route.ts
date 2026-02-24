@@ -60,14 +60,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se puede reservar una clase en el pasado' }, { status: 400 })
     }
 
-    // Get alumno profile
+    // Get alumno profile (by userId only, profesorId now nullable)
     const alumno = await prisma.alumno.findFirst({
-      where: { userId, profesorId, deletedAt: null },
-      select: { id: true, packType: true, estudioId: true }
+      where: { userId, deletedAt: null },
+      select: { id: true, packType: true, estudioId: true, profesorId: true }
     })
 
     if (!alumno) {
-      return NextResponse.json({ error: 'No estas vinculado a este profesor' }, { status: 403 })
+      return NextResponse.json({ error: 'No estas vinculado a ningun profesor' }, { status: 403 })
     }
 
     // Get pack for weekly limit
@@ -80,10 +80,16 @@ export async function POST(request: NextRequest) {
       if (pack) clasesPorSemana = pack.clasesPorSemana
     }
 
-    // Owner filter
+    // Owner filter (from alumno record, not request)
     const ownerFilter = alumno.estudioId
       ? { estudioId: alumno.estudioId }
-      : { profesorId }
+      : alumno.profesorId
+        ? { profesorId: alumno.profesorId }
+        : null
+
+    if (!ownerFilter) {
+      return NextResponse.json({ error: 'Alumno sin vinculacion valida' }, { status: 500 })
+    }
 
     // Get profesor/estudio config
     const config = alumno.estudioId
@@ -115,21 +121,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Esta fecha esta bloqueada' }, { status: 400 })
     }
 
-    // Validate slot exists within a HorarioDisponible range
+    // Validate slot exists within a HorarioDisponible range AND profesorId matches
     const diaSemana = fecha.getUTCDay()
     const horaNum = parseInt(horaInicio.split(':')[0])
     const horariosDelDia = await prisma.horarioDisponible.findMany({
       where: { ...ownerFilter, diaSemana, estaActivo: true, deletedAt: null },
-      select: { horaInicio: true, horaFin: true }
+      select: { profesorId: true, horaInicio: true, horaFin: true }
     })
 
-    const isValidSlot = horariosDelDia.some(h => {
+    const matchingHorario = horariosDelDia.find(h => {
       const start = parseInt(h.horaInicio.split(':')[0])
       const end = parseInt(h.horaFin.split(':')[0])
-      return horaNum >= start && horaNum < end
+      return horaNum >= start && horaNum < end && h.profesorId === profesorId
     })
 
-    if (!isValidSlot) {
+    if (!matchingHorario) {
       return NextResponse.json({ error: 'Este horario no esta disponible' }, { status: 400 })
     }
 

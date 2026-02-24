@@ -33,7 +33,8 @@ export async function GET() {
         userId: userId,
         deletedAt: null
       },
-      include: {
+      select: {
+        estudioId: true,
         profesor: {
           select: {
             id: true,
@@ -71,11 +72,39 @@ export async function GET() {
     const hasProfile = Boolean(user.telefono && user.telefono.length >= 8)
     const hasProfesor = alumnos.length > 0
 
-    // Extraer profesores únicos
-    const profesores = alumnos.map(a => ({
-      id: a.profesor.id,
-      nombre: a.profesor.nombre
-    }))
+    // Extraer profesores de alumnos legacy (con profesorId)
+    const profesoresFromAlumnos = alumnos
+      .filter(a => a.profesor !== null)
+      .map(a => ({ id: a.profesor!.id, nombre: a.profesor!.nombre }))
+
+    // Para alumnos studio-wide, buscar profesores del estudio
+    const estudioIds = [...new Set(
+      alumnos.filter(a => a.estudioId).map(a => a.estudioId!)
+    )]
+
+    let profesoresFromEstudio: { id: string; nombre: string }[] = []
+    if (estudioIds.length > 0) {
+      const miembros = await prisma.estudioMiembro.findMany({
+        where: {
+          estudioId: { in: estudioIds },
+          deletedAt: null
+        },
+        include: {
+          user: {
+            select: { id: true, nombre: true }
+          }
+        }
+      })
+      profesoresFromEstudio = miembros.map(m => ({
+        id: m.user.id,
+        nombre: m.user.nombre
+      }))
+    }
+
+    // Combinar y eliminar duplicados
+    const allProfesores = [...profesoresFromAlumnos, ...profesoresFromEstudio]
+    const profesoresMap = new Map(allProfesores.map(p => [p.id, p]))
+    const profesores = [...profesoresMap.values()]
 
     return NextResponse.json({
       user: {

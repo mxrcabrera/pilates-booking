@@ -9,6 +9,8 @@ const MS_PER_DAY = 86400000
 interface SlotInfo {
   fecha: string
   horaInicio: string
+  profesorId: string
+  profesorNombre: string
   available: number
   total: number
   isBooked: boolean
@@ -40,19 +42,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const profesorId = searchParams.get('profesorId')
-    if (!profesorId) {
-      return NextResponse.json({ error: 'profesorId requerido' }, { status: 400 })
-    }
-
+    // Find alumno by userId only (no profesorId filter)
     const alumno = await prisma.alumno.findFirst({
-      where: { userId, profesorId, deletedAt: null },
-      select: { id: true, nombre: true, packType: true, estudioId: true }
+      where: { userId, deletedAt: null },
+      select: { id: true, nombre: true, packType: true, estudioId: true, profesorId: true }
     })
 
     if (!alumno) {
-      return NextResponse.json({ error: 'No estas vinculado a este profesor' }, { status: 403 })
+      return NextResponse.json({ error: 'No estas vinculado a ningun profesor' }, { status: 403 })
+    }
+
+    // Determine ownerFilter from alumno record
+    const ownerFilter = alumno.estudioId
+      ? { estudioId: alumno.estudioId }
+      : alumno.profesorId
+        ? { profesorId: alumno.profesorId }
+        : null
+
+    if (!ownerFilter) {
+      return NextResponse.json({ error: 'Alumno sin vinculacion valida' }, { status: 500 })
     }
 
     let clasesPorSemana: number | null = null
@@ -64,17 +72,13 @@ export async function GET(request: NextRequest) {
       if (pack) clasesPorSemana = pack.clasesPorSemana
     }
 
-    const ownerFilter = alumno.estudioId
-      ? { estudioId: alumno.estudioId }
-      : { profesorId }
-
     const config = alumno.estudioId
       ? await prisma.estudio.findUnique({
           where: { id: alumno.estudioId },
           select: { maxAlumnosPorClase: true }
         })
       : await prisma.user.findUnique({
-          where: { id: profesorId },
+          where: { id: alumno.profesorId! },
           select: { maxAlumnosPorClase: true }
         })
 
@@ -90,7 +94,7 @@ export async function GET(request: NextRequest) {
     const [horarios, fechasBloqueadas, clasesInRange] = await Promise.all([
       prisma.horarioDisponible.findMany({
         where: { ...ownerFilter, estaActivo: true, deletedAt: null },
-        select: { diaSemana: true, horaInicio: true, horaFin: true }
+        select: { profesorId: true, diaSemana: true, horaInicio: true, horaFin: true }
       }),
       prisma.fechaBloqueada.findMany({
         where: { ...ownerFilter, fecha: { gte: today, lte: endDate } },
@@ -103,7 +107,7 @@ export async function GET(request: NextRequest) {
           estado: { not: 'cancelada' },
           deletedAt: null
         },
-        select: { fecha: true, horaInicio: true, alumnoId: true }
+        select: { fecha: true, horaInicio: true, alumnoId: true, profesorId: true }
       })
     ])
 
@@ -111,52 +115,77 @@ export async function GET(request: NextRequest) {
       fechasBloqueadas.map(f => f.fecha.toISOString().split('T')[0])
     )
 
-    // Index horarios by day of week, dedup hourly slots per day
-    const slotsByDay = new Map<number, Set<string>>()
+    // Get unique profesorIds from horarios
+    const profesorIds = [...new Set(horarios.map(h => h.profesorId))]
+    const profesores = await prisma.user.findMany({
+      where: { id: { in: profesorIds } },
+      select: { id: true, nombre: true }
+    })
+    const profesorMap = new Map(profesores.map(p => [p.id, p.nombre]))
+
+    // Index horarios by (day, profesorId) with set of hours per profesor
+    const slotsByDayAndProfesor = new Map<string, Set<string>>()
     for (const horario of horarios) {
-      if (!slotsByDay.has(horario.diaSemana)) {
-        slotsByDay.set(horario.diaSemana, new Set())
+      const key = `${horario.diaSemana}|${horario.profesorId}`
+      if (!slotsByDayAndProfesor.has(key)) {
+        slotsByDayAndProfesor.set(key, new Set())
       }
       const hours = generateHourlySlots(horario.horaInicio, horario.horaFin)
       for (const h of hours) {
-        slotsByDay.get(horario.diaSemana)!.add(h)
+        slotsByDayAndProfesor.get(key)!.add(h)
       }
     }
 
-    // Index classes by "YYYY-MM-DD|HH:MM"
+    // Index classes by "YYYY-MM-DD|HH:MM|profesorId"
     const classIndex = new Map<string, typeof clasesInRange>()
     for (const clase of clasesInRange) {
-      const key = `${clase.fecha.toISOString().split('T')[0]}|${clase.horaInicio}`
+      const key = `${clase.fecha.toISOString().split('T')[0]}|${clase.horaInicio}|${clase.profesorId}`
       if (!classIndex.has(key)) classIndex.set(key, [])
       classIndex.get(key)!.push(clase)
     }
 
-    // Generate virtual slots
+    // Generate virtual slots (one per profesor per timeslot)
     const slots: SlotInfo[] = []
     const currentDate = new Date(today)
 
     while (currentDate <= endDate) {
       const fechaStr = currentDate.toISOString().split('T')[0]
       const dayOfWeek = currentDate.getUTCDay()
-      const daySlots = slotsByDay.get(dayOfWeek)
 
-      if (daySlots && !blockedSet.has(fechaStr)) {
-        const sortedHours = [...daySlots].sort()
+      if (!blockedSet.has(fechaStr)) {
+        // Iterate over all profesores who have horarios on this day
+        for (const profesorId of profesorIds) {
+          const key = `${dayOfWeek}|${profesorId}`
+          const daySlots = slotsByDayAndProfesor.get(key)
 
-        for (const hora of sortedHours) {
-          // Skip past slots for today
-          if (fechaStr === todayStr) {
-            const slotHour = parseInt(hora.split(':')[0])
-            if (slotHour <= nowArgHour) continue
-          }
+          if (daySlots) {
+            const sortedHours = [...daySlots].sort()
 
-          const clases = classIndex.get(`${fechaStr}|${hora}`) || []
-          const occupied = clases.filter(c => c.alumnoId !== null).length
-          const available = maxCapacity - occupied
-          const isBooked = clases.some(c => c.alumnoId === alumno.id)
+            for (const hora of sortedHours) {
+              // Skip past slots for today
+              if (fechaStr === todayStr) {
+                const slotHour = parseInt(hora.split(':')[0])
+                if (slotHour <= nowArgHour) continue
+              }
 
-          if (available > 0 || isBooked) {
-            slots.push({ fecha: fechaStr, horaInicio: hora, available, total: maxCapacity, isBooked })
+              const classKey = `${fechaStr}|${hora}|${profesorId}`
+              const clases = classIndex.get(classKey) || []
+              const occupied = clases.filter(c => c.alumnoId !== null).length
+              const available = maxCapacity - occupied
+              const isBooked = clases.some(c => c.alumnoId === alumno.id)
+
+              if (available > 0 || isBooked) {
+                slots.push({
+                  fecha: fechaStr,
+                  horaInicio: hora,
+                  profesorId,
+                  profesorNombre: profesorMap.get(profesorId) || 'Desconocido',
+                  available,
+                  total: maxCapacity,
+                  isBooked
+                })
+              }
+            }
           }
         }
       }

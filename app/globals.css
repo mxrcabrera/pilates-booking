@@ -9498,6 +9498,12 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   color: rgba(255, 255, 255, var(--opacity-text-primary));
 }
 
+.slot-profe {
+  font-size: var(--font-xs);
+  color: rgba(147, 155, 245, 0.9);
+  font-weight: 500;
+}
+
 .slot-capacity {
   display: flex;
   align-items: center;

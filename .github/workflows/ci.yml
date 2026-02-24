@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npx prisma generate
+
+      - run: npm run lint
+
+      - run: npx tsc --noEmit
+
+      - run: npm test -- --passWithNoTests
+
+      - run: npm run build
+        env:
+          DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+          DIRECT_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+          AUTH_SECRET: "ci-auth-secret-placeholder-min-32-chars"
+          JWT_SECRET: "ci-jwt-secret-placeholder-min-32-chars"
+          AUTH_URL: "http://localhost:3000"

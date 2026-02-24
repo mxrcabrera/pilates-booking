@@ -63,13 +63,14 @@ export async function GET(request: Request) {
     ] = await Promise.all([
       // Alumnos activos actuales
       prisma.alumno.count({
-        where: { ...ownerFilter, estaActivo: true }
+        where: { ...ownerFilter, estaActivo: true, deletedAt: null }
       }),
       // Alumnos activos mes anterior (aproximación - contamos los que existían)
       prisma.alumno.count({
         where: {
           ...ownerFilter,
           estaActivo: true,
+          deletedAt: null,
           createdAt: { lte: fechaFinAnterior }
         }
       }),
@@ -78,6 +79,7 @@ export async function GET(request: Request) {
         where: {
           alumno: ownerFilter,
           estado: 'pagado',
+          deletedAt: null,
           fechaPago: { gte: fechaInicio, lte: fechaFin }
         },
         _sum: { monto: true },
@@ -88,6 +90,7 @@ export async function GET(request: Request) {
         where: {
           alumno: ownerFilter,
           estado: 'pagado',
+          deletedAt: null,
           fechaPago: { gte: fechaInicioAnterior, lte: fechaFinAnterior }
         },
         _sum: { monto: true },
@@ -97,6 +100,7 @@ export async function GET(request: Request) {
       prisma.clase.findMany({
         where: {
           ...ownerFilter,
+          deletedAt: null,
           fecha: { gte: fechaInicio, lte: fechaFin },
           alumnoId: { not: null }
         },
@@ -110,6 +114,7 @@ export async function GET(request: Request) {
       prisma.clase.count({
         where: {
           ...ownerFilter,
+          deletedAt: null,
           fecha: { gte: fechaInicioAnterior, lte: fechaFinAnterior },
           alumnoId: { not: null },
           asistencia: 'presente'
@@ -120,6 +125,7 @@ export async function GET(request: Request) {
         by: ['estado'],
         where: {
           alumno: ownerFilter,
+          deletedAt: null,
           fechaVencimiento: { gte: fechaInicio, lte: fechaFin }
         },
         _count: true
@@ -172,51 +178,48 @@ export async function GET(request: Request) {
     const ocupacionPromedio = clasesMes.length > 0 ? Math.round((presentes / clasesMes.length) * 100) : 0
 
     // ===== DATOS HISTÓRICOS PARA GRÁFICOS (últimos 6 meses) =====
-    const historico: Array<{
-      mes: string
-      ingresos: number
-      clases: number
-      alumnos: number
-    }> = []
+    const historico = await Promise.all(
+      Array.from({ length: 6 }, (_, idx) => {
+        const i = 5 - idx
+        const fecha = subMonths(new Date(), i)
+        const inicioMes = startOfMonth(fecha)
+        const finMes = endOfMonth(fecha)
 
-    for (let i = 5; i >= 0; i--) {
-      const fecha = subMonths(new Date(), i)
-      const inicioMes = startOfMonth(fecha)
-      const finMes = endOfMonth(fecha)
-
-      const [pagosHist, clasesHist, alumnosHist] = await Promise.all([
-        prisma.pago.aggregate({
-          where: {
-            alumno: ownerFilter,
-            estado: 'pagado',
-            fechaPago: { gte: inicioMes, lte: finMes }
-          },
-          _sum: { monto: true }
-        }),
-        prisma.clase.count({
-          where: {
-            ...ownerFilter,
-            fecha: { gte: inicioMes, lte: finMes },
-            alumnoId: { not: null },
-            asistencia: 'presente'
-          }
-        }),
-        prisma.alumno.count({
-          where: {
-            ...ownerFilter,
-            estaActivo: true,
-            createdAt: { lte: finMes }
-          }
-        })
-      ])
-
-      historico.push({
-        mes: format(fecha, 'MMM', { locale: es }),
-        ingresos: Number(pagosHist._sum.monto || 0),
-        clases: clasesHist,
-        alumnos: alumnosHist
+        return Promise.all([
+          prisma.pago.aggregate({
+            where: {
+              alumno: ownerFilter,
+              estado: 'pagado',
+              deletedAt: null,
+              fechaPago: { gte: inicioMes, lte: finMes }
+            },
+            _sum: { monto: true }
+          }),
+          prisma.clase.count({
+            where: {
+              ...ownerFilter,
+              deletedAt: null,
+              fecha: { gte: inicioMes, lte: finMes },
+              alumnoId: { not: null },
+              asistencia: 'presente'
+            }
+          }),
+          prisma.alumno.count({
+            where: {
+              ...ownerFilter,
+              estaActivo: true,
+              deletedAt: null,
+              createdAt: { lte: finMes }
+            }
+          })
+        ]).then(([pagosHist, clasesHist, alumnosHist]) => ({
+          mes: format(fecha, 'MMM', { locale: es }),
+          ingresos: Number(pagosHist._sum.monto || 0),
+          clases: clasesHist,
+          alumnos: alumnosHist
+        }))
       })
-    }
+    )
 
     // ===== DISTRIBUCIÓN POR DÍA DE SEMANA =====
     const asistenciaPorDia: Array<{ dia: string; clases: number; asistencia: number }> = []
@@ -235,7 +238,8 @@ export async function GET(request: Request) {
       by: ['packType'],
       where: {
         ...ownerFilter,
-        estaActivo: true
+        estaActivo: true,
+        deletedAt: null
       },
       _count: true
     })
@@ -270,6 +274,7 @@ export async function GET(request: Request) {
           where: {
             alumno: ownerFilter,
             estado: 'pagado',
+            deletedAt: null,
             fechaPago: { gte: inicioAñoActual, lte: finAñoActual }
           },
           _sum: { monto: true }
@@ -279,6 +284,7 @@ export async function GET(request: Request) {
           where: {
             alumno: ownerFilter,
             estado: 'pagado',
+            deletedAt: null,
             fechaPago: { gte: inicioAñoAnterior, lte: finAñoAnterior }
           },
           _sum: { monto: true }
@@ -288,6 +294,7 @@ export async function GET(request: Request) {
           where: {
             ...ownerFilter,
             estaActivo: true,
+            deletedAt: null,
             createdAt: { lte: subMonths(new Date(), 3) }
           }
         }),
@@ -295,7 +302,8 @@ export async function GET(request: Request) {
         prisma.alumno.findMany({
           where: {
             ...ownerFilter,
-            estaActivo: true
+            estaActivo: true,
+            deletedAt: null
           },
           select: {
             id: true,
@@ -345,6 +353,7 @@ export async function GET(request: Request) {
           const totalClases = await prisma.clase.count({
             where: {
               alumnoId: a.id,
+              deletedAt: null,
               fecha: { gte: fechaInicio, lte: fechaFin }
             }
           })

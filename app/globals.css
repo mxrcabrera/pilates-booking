@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Global focus-visible indicator for keyboard accessibility (WCAG 2.1 AA) */
+*:focus-visible {
+  outline: 2px solid rgba(110, 125, 245, 0.7);
+  outline-offset: 2px;
+}
+
 /* Spinner animation */
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -3602,7 +3608,7 @@ input[type="checkbox"]:checked::after {
   transform: rotate(45deg);
 }
 
-input[type="checkbox"]:focus {
+input[type="checkbox"]:focus:not(:focus-visible) {
   outline: none;
 }
 

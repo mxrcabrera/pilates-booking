@@ -94,6 +94,9 @@ model Alumno {
   pagos               Pago[]
   listaEspera         ListaEspera[]
 
+  @@index([profesorId])
+  @@index([estudioId])
+  @@index([deletedAt])
   @@map("alumnos")
 }
 
@@ -137,6 +140,11 @@ model Clase {
   estudio           Estudio?       @relation(fields: [estudioId], references: [id])
   notificaciones    Notificacion[]
 
+  @@index([profesorId, fecha])
+  @@index([estudioId, fecha])
+  @@index([alumnoId])
+  @@index([serieId])
+  @@index([deletedAt])
   @@map("clases")
 }
 
@@ -158,6 +166,9 @@ model Pago {
   profesor           User?     @relation(fields: [profesorId], references: [id])
   estudio            Estudio?  @relation(fields: [estudioId], references: [id])
 
+  @@index([alumnoId])
+  @@index([estado])
+  @@index([fechaVencimiento])
   @@map("pagos")
 }
 

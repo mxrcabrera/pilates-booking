@@ -51,7 +51,6 @@ export default function CalendarioPage() {
         clasesIniciales={data.clases}
         alumnos={data.alumnos}
         packs={data.packs}
-        currentUserId={data.currentUserId}
         horarioMananaInicio={data.horarioMananaInicio}
         horarioMananaFin={data.horarioMananaFin}
         horarioTardeInicio={data.horarioTardeInicio}

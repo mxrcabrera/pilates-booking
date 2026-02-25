@@ -271,7 +271,6 @@ export async function GET(request: NextRequest) {
       clases: clasesNormalizadas,
       alumnos,
       packs,
-      currentUserId: userId,
       horarioMananaInicio: configData.horarioMananaInicio || '08:00',
       horarioMananaFin: configData.horarioMananaFin || '14:00',
       horarioTardeInicio: configData.horarioTardeInicio || '17:00',

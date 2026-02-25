@@ -17,7 +17,6 @@ interface CalendarioClientProps {
   clasesIniciales: Clase[]
   alumnos: AlumnoSimple[]
   packs: Pack[]
-  currentUserId: string
   horarioMananaInicio: string
   horarioMananaFin: string
   horarioTardeInicio: string

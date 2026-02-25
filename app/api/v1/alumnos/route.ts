@@ -261,9 +261,7 @@ export async function POST(request: NextRequest) {
 
         const { id, nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor, diaInicioCiclo } = parsed.data
 
-        // Filtro por estudio o profesor
-
-        // Validar que el alumno pertenece al estudio/profesor
+        // Validate alumno belongs to owner
         const alumnoExistente = await prisma.alumno.findFirst({
           where: { id, ...ownerFilter, deletedAt: null }
         })
@@ -395,8 +393,6 @@ export async function POST(request: NextRequest) {
 
         const { id } = parsed.data
 
-        // Filtro por estudio o profesor
-
         const alumno = await prisma.alumno.findFirst({
           where: { id, ...ownerFilter, deletedAt: null }
         })
@@ -421,8 +417,6 @@ export async function POST(request: NextRequest) {
         }
 
         const { id } = parsed.data
-
-        // Filtro por estudio o profesor
 
         const alumno = await prisma.alumno.findFirst({
           where: { id, ...ownerFilter, deletedAt: null }

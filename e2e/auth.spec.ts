@@ -34,7 +34,8 @@ test.describe('Authentication', () => {
     })
 
     test('should redirect authenticated user to dashboard', async ({ page }) => {
-      // Login with test credentials
+      test.skip(process.env.SKIP_DB_TESTS === '1', 'Requires a running database')
+
       await page.goto('/login')
 
       await page.getByLabel(/email/i).fill('demo@pilates.com')
@@ -95,6 +96,8 @@ test.describe('Authentication', () => {
 
   test.describe('Logout', () => {
     test('should logout and redirect to login', async ({ page }) => {
+      test.skip(process.env.SKIP_DB_TESTS === '1', 'Requires a running database')
+
       // First login
       await page.goto('/login')
       await page.getByLabel(/email/i).fill('demo@pilates.com')

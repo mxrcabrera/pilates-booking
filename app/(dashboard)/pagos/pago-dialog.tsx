@@ -77,7 +77,7 @@ export function PagoDialog({
     // Fecha de vencimiento con el día seleccionado
     const fechaVencimiento = new Date(anio, mesIndex, dia)
 
-    const mesCorrespondiente = `${MESES[mesIndex]} ${anio}`
+    const mesCorrespondiente = `${anio}-${(mesIndex + 1).toString().padStart(2, '0')}`
 
     try {
       const result = await createPagoAPI({

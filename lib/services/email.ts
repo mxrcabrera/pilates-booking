@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { logger } from '../logger'
+import { formatCurrency } from '../format'
 import type { NotificationType } from '@prisma/client'
 
 // Only instantiate Resend if the API key is available
@@ -224,7 +225,7 @@ export async function sendPaymentReminderEmail(
     <p>Hola ${alumnoNombre},</p>
     <p>Te recordamos que tenés un pago pendiente.</p>
     <div style="background: #fff3cd; padding: 16px; border-radius: 8px; margin: 16px 0;">
-      <p><strong>Monto:</strong> $${monto}</p>
+      <p><strong>Monto:</strong> ${formatCurrency(monto)}</p>
       <p><strong>Vencimiento:</strong> ${fechaVencimiento}</p>
     </div>
     <p>Por favor, realizá el pago antes de la fecha de vencimiento para evitar interrupciones en tus clases.</p>

@@ -6,6 +6,7 @@ import { PagoDialog } from './pago-dialog'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { marcarPagadoAPI, marcarPendienteAPI, deletePagoAPI, bulkDeletePagosAPI } from '@/lib/api'
+import { formatCurrency } from '@/lib/format'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { formatMes, diasDiferencia } from '@/lib/dates'
 import { exportToCSV, PAGOS_COLUMNS } from '@/lib/export'
@@ -196,8 +197,7 @@ export function PagosClient({
   }
 
   function formatMonto(monto: string | number) {
-    const num = typeof monto === 'string' ? parseFloat(monto) : monto
-    return num.toLocaleString('es-AR')
+    return formatCurrency(monto)
   }
 
   // Funciones de selección bulk
@@ -260,7 +260,6 @@ export function PagosClient({
           <h1 className="page-title">Pagos</h1>
           {totalPendiente > 0 && (
             <p className="page-subtitle pagos-total-pendiente">
-              <DollarSign size={14} />
               {formatMonto(totalPendiente)} pendiente
             </p>
           )}
@@ -416,7 +415,7 @@ export function PagosClient({
 
                   {/* Monto */}
                   <div className="pago-monto">
-                    ${formatMonto(pago.monto)}
+                    {formatMonto(pago.monto)}
                   </div>
 
                   {/* Acciones - ocultas en modo selección */}

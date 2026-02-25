@@ -9,6 +9,7 @@ import { DialogBase } from '@/components/ui/dialog-base'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
+import { formatCurrency } from '@/lib/format'
 import { getPaymentStatus, getStatusText, getClasesRestantesDetalle } from '@/lib/alumno-utils'
 import { getErrorMessage } from '@/lib/utils'
 import { getWhatsAppLink, getMensajeGenericoMessage } from '@/lib/whatsapp-links'
@@ -131,7 +132,7 @@ export function AlumnoDetailSheet({
           <div className="detail-info-section">
             <div className="detail-info-row">
               <span className="detail-info-label">Precio</span>
-              <span className="detail-info-value">${Number(alumno.precio).toLocaleString('es-AR')}</span>
+              <span className="detail-info-value">{formatCurrency(alumno.precio)}</span>
             </div>
             <div className="detail-info-row">
               <span className="detail-info-label">Email</span>

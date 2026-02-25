@@ -22,7 +22,7 @@ export default function MisClasesPage() {
 
   const loadClases = async () => {
     try {
-      const res = await fetch('/api/alumno/mis-clases')
+      const res = await fetch('/api/v1/alumno/mis-clases')
       const data = await res.json()
       if (data.clases) {
         setClases(data.clases)
@@ -43,7 +43,7 @@ export default function MisClasesPage() {
     setMessage(null)
 
     try {
-      const res = await fetch(`/api/alumno/cancelar?id=${claseId}`, {
+      const res = await fetch(`/api/v1/alumno/cancelar?id=${claseId}`, {
         method: 'DELETE'
       })
       const data = await res.json()

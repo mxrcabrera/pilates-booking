@@ -142,7 +142,7 @@ export async function middleware(request: NextRequest) {
 
   // Rutas de ALUMNO - Solo para rol ALUMNO
   // Note: Use exact /alumno path to avoid matching /alumnos (profesor route)
-  if (pathname === '/alumno' || pathname.startsWith('/alumno/') || pathname.startsWith('/api/alumno')) {
+  if (pathname === '/alumno' || pathname.startsWith('/alumno/') || pathname.startsWith('/api/v1/alumno')) {
     if (userRole && userRole !== 'ALUMNO') {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Acceso denegado', redirect: '/dashboard' }, { status: 403 })

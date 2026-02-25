@@ -37,7 +37,7 @@ export default function AlumnoConfiguracionPage() {
   })
 
   useEffect(() => {
-    fetch('/api/alumno/perfil')
+    fetch('/api/v1/alumno/perfil')
       .then(res => res.json())
       .then(data => {
         if (data.user) {
@@ -97,7 +97,7 @@ export default function AlumnoConfiguracionPage() {
     setSaving(true)
 
     try {
-      const res = await fetch('/api/alumno/perfil', {
+      const res = await fetch('/api/v1/alumno/perfil', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

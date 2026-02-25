@@ -54,10 +54,10 @@ export const WAITLIST_EXPIRY_MS = 2 * 60 * 60 * 1000 // 2 hours
 export const DIAS_SEMANA_OPTIONS = [
   { value: 1, label: 'Lunes', short: 'Lun' },
   { value: 2, label: 'Martes', short: 'Mar' },
-  { value: 3, label: 'Miércoles', short: 'Mie' },
+  { value: 3, label: 'Miércoles', short: 'Mié' },
   { value: 4, label: 'Jueves', short: 'Jue' },
   { value: 5, label: 'Viernes', short: 'Vie' },
-  { value: 6, label: 'Sábado', short: 'Sab' },
+  { value: 6, label: 'Sábado', short: 'Sáb' },
   { value: 0, label: 'Domingo', short: 'Dom' }
 ]
 

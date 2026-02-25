@@ -59,10 +59,16 @@ export const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres')
 })
 
+export const bulkDeleteAlumnoSchema = z.object({
+  action: z.literal('bulkDelete'),
+  ids: z.array(z.string().uuid('ID inválido')).min(1, 'Se requiere al menos un ID')
+})
+
 export const alumnoActionSchema = z.discriminatedUnion('action', [
   createAlumnoSchema,
   updateAlumnoSchema,
   deleteAlumnoSchema,
   toggleStatusSchema,
-  resetPasswordSchema
+  resetPasswordSchema,
+  bulkDeleteAlumnoSchema
 ])

@@ -5,7 +5,7 @@ import { Search, Plus, Grid, List, Users, Pencil, Trash2, UserX, UserCheck, X, C
 import { AlumnoCard } from './alumno-card'
 import { AlumnoDialog } from './alumno-dialog'
 import { AlumnoDetailSheet } from './alumno-detail-sheet'
-import { toggleAlumnoStatusAPI, deleteAlumnoAPI } from '@/lib/api'
+import { toggleAlumnoStatusAPI, deleteAlumnoAPI, bulkDeleteAlumnosAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { getErrorMessage } from '@/lib/utils'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
@@ -145,7 +145,7 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
     setIsDeleting(true)
     try {
       const idsToDelete = Array.from(selectedAlumnos)
-      await Promise.all(idsToDelete.map(id => deleteAlumnoAPI(id)))
+      await bulkDeleteAlumnosAPI(idsToDelete)
       setAlumnos(prev => prev.filter(a => !selectedAlumnos.has(a.id)))
       setCurrentPlanInfo(prev => ({
         ...prev,

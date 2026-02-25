@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
 import { SerieEditDialog } from './serie-edit-dialog'
-import { deleteClaseAPI, changeClaseStatusAPI } from '@/lib/api'
+import { deleteClaseAPI, changeClaseStatusAPI, bulkDeleteClasesAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import type { Clase, AlumnoSimple, Pack, CalendarioFeatures } from '@/lib/types'
@@ -254,7 +254,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
     setIsDeleting(true)
 
     try {
-      await Promise.all(Array.from(selectedClases).map(id => deleteClaseAPI(id)))
+      await bulkDeleteClasesAPI(Array.from(selectedClases))
       // Actualización local
       setClases(prev => prev.filter(c => !selectedClases.has(c.id)))
       setSelectedClases(new Set())

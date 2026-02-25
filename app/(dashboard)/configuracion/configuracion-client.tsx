@@ -11,8 +11,7 @@ import { TimeInput } from '@/components/time-input'
 import { SelectInput } from '@/components/select-input'
 import type { Horario, Pack, ProfesorConfig, ConfigFeatures } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
-
-const DIAS_NOMBRES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+import { DIAS_SEMANA_COMPLETO } from '@/lib/constants'
 
 interface ConfiguracionClientProps {
   profesor: ProfesorConfig
@@ -76,7 +75,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         // Agrupar todos
         result.push({
           id: horariosLV.map(h => h.id).join('-'),
-          dias: diasSemana.map(d => DIAS_NOMBRES[d]),
+          dias: diasSemana.map(d => DIAS_SEMANA_COMPLETO[d]),
           inicio: primerHorario.horaInicio,
           fin: primerHorario.horaFin,
           turno: primerHorario.esManiana ? 'Mañana' : 'Tarde',
@@ -89,7 +88,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
           if (h) {
             result.push({
               id: h.id,
-              dias: [DIAS_NOMBRES[dia]],
+              dias: [DIAS_SEMANA_COMPLETO[dia]],
               inicio: h.horaInicio,
               fin: h.horaFin,
               turno: h.esManiana ? 'Mañana' : 'Tarde',
@@ -98,7 +97,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
           } else {
             result.push({
               id: `no-disponible-${dia}`,
-              dias: [DIAS_NOMBRES[dia]],
+              dias: [DIAS_SEMANA_COMPLETO[dia]],
               inicio: '',
               fin: '',
               turno: '',
@@ -112,7 +111,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
       diasSemana.forEach(dia => {
         result.push({
           id: `no-disponible-${dia}`,
-          dias: [DIAS_NOMBRES[dia]],
+          dias: [DIAS_SEMANA_COMPLETO[dia]],
           inicio: '',
           fin: '',
           turno: '',

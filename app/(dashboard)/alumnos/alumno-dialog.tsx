@@ -9,7 +9,7 @@ import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import { Lock } from 'lucide-react'
 import type { Alumno, Pack } from '@/lib/types'
-import { PLAN_NAMES } from '@/lib/constants'
+import { PLAN_NAMES, DIAS_SEMANA_OPTIONS } from '@/lib/constants'
 
 type DialogStep = 'form' | 'seriesPrompt'
 
@@ -17,16 +17,6 @@ type SeriesData = {
   activeSeries: Array<{ serieId: string; horaInicio: string }>
   newClasesPorSemana: number
 }
-
-const DIAS_SEMANA_OPTIONS = [
-  { value: 1, label: 'Lun' },
-  { value: 2, label: 'Mar' },
-  { value: 3, label: 'Mie' },
-  { value: 4, label: 'Jue' },
-  { value: 5, label: 'Vie' },
-  { value: 6, label: 'Sab' },
-  { value: 0, label: 'Dom' },
-]
 
 export function AlumnoDialog({
   isOpen,
@@ -305,7 +295,7 @@ export function AlumnoDialog({
                     onChange={() => handleSeriesDiaToggle(dia.value)}
                     disabled={isUpdatingSeries || (!seriesDias.includes(dia.value) && seriesDias.length >= seriesData.newClasesPorSemana)}
                   />
-                  <span>{dia.label}</span>
+                  <span>{dia.short}</span>
                 </label>
               ))}
             </div>

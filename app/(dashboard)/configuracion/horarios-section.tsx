@@ -9,6 +9,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { SectionWrapper } from '@/components/ui/section-wrapper'
 import type { Horario } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
+import { DIAS_SEMANA_COMPLETO } from '@/lib/constants'
 
 type HorariosSectionProps = {
   horarios: Horario[]
@@ -18,7 +19,6 @@ type HorariosSectionProps = {
   horarioTardeFin: string
 }
 
-const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 export function HorariosSection({
   horarios: initialHorarios,
@@ -216,7 +216,7 @@ export function HorariosSection({
 
               return (
                 <div key={dia} className="horario-dia">
-                  <h3 className="horario-dia-nombre">{DIAS[dia]}</h3>
+                  <h3 className="horario-dia-nombre">{DIAS_SEMANA_COMPLETO[dia]}</h3>
                   <div className="horario-dia-slots">
                     {horariosDelDia.map(horario => (
                       <div

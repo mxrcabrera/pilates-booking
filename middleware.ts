@@ -157,6 +157,7 @@ export async function middleware(request: NextRequest) {
 
   const isProfesorRoute = profesorPaths.some(path => pathname.startsWith(path))
   const isProfesorApi = profesorApiPaths.some(path => pathname.startsWith(path))
+    && !pathname.startsWith('/api/v1/alumno')
 
   if (isProfesorRoute || isProfesorApi) {
     if (userRole && userRole === 'ALUMNO') {

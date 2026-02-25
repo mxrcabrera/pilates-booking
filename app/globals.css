@@ -1,3 +1,5 @@
+/* NOTE: This file exceeds recommended size (200 lines).
+   Component-specific styles should be gradually extracted to CSS modules. */
 @import "tailwindcss";
 
 /* Global focus-visible indicator for keyboard accessibility (WCAG 2.1 AA) */

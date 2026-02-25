@@ -149,3 +149,9 @@ export async function getCurrentEstudioId(): Promise<string | null> {
   const context = await getUserContext()
   return context?.estudio?.estudioId || null
 }
+
+export function getOwnerFilter(context: UserContext): Record<string, string> {
+  return context.estudio
+    ? { estudioId: context.estudio.estudioId }
+    : { profesorId: context.userId }
+}

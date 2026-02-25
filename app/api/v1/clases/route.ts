@@ -12,6 +12,7 @@ import { canUseFeature, PLAN_CONFIGS, getSuggestedUpgrade, getEffectiveFeatures 
 import { createCalendarEvent, deleteCalendarEvent } from '@/lib/services/google-calendar'
 import { notifyClassEvent } from '@/lib/services/notifications'
 import { Prisma } from '@prisma/client'
+import { logger } from '@/lib/logger'
 import {
   createClaseSchema,
   updateClaseSchema,
@@ -20,6 +21,44 @@ import {
   changeAsistenciaSchema,
   editSeriesSchema
 } from '@/lib/schemas/clase.schema'
+
+interface ScheduleConfig {
+  horasAnticipacionMinima: number
+  horarioMananaInicio: string
+  horarioMananaFin: string
+  horarioTardeInicio: string
+  horarioTardeFin: string
+}
+
+function validateScheduleTiming(
+  fechaStr: string,
+  horaInicio: string,
+  config: ScheduleConfig,
+  actionLabel: string = 'reservarse'
+): string | null {
+  const fechaHoraClaseUTC = argentinaToUTC(fechaStr, horaInicio)
+  const ahora = new Date()
+  const tiempoMinimo = new Date(ahora.getTime() + config.horasAnticipacionMinima * 60 * 60 * 1000)
+
+  if (fechaHoraClaseUTC < tiempoMinimo) {
+    const horasTexto = config.horasAnticipacionMinima === 1 ? '1 hora' : `${config.horasAnticipacionMinima} horas`
+    return `Las clases deben ${actionLabel} con al menos ${horasTexto} de anticipación`
+  }
+
+  const horaTardeInicio = parseInt(config.horarioTardeInicio.split(':')[0])
+  const horaNum = parseInt(horaInicio.split(':')[0])
+  const esManiana = horaNum < horaTardeInicio
+
+  const horarioInicio = esManiana ? config.horarioMananaInicio : config.horarioTardeInicio
+  const horarioFin = esManiana ? config.horarioMananaFin : config.horarioTardeFin
+
+  if (horaInicio < horarioInicio || horaInicio > horarioFin) {
+    const turno = esManiana ? 'mañana' : 'tarde'
+    return `El horario de ${turno} configurado es de ${horarioInicio} a ${horarioFin}`
+  }
+
+  return null
+}
 
 export const runtime = 'nodejs'
 
@@ -352,33 +391,12 @@ export async function POST(request: NextRequest) {
 
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
-        // Validar que la clase sea al menos X horas en el futuro
-        const fechaHoraClaseUTC = argentinaToUTC(fechaStr, horaInicio)
-
-        const ahora = new Date()
-        const tiempoMinimoAnticipacion = new Date(ahora.getTime() + configData.horasAnticipacionMinima * 60 * 60 * 1000)
-
-        if (fechaHoraClaseUTC < tiempoMinimoAnticipacion) {
-          const horasTexto = configData.horasAnticipacionMinima === 1 ? '1 hora' : `${configData.horasAnticipacionMinima} horas`
-          return NextResponse.json({ error: `Las clases deben reservarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
+        const scheduleError = validateScheduleTiming(fechaStr, horaInicio, configData, 'reservarse')
+        if (scheduleError) {
+          return badRequest(scheduleError)
         }
 
-        // Validar horario contra configuración del profesor/estudio
-        // Usar el inicio del horario de tarde para determinar si es mañana o tarde
         const horaTardeInicio = parseInt(configData.horarioTardeInicio.split(':')[0])
-        const horaNum = parseInt(horaInicio.split(':')[0])
-        const esManiana = horaNum < horaTardeInicio
-
-        const horarioInicio = esManiana ? configData.horarioMananaInicio : configData.horarioTardeInicio
-        const horarioFin = esManiana ? configData.horarioMananaFin : configData.horarioTardeFin
-
-        if (horaInicio < horarioInicio || horaInicio > horarioFin) {
-          const turno = esManiana ? 'mañana' : 'tarde'
-          return NextResponse.json({
-            error: `El horario de ${turno} configurado es de ${horarioInicio} a ${horarioFin}`
-          }, { status: 400 })
-        }
-
         const diaSemana = fecha.getUTCDay()
 
         if (diaSemana === 0 || diaSemana === 6) {
@@ -511,7 +529,7 @@ export async function POST(request: NextRequest) {
               claseCreada.alumno.nombre,
               fecha,
               horaInicio
-            ).catch(() => {})
+            ).catch(err => logger.error('Calendar event creation failed', err))
           }
 
           if (claseCreada.alumno) {
@@ -521,7 +539,7 @@ export async function POST(request: NextRequest) {
               profesorId: userId,
               plan: configData.plan,
               trialEndsAt: configData.trialEndsAt,
-            }).catch(() => {})
+            }).catch(err => logger.error('Class notification failed', err))
           }
 
           if (esRecurrente && claseCreada.alumnoId) {
@@ -559,38 +577,40 @@ export async function POST(request: NextRequest) {
               }
 
               if (clasesACrear.length > 0) {
-                // H4: Validate capacity for each future date
-                const maxCap = configData.maxAlumnosPorClase
-                const futureDates = clasesACrear.map(c => c.fecha as Date)
-                const existingCounts = await prisma.clase.groupBy({
-                  by: ['fecha'],
-                  where: {
-                    profesorId: userId,
-                    horaInicio: horaRecurrente,
-                    fecha: { in: futureDates },
-                    estado: { not: 'cancelada' },
-                    deletedAt: null
-                  },
-                  _count: true
-                })
-                const countMap = new Map(existingCounts.map(e => [e.fecha.toISOString(), e._count]))
-                const filtered = clasesACrear.filter(c => {
-                  const count = countMap.get((c.fecha as Date).toISOString()) || 0
-                  return count < maxCap
-                })
-
-                if (filtered.length > 0) {
-                  await prisma.clase.createMany({
-                    data: filtered,
-                    skipDuplicates: true
+                // H4: Validate capacity + create in a transaction to prevent race conditions
+                await prisma.$transaction(async (tx) => {
+                  const maxCap = configData.maxAlumnosPorClase
+                  const futureDates = clasesACrear.map(c => c.fecha as Date)
+                  const existingCounts = await tx.clase.groupBy({
+                    by: ['fecha'],
+                    where: {
+                      profesorId: userId,
+                      horaInicio: horaRecurrente,
+                      fecha: { in: futureDates },
+                      estado: { not: 'cancelada' },
+                      deletedAt: null
+                    },
+                    _count: true
                   })
-                }
+                  const countMap = new Map(existingCounts.map(e => [e.fecha.toISOString(), e._count]))
+                  const filtered = clasesACrear.filter(c => {
+                    const count = countMap.get((c.fecha as Date).toISOString()) || 0
+                    return count < maxCap
+                  })
+
+                  if (filtered.length > 0) {
+                    await tx.clase.createMany({
+                      data: filtered,
+                      skipDuplicates: true
+                    })
+                  }
+                })
               }
             }
           }
         }
 
-        return NextResponse.json({ success: true, clases: clasesCreadas })
+        return NextResponse.json({ success: true, clases: clasesCreadas }, { status: 201 })
       }
 
       case 'update': {
@@ -651,33 +671,12 @@ export async function POST(request: NextRequest) {
 
         const fecha = new Date(fechaStr + 'T00:00:00.000Z')
 
-        // Validar que la clase sea al menos X horas en el futuro
-        const fechaHoraClaseUTC = argentinaToUTC(fechaStr, horaInicio)
-
-        const ahora = new Date()
-        const tiempoMinimoAnticipacion = new Date(ahora.getTime() + updateConfigData.horasAnticipacionMinima * 60 * 60 * 1000)
-
-        if (fechaHoraClaseUTC < tiempoMinimoAnticipacion) {
-          const horasTexto = updateConfigData.horasAnticipacionMinima === 1 ? '1 hora' : `${updateConfigData.horasAnticipacionMinima} horas`
-          return NextResponse.json({ error: `Las clases deben modificarse con al menos ${horasTexto} de anticipación` }, { status: 400 })
+        const updateScheduleError = validateScheduleTiming(fechaStr, horaInicio, updateConfigData, 'modificarse')
+        if (updateScheduleError) {
+          return badRequest(updateScheduleError)
         }
 
-        // Validar horario contra configuración del profesor/estudio
-        // Usar el inicio del horario de tarde para determinar si es mañana o tarde
         const horaTardeInicio = parseInt(updateConfigData.horarioTardeInicio.split(':')[0])
-        const horaNum = parseInt(horaInicio.split(':')[0])
-        const esManiana = horaNum < horaTardeInicio
-
-        const horarioInicio = esManiana ? updateConfigData.horarioMananaInicio : updateConfigData.horarioTardeInicio
-        const horarioFin = esManiana ? updateConfigData.horarioMananaFin : updateConfigData.horarioTardeFin
-
-        if (horaInicio < horarioInicio || horaInicio > horarioFin) {
-          const turno = esManiana ? 'mañana' : 'tarde'
-          return NextResponse.json({
-            error: `El horario de ${turno} configurado es de ${horarioInicio} a ${horarioFin}`
-          }, { status: 400 })
-        }
-
         const diaSemana = fecha.getUTCDay()
 
         if (diaSemana === 0 || diaSemana === 6) {
@@ -800,7 +799,7 @@ export async function POST(request: NextRequest) {
 
         // Eliminar evento de Google Calendar si existe
         if (clase.googleEventId) {
-          deleteCalendarEvent(userId, clase.googleEventId).catch(() => {})
+          deleteCalendarEvent(userId, clase.googleEventId).catch(err => logger.error('Calendar event deletion failed', err))
         }
 
         // Soft delete: marcar como eliminado en lugar de borrar

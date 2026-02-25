@@ -346,30 +346,10 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         </div>
       </div>
 
-    </form>
-
-    {/* Sección 3: Paquetes - fuera del form para evitar submit accidental */}
-    <div className="settings-section" style={{ marginTop: '2rem' }}>
-      <div className="section-content">
-        <PacksSection
-          packs={packs}
-          renderButton={(onClick) => (
-            <div className="horarios-header">
-              <div>
-                <h2 className="horarios-header-title">Paquetes</h2>
-                <p className="horarios-header-subtitle">Configurá los packs de clases disponibles</p>
-              </div>
-              <button onClick={onClick} className="btn-primary btn-sm">
-                <Plus size={16} />
-                <span>Nuevo</span>
-              </button>
-            </div>
-          )}
-        />
-
-        {/* Clase suelta dentro de la sección de paquetes */}
-        <div className="clase-suelta-section">
-          <form onSubmit={handleSubmit}>
+      {/* Clase suelta */}
+      <div className="settings-section" style={{ marginTop: '2rem' }}>
+        <div className="section-content">
+          <div className="clase-suelta-section">
             <div className="form-group">
               <label htmlFor="config-precio-por-clase">Clase suelta</label>
               <div className="price-input-wrapper">
@@ -387,13 +367,11 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
                 />
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
-    </div>
 
-    <form onSubmit={handleSubmit}>
-      {/* Botón de guardar */}
+      {/* Boton de guardar */}
       <div className="settings-actions">
         {message && (
           <div className={`form-message ${message.type}`}>
@@ -405,6 +383,27 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         </button>
       </div>
     </form>
+
+    {/* Sección 3: Paquetes - fuera del form (tiene su propia lógica de guardado) */}
+    <div className="settings-section" style={{ marginTop: '2rem' }}>
+      <div className="section-content">
+        <PacksSection
+          packs={packs}
+          renderButton={(onClick) => (
+            <div className="horarios-header">
+              <div>
+                <h2 className="horarios-header-title">Paquetes</h2>
+                <p className="horarios-header-subtitle">Configurá los packs de clases disponibles</p>
+              </div>
+              <button type="button" onClick={onClick} className="btn-primary btn-sm">
+                <Plus size={16} />
+                <span>Nuevo</span>
+              </button>
+            </div>
+          )}
+        />
+      </div>
+    </div>
 
     {/* Dialog de horarios - fuera del form */}
     <HorarioDialog

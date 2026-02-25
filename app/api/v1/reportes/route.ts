@@ -6,11 +6,9 @@ import { es } from 'date-fns/locale'
 import { logger } from '@/lib/logger'
 import { getEffectiveFeatures } from '@/lib/plans'
 import { unauthorized } from '@/lib/api-utils'
+import { DIAS_SEMANA_COMPLETO, DIAS_SEMANA } from '@/lib/constants'
 
 export const runtime = 'nodejs'
-
-const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const DIAS_SEMANA_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 export async function GET(request: Request) {
   try {
@@ -108,7 +106,8 @@ export async function GET(request: Request) {
           asistencia: true,
           horaInicio: true,
           fecha: true
-        }
+        },
+        take: 5000
       }),
       // Clases del mes anterior
       prisma.clase.count({
@@ -172,7 +171,7 @@ export async function GET(request: Request) {
 
     const horasPico = Object.entries(horaCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '-'
     const diaPicoNum = Object.entries(diaCount).sort((a, b) => b[1] - a[1])[0]?.[0]
-    const diaPico = diaPicoNum !== undefined ? DIAS_SEMANA[parseInt(diaPicoNum)] : '-'
+    const diaPico = diaPicoNum !== undefined ? DIAS_SEMANA_COMPLETO[parseInt(diaPicoNum)] : '-'
 
     // Ocupación promedio (simplificada)
     const ocupacionPromedio = clasesMes.length > 0 ? Math.round((presentes / clasesMes.length) * 100) : 0
@@ -227,7 +226,7 @@ export async function GET(request: Request) {
       const clasesDelDia = clasesMes.filter(c => new Date(c.fecha).getDay() === d)
       const presentesDelDia = clasesDelDia.filter(c => c.asistencia === 'presente').length
       asistenciaPorDia.push({
-        dia: DIAS_SEMANA_CORTO[d],
+        dia: DIAS_SEMANA[d],
         clases: clasesDelDia.length,
         asistencia: clasesDelDia.length > 0 ? Math.round((presentesDelDia / clasesDelDia.length) * 100) : 0
       })

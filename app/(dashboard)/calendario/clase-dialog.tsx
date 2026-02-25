@@ -11,23 +11,7 @@ import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import type { Clase, AlumnoSimple, Pack } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
-
-const PLAN_NAMES: Record<string, string> = {
-  FREE: 'Free',
-  STARTER: 'Starter',
-  PRO: 'Pro',
-  ESTUDIO: 'Max'
-}
-
-const DIAS_SEMANA = [
-  { value: 1, label: 'Lunes', short: 'Lun' },
-  { value: 2, label: 'Martes', short: 'Mar' },
-  { value: 3, label: 'Miercoles', short: 'Mie' },
-  { value: 4, label: 'Jueves', short: 'Jue' },
-  { value: 5, label: 'Viernes', short: 'Vie' },
-  { value: 6, label: 'Sabado', short: 'Sab' },
-  { value: 0, label: 'Domingo', short: 'Dom' },
-]
+import { PLAN_NAMES, DIAS_SEMANA_OPTIONS } from '@/lib/constants'
 
 type TipoClase = 'prueba' | 'recurrente'
 
@@ -485,7 +469,7 @@ export function ClaseDialog({
                     </span>
                   </div>
                   <div className="dias-grid compact">
-                    {DIAS_SEMANA.map((dia) => (
+                    {DIAS_SEMANA_OPTIONS.map((dia) => (
                       <label key={dia.value} className="dia-option" htmlFor={`dia-${alumno.id}-${dia.value}`}>
                         <input
                           type="checkbox"
@@ -526,7 +510,7 @@ export function ClaseDialog({
                 </span>
               </span>
               <div className="dias-grid">
-                {DIAS_SEMANA.map((dia) => (
+                {DIAS_SEMANA_OPTIONS.map((dia) => (
                   <label key={dia.value} className="dia-option" htmlFor={`dia-${dia.value}`}>
                     <input
                       type="checkbox"

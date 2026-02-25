@@ -31,7 +31,7 @@ test.describe('Integrated Flow - User Journey', () => {
     await addAlumnoBtn.click()
     await expect(page.locator('[role="dialog"], .dialog')).toBeVisible({ timeout: 5000 })
     await page.keyboard.press('Escape')
-    await page.waitForTimeout(500)
+    await expect(page.locator('[role="dialog"], .dialog')).not.toBeVisible({ timeout: 5000 })
 
     // Calendario
     await page.goto('/calendario')
@@ -40,7 +40,7 @@ test.describe('Integrated Flow - User Journey', () => {
     await addClaseBtn.click()
     await expect(page.locator('[role="dialog"], .dialog')).toBeVisible({ timeout: 5000 })
     await page.keyboard.press('Escape')
-    await page.waitForTimeout(500)
+    await expect(page.locator('[role="dialog"], .dialog')).not.toBeVisible({ timeout: 5000 })
 
     // Pagos
     await page.goto('/pagos')
@@ -53,7 +53,7 @@ test.describe('Integrated Flow - User Journey', () => {
 
   test('dashboard shows stats or content', async ({ page }) => {
     await page.goto('/dashboard')
-    await page.waitForTimeout(3000)
+    await page.waitForLoadState('networkidle')
 
     // Should have some content visible
     const hasContent = await page.locator('.stat-card, .metric, .dashboard-card, .card, h1, h2, .empty-state').first().isVisible({ timeout: 10000 }).catch(() => false)

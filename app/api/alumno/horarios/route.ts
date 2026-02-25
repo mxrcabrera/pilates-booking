@@ -27,12 +27,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'profesorId requerido' }, { status: 400 })
     }
 
-    // Verificar que el alumno está vinculado a este profesor
+    // Verify the alumno is linked to this profesor (directly or via studio)
     const alumnoVinculado = await prisma.alumno.findFirst({
       where: {
         userId: userId,
-        profesorId: profesorId,
-        deletedAt: null
+        deletedAt: null,
+        OR: [
+          { profesorId: profesorId },
+          {
+            estudioId: { not: null },
+            estudio: {
+              miembros: {
+                some: { userId: profesorId, deletedAt: null }
+              }
+            }
+          }
+        ]
       }
     })
 

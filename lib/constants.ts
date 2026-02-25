@@ -44,3 +44,20 @@ export const ASISTENCIA_LABELS: Record<string, string> = {
   ausente: 'Ausente'
 }
 
+// Magic numbers extracted as named constants
+export const RECURRING_WEEKS = 8
+export const OVERDUE_DAYS_THRESHOLD = 60
+export const WEEKS_PER_MONTH = 4
+export const WAITLIST_EXPIRY_MS = 2 * 60 * 60 * 1000 // 2 hours
+
+// DIAS_SEMANA with objects for use in day selection components
+export const DIAS_SEMANA_OPTIONS = [
+  { value: 1, label: 'Lunes', short: 'Lun' },
+  { value: 2, label: 'Martes', short: 'Mar' },
+  { value: 3, label: 'Miércoles', short: 'Mie' },
+  { value: 4, label: 'Jueves', short: 'Jue' },
+  { value: 5, label: 'Viernes', short: 'Vie' },
+  { value: 6, label: 'Sábado', short: 'Sab' },
+  { value: 0, label: 'Domingo', short: 'Dom' }
+]
+

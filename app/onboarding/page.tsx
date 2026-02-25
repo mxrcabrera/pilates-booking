@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { OnboardingClient } from './onboarding-client'
 
+export const metadata = { title: 'Onboarding | Pilates Booking' }
+
 export default async function OnboardingPage() {
   const session = await auth()
 

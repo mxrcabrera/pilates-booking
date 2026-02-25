@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Users, UserPlus, Shield, Eye, Edit3, Trash2, Crown, X } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import type { EstudioRol } from '@prisma/client'
 
 interface Miembro {
@@ -33,6 +35,7 @@ const ROL_INFO: Record<EstudioRol, { label: string; icon: typeof Crown; color: s
 }
 
 export function EquipoClient() {
+  const { showError } = useToast()
   const [data, setData] = useState<EquipoData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +43,9 @@ export function EquipoClient() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRol, setInviteRol] = useState<EstudioRol>('INSTRUCTOR')
   const [submitting, setSubmitting] = useState(false)
+  const [removeConfirm, setRemoveConfirm] = useState<{ isOpen: boolean; miembroId: string; nombre: string }>({
+    isOpen: false, miembroId: '', nombre: ''
+  })
 
   const fetchEquipo = useCallback(async () => {
     try {
@@ -74,7 +80,7 @@ export function EquipoClient() {
       setInviteRol('INSTRUCTOR')
       fetchEquipo()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al invitar')
+      showError(err instanceof Error ? err.message : 'Error al invitar')
     } finally {
       setSubmitting(false)
     }
@@ -91,19 +97,24 @@ export function EquipoClient() {
       if (!res.ok) throw new Error(json.error)
       fetchEquipo()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al cambiar rol')
+      showError(err instanceof Error ? err.message : 'Error al cambiar rol')
     }
   }
 
-  const handleRemove = async (miembroId: string, nombre: string) => {
-    if (!confirm(`¿Remover a ${nombre || 'este miembro'} del equipo?`)) return
+  const handleRemove = (miembroId: string, nombre: string) => {
+    setRemoveConfirm({ isOpen: true, miembroId, nombre: nombre || 'este miembro' })
+  }
+
+  const confirmRemove = async () => {
+    const { miembroId } = removeConfirm
+    setRemoveConfirm({ isOpen: false, miembroId: '', nombre: '' })
     try {
       const res = await fetch(`/api/v1/equipo?id=${miembroId}`, { method: 'DELETE' })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       fetchEquipo()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al remover')
+      showError(err instanceof Error ? err.message : 'Error al remover')
     }
   }
 
@@ -262,6 +273,16 @@ export function EquipoClient() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={removeConfirm.isOpen}
+        onClose={() => setRemoveConfirm({ isOpen: false, miembroId: '', nombre: '' })}
+        onConfirm={confirmRemove}
+        title="¿Remover miembro?"
+        description={`¿Remover a ${removeConfirm.nombre} del equipo?`}
+        confirmText="Remover"
+        variant="danger"
+      />
     </div>
   )
 }

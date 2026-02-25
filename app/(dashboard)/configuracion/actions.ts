@@ -93,7 +93,11 @@ export async function saveHorario(formData: FormData) {
   if (rangeError) throw new Error(rangeError)
 
   if (id) {
-    // Actualizar (modo edición)
+    const existing = await prisma.horarioDisponible.findFirst({
+      where: { id, profesorId: userId, deletedAt: null }
+    })
+    if (!existing) throw new Error('Horario no encontrado')
+
     await prisma.horarioDisponible.update({
       where: { id },
       data: { diaSemana, horaInicio, horaFin, esManiana }
@@ -136,6 +140,11 @@ export async function deleteHorario(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
+  const horario = await prisma.horarioDisponible.findFirst({
+    where: { id, profesorId: userId, deletedAt: null }
+  })
+  if (!horario) throw new Error('Horario no encontrado')
+
   await prisma.horarioDisponible.delete({
     where: { id }
   })
@@ -148,10 +157,9 @@ export async function toggleHorario(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  const horario = await prisma.horarioDisponible.findUnique({
-    where: { id }
+  const horario = await prisma.horarioDisponible.findFirst({
+    where: { id, profesorId: userId, deletedAt: null }
   })
-
   if (!horario) throw new Error('Horario no encontrado')
 
   await prisma.horarioDisponible.update({
@@ -245,7 +253,11 @@ export async function savePack(formData: FormData) {
   const precio = parseFloat(formData.get('precio') as string)
 
   if (id) {
-    // Editar pack existente
+    const existing = await prisma.pack.findFirst({
+      where: { id, profesorId: userId, deletedAt: null }
+    })
+    if (!existing) throw new Error('Pack no encontrado')
+
     await prisma.pack.update({
       where: { id },
       data: {
@@ -275,13 +287,10 @@ export async function deletePack(id: string) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  const pack = await prisma.pack.findUnique({
-    where: { id }
+  const pack = await prisma.pack.findFirst({
+    where: { id, profesorId: userId, deletedAt: null }
   })
-
-  if (!pack || pack.profesorId !== userId) {
-    throw new Error('Pack no encontrado')
-  }
+  if (!pack) throw new Error('Pack no encontrado')
 
   await prisma.pack.delete({
     where: { id }

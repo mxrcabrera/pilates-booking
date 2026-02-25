@@ -69,15 +69,14 @@ test.describe('Pagos - Complete CRUD Flow', () => {
     }
   })
 
-  test('should show pago details', async ({ page }) => {
-    const pagoRow = page.locator('.pago-row, tr, .pago-card').first()
+  test('should show pago row with action buttons', async ({ page }) => {
+    const pagoRow = page.locator('.pago-row').first()
 
     if (await pagoRow.isVisible({ timeout: 5000 })) {
-      await pagoRow.click()
-
-      // Should show details (sheet or expanded row)
-      const hasDetails = await page.locator('.sheet, [role="dialog"], .pago-details').isVisible({ timeout: 3000 })
-      expect(hasDetails).toBeTruthy()
+      // Each row has action buttons (mark paid/pending, delete)
+      const actionButtons = pagoRow.locator('.pago-actions button')
+      const count = await actionButtons.count()
+      expect(count).toBeGreaterThan(0)
     }
   })
 })

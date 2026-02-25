@@ -61,12 +61,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.role) {
         session.user.role = token.role as string
       }
-      if (token.accessToken) {
-        session.accessToken = token.accessToken as string
-      }
-      if (token.refreshToken) {
-        session.refreshToken = token.refreshToken as string
-      }
       return session
     },
   },

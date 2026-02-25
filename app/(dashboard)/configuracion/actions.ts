@@ -33,8 +33,8 @@ export async function changePassword(formData: FormData) {
     throw new Error('Las contraseñas no coinciden')
   }
 
-  if (newPassword.length < 6) {
-    throw new Error('La contraseña debe tener al menos 6 caracteres')
+  if (newPassword.length < 8) {
+    throw new Error('La contraseña debe tener al menos 8 caracteres')
   }
 
   const user = await prisma.user.findUnique({

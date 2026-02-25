@@ -1,10 +1,10 @@
 /**
- * Rate limiting en memoria para proteger endpoints de abuso
+ * Rate limiting en memoria para proteger endpoints de abuso.
  *
- * Limitaciones:
- * - Solo funciona en una instancia (no distribuido)
- * - Se resetea al reiniciar el servidor
- * - Para producción con múltiples instancias, usar Upstash Redis
+ * WARNING: In-memory only — does NOT work across multiple serverless
+ * instances (Vercel, Netlify Functions). Each cold start gets a fresh Map.
+ * For distributed rate limiting, replace with Upstash Redis:
+ *   https://upstash.com/docs/oss/sdks/ts/ratelimit/overview
  */
 
 type RateLimitRecord = {
@@ -12,17 +12,20 @@ type RateLimitRecord = {
   resetTime: number
 }
 
+const MAX_ENTRIES = 10_000
 const rateLimitMap = new Map<string, RateLimitRecord>()
 
-// Limpiar registros expirados cada 5 minutos
-setInterval(() => {
+function pruneExpired() {
   const now = Date.now()
   for (const [key, record] of rateLimitMap.entries()) {
     if (now > record.resetTime) {
       rateLimitMap.delete(key)
     }
   }
-}, 5 * 60 * 1000)
+}
+
+// Cleanup every 5 minutes (only effective in long-running processes)
+setInterval(pruneExpired, 5 * 60 * 1000)
 
 /**
  * Verifica si una request está dentro del límite permitido
@@ -42,6 +45,9 @@ export function rateLimit(
 
   // Si no hay registro o ya expiró, crear nuevo
   if (!record || now > record.resetTime) {
+    if (rateLimitMap.size >= MAX_ENTRIES) {
+      pruneExpired()
+    }
     rateLimitMap.set(key, { count: 1, resetTime: now + windowMs })
     return { success: true, remaining: limit - 1, resetIn: windowMs }
   }

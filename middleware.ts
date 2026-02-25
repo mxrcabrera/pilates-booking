@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { decode } from 'next-auth/jwt'
 
 const jwtSecret = process.env.JWT_SECRET
 if (!jwtSecret) {
@@ -8,10 +9,25 @@ if (!jwtSecret) {
 }
 const secret = new TextEncoder().encode(jwtSecret)
 
+const authSecret = process.env.AUTH_SECRET || ''
+
 async function getRoleFromToken(token: string): Promise<string | null> {
   try {
     const { payload } = await jwtVerify(token, secret)
     return (payload as { role?: string }).role || 'PROFESOR'
+  } catch {
+    return null
+  }
+}
+
+async function getRoleFromNextAuthToken(
+  token: string,
+  cookieName: string
+): Promise<string | null> {
+  try {
+    const decoded = await decode({ token, secret: authSecret, salt: cookieName })
+    if (!decoded) return null
+    return (decoded as { role?: string }).role || 'PROFESOR'
   } catch {
     return null
   }
@@ -34,11 +50,11 @@ export async function middleware(request: NextRequest) {
 
   // Obtener tokens de sesión
   const authToken = request.cookies.get('auth-token')?.value
-  const nextAuthSession =
-    request.cookies.get('next-auth.session-token')?.value ||
-    request.cookies.get('__Secure-next-auth.session-token')?.value
+  const secureCookieName = '__Secure-next-auth.session-token'
+  const plainCookieName = 'next-auth.session-token'
+  const nextAuthToken = request.cookies.get(secureCookieName)?.value
+  const nextAuthTokenPlain = request.cookies.get(plainCookieName)?.value
 
-  // Obtener rol del token JWT (solo para auth-token)
   let userRole: string | null = null
   let hasValidToken = false
 
@@ -47,8 +63,14 @@ export async function middleware(request: NextRequest) {
     hasValidToken = userRole !== null
   }
 
-  // Sesión válida: token JWT válido O sesión de NextAuth
-  const hasSession = hasValidToken || !!nextAuthSession
+  if (!hasValidToken && (nextAuthToken || nextAuthTokenPlain)) {
+    const token = nextAuthToken || nextAuthTokenPlain!
+    const salt = nextAuthToken ? secureCookieName : plainCookieName
+    userRole = await getRoleFromNextAuthToken(token, salt)
+    hasValidToken = userRole !== null
+  }
+
+  const hasSession = hasValidToken
 
   // ===========================================
   // RUTAS PÚBLICAS (sin autenticación requerida)

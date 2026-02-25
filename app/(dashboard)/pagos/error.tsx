@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-export default function PagosError({ error, reset }: { error: Error; reset: () => void }) {
+export default function PagosError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error('Pagos error:', error)
   }, [error])

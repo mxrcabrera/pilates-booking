@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-export default function AlumnoError({ error, reset }: { error: Error; reset: () => void }) {
+export default function AlumnoError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error('Portal alumno error:', error)
   }, [error])

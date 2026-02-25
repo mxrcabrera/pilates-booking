@@ -11,7 +11,7 @@ import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import type { Clase, AlumnoSimple, Pack } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
-import { PLAN_NAMES, DIAS_SEMANA_OPTIONS } from '@/lib/constants'
+import { PLAN_NAMES, DIAS_SEMANA_OPTIONS, RECURRING_WEEKS } from '@/lib/constants'
 
 type TipoClase = 'prueba' | 'recurrente'
 
@@ -220,7 +220,7 @@ export function ClaseDialog({
     let total = 0
     for (const alumno of alumnosConPack) {
       const dias = diasPorAlumno[alumno.id] || []
-      total += dias.length > 0 ? 1 + dias.length * 8 : 1
+      total += dias.length > 0 ? 1 + dias.length * RECURRING_WEEKS : 1
     }
     return total
   }, [esRecurrente, isEditMode, alumnosConPack, diasPorAlumno])

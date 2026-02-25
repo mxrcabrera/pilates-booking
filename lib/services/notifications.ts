@@ -5,6 +5,7 @@ import { canUseFeature } from '../plans'
 import type { NotificationType, PlanType } from '@prisma/client'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { WAITLIST_EXPIRY_MS } from '@/lib/constants'
 
 interface CreateNotificationParams {
   userId: string
@@ -180,7 +181,7 @@ export async function notifyWaitlistAvailable(
       data: {
         estado: 'notificado',
         notificadoEn: new Date(),
-        expiraEn: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 horas para confirmar
+        expiraEn: new Date(Date.now() + WAITLIST_EXPIRY_MS),
       },
     })
   } catch (error) {

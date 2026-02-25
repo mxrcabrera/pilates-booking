@@ -30,6 +30,43 @@ interface ScheduleConfig {
   horarioTardeFin: string
 }
 
+interface WeekendValidationParams {
+  fecha: Date
+  horaInicio: string
+  horaTardeInicio: number
+  ownerFilter: { estudioId: string } | { profesorId: string }
+}
+
+async function validateWeekendSchedule(
+  params: WeekendValidationParams
+): Promise<string | null> {
+  const { fecha, horaInicio, horaTardeInicio, ownerFilter } = params
+  const diaSemana = fecha.getUTCDay()
+
+  if (diaSemana !== 0 && diaSemana !== 6) return null
+
+  const horaNum = parseInt(horaInicio.split(':')[0])
+  const esManiana = horaNum < horaTardeInicio
+
+  const horarioDisponible = await prisma.horarioDisponible.findFirst({
+    where: { ...ownerFilter, diaSemana, esManiana, estaActivo: true, deletedAt: null }
+  })
+
+  if (!horarioDisponible) {
+    const nombreDia = diaSemana === 6 ? 'sábados' : 'domingos'
+    const turno = esManiana ? 'mañana' : 'tarde'
+    return `No trabajás los ${nombreDia} por la ${turno}`
+  }
+
+  if (horaInicio < horarioDisponible.horaInicio || horaInicio > horarioDisponible.horaFin) {
+    const nombreDia = diaSemana === 6 ? 'sábado' : 'domingo'
+    const turno = esManiana ? 'mañana' : 'tarde'
+    return `Tu horario de ${nombreDia} ${turno} es de ${horarioDisponible.horaInicio} a ${horarioDisponible.horaFin}`
+  }
+
+  return null
+}
+
 function validateScheduleTiming(
   fechaStr: string,
   horaInicio: string,
@@ -396,35 +433,12 @@ export async function POST(request: NextRequest) {
           return badRequest(scheduleError)
         }
 
-        const horaTardeInicio = parseInt(configData.horarioTardeInicio.split(':')[0])
-        const diaSemana = fecha.getUTCDay()
-
-        if (diaSemana === 0 || diaSemana === 6) {
-          const horaNum = parseInt(horaInicio.split(':')[0])
-          const esManiana = horaNum < horaTardeInicio
-
-          const horarioDisponible = await prisma.horarioDisponible.findFirst({
-            where: {
-              ...ownerFilter,
-              diaSemana,
-              esManiana,
-              estaActivo: true,
-              deletedAt: null
-            }
-          })
-
-          if (!horarioDisponible) {
-            const nombreDia = diaSemana === 6 ? 'sábados' : 'domingos'
-            const turno = esManiana ? 'mañana' : 'tarde'
-            return NextResponse.json({ error: `No trabajás los ${nombreDia} por la ${turno}` }, { status: 400 })
-          }
-
-          if (horaInicio < horarioDisponible.horaInicio || horaInicio > horarioDisponible.horaFin) {
-            const nombreDia = diaSemana === 6 ? 'sábado' : 'domingo'
-            const turno = esManiana ? 'mañana' : 'tarde'
-            return NextResponse.json({ error: `Tu horario de ${nombreDia} ${turno} es de ${horarioDisponible.horaInicio} a ${horarioDisponible.horaFin}` }, { status: 400 })
-          }
-        }
+        const weekendError = await validateWeekendSchedule({
+          fecha, horaInicio,
+          horaTardeInicio: parseInt(configData.horarioTardeInicio.split(':')[0]),
+          ownerFilter
+        })
+        if (weekendError) return badRequest(weekendError)
 
         // Validate capacity + create classes in a serializable transaction to prevent race conditions
         const clasesCreadas = await prisma.$transaction(async (tx) => {
@@ -676,35 +690,12 @@ export async function POST(request: NextRequest) {
           return badRequest(updateScheduleError)
         }
 
-        const horaTardeInicio = parseInt(updateConfigData.horarioTardeInicio.split(':')[0])
-        const diaSemana = fecha.getUTCDay()
-
-        if (diaSemana === 0 || diaSemana === 6) {
-          const horaNum = parseInt(horaInicio.split(':')[0])
-          const esManiana = horaNum < horaTardeInicio
-
-          const horarioDisponible = await prisma.horarioDisponible.findFirst({
-            where: {
-              ...ownerFilter,
-              diaSemana,
-              esManiana,
-              estaActivo: true,
-              deletedAt: null
-            }
-          })
-
-          if (!horarioDisponible) {
-            const nombreDia = diaSemana === 6 ? 'sábados' : 'domingos'
-            const turno = esManiana ? 'mañana' : 'tarde'
-            return NextResponse.json({ error: `No trabajás los ${nombreDia} por la ${turno}` }, { status: 400 })
-          }
-
-          if (horaInicio < horarioDisponible.horaInicio || horaInicio > horarioDisponible.horaFin) {
-            const nombreDia = diaSemana === 6 ? 'sábado' : 'domingo'
-            const turno = esManiana ? 'mañana' : 'tarde'
-            return NextResponse.json({ error: `Tu horario de ${nombreDia} ${turno} es de ${horarioDisponible.horaInicio} a ${horarioDisponible.horaFin}` }, { status: 400 })
-          }
-        }
+        const updateWeekendError = await validateWeekendSchedule({
+          fecha, horaInicio,
+          horaTardeInicio: parseInt(updateConfigData.horarioTardeInicio.split(':')[0]),
+          ownerFilter
+        })
+        if (updateWeekendError) return badRequest(updateWeekendError)
 
         // Validar cantidad de clases en el mismo horario (only count assigned students)
         const clasesEnMismoHorario = await prisma.clase.count({

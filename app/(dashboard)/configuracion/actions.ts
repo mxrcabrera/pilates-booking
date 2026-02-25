@@ -109,7 +109,8 @@ export async function saveHorario(formData: FormData) {
       where: {
         profesorId: userId,
         diaSemana,
-        esManiana
+        esManiana,
+        deletedAt: null
       }
     })
 

@@ -121,6 +121,10 @@ export async function deleteAlumnoAPI(id: string) {
   return apiCallTo('/api/v1/alumnos', 'delete', { id })
 }
 
+export async function bulkDeleteAlumnosAPI(ids: string[]) {
+  return apiCallTo('/api/v1/alumnos', 'bulkDelete', { ids })
+}
+
 export async function resetPasswordAlumnoAPI(data: { id: string; newPassword: string }) {
   return apiCallTo('/api/v1/alumnos', 'resetPassword', data)
 }
@@ -154,6 +158,10 @@ export async function updateClaseAPI(data: {
 
 export async function deleteClaseAPI(id: string) {
   return apiCallTo('/api/v1/clases', 'delete', { id })
+}
+
+export async function bulkDeleteClasesAPI(ids: string[]) {
+  return apiCallTo('/api/v1/clases', 'bulkDelete', { ids })
 }
 
 export async function changeClaseStatusAPI(id: string, estado: string) {
@@ -193,4 +201,8 @@ export async function marcarPendienteAPI(id: string) {
 
 export async function deletePagoAPI(id: string) {
   return apiCallTo('/api/v1/pagos', 'delete', { id })
+}
+
+export async function bulkDeletePagosAPI(ids: string[]) {
+  return apiCallTo('/api/v1/pagos', 'bulkDelete', { ids })
 }

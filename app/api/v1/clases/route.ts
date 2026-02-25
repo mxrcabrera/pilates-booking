@@ -802,6 +802,32 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true })
       }
 
+      case 'bulkDelete': {
+        if (estudio && !hasPermission(estudio.rol, 'delete:clases')) {
+          return forbidden('No tienes permiso para eliminar clases')
+        }
+
+        const { ids } = data
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+          return badRequest('Se requiere un array de IDs')
+        }
+
+        const validClases = await prisma.clase.findMany({
+          where: { id: { in: ids }, ...ownerFilter, deletedAt: null },
+          select: { id: true }
+        })
+        const validIds = validClases.map(c => c.id)
+
+        if (validIds.length > 0) {
+          await prisma.clase.updateMany({
+            where: { id: { in: validIds } },
+            data: { deletedAt: new Date() }
+          })
+        }
+
+        return NextResponse.json({ success: true, deleted: validIds.length })
+      }
+
       case 'changeStatus': {
         // Validar con Zod
         const parsedStatus = changeStatusSchema.safeParse({ action, ...data })

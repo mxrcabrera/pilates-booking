@@ -32,9 +32,15 @@ export const deletePagoSchema = z.object({
   id: z.string().uuid('ID de pago inválido')
 })
 
+export const bulkDeletePagoSchema = z.object({
+  action: z.literal('bulkDelete'),
+  ids: z.array(z.string().uuid('ID inválido')).min(1, 'Se requiere al menos un ID')
+})
+
 export const pagoActionSchema = z.discriminatedUnion('action', [
   createPagoSchema,
   marcarPagadoSchema,
   marcarPendienteSchema,
-  deletePagoSchema
+  deletePagoSchema,
+  bulkDeletePagoSchema
 ])

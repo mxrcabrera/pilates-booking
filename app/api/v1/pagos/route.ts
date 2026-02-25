@@ -471,6 +471,29 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true })
       }
 
+      case 'bulkDelete': {
+        if (estudio && !hasPermission(estudio.rol, 'delete:pagos')) {
+          return forbidden('No tienes permiso para eliminar pagos')
+        }
+
+        const { ids } = parsed.data
+
+        const validPagos = await prisma.pago.findMany({
+          where: { id: { in: ids }, alumno: ownerFilter, deletedAt: null },
+          select: { id: true }
+        })
+        const validIds = validPagos.map(p => p.id)
+
+        if (validIds.length > 0) {
+          await prisma.pago.updateMany({
+            where: { id: { in: validIds } },
+            data: { deletedAt: new Date() }
+          })
+        }
+
+        return NextResponse.json({ success: true, deleted: validIds.length })
+      }
+
       default:
         return badRequest('Acción no válida')
     }

@@ -465,6 +465,45 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true })
       }
 
+      case 'bulkDelete': {
+        if (estudio && !hasPermission(estudio.rol, 'delete:alumnos')) {
+          return forbidden('No tienes permiso para eliminar alumnos')
+        }
+
+        const { ids } = parsed.data
+
+        const ownerFilter = estudio
+          ? { estudioId: estudio.estudioId }
+          : { profesorId: userId }
+
+        const now = new Date()
+        const validAlumnos = await prisma.alumno.findMany({
+          where: { id: { in: ids }, ...ownerFilter, deletedAt: null },
+          select: { id: true }
+        })
+        const validIds = validAlumnos.map(a => a.id)
+
+        if (validIds.length > 0) {
+          await prisma.$transaction([
+            prisma.alumno.updateMany({
+              where: { id: { in: validIds } },
+              data: { deletedAt: now }
+            }),
+            prisma.pago.updateMany({
+              where: { alumnoId: { in: validIds }, estado: 'pendiente', deletedAt: null },
+              data: { deletedAt: now }
+            }),
+            prisma.clase.updateMany({
+              where: { alumnoId: { in: validIds }, estado: 'reservada', fecha: { gte: now }, deletedAt: null },
+              data: { estado: 'cancelada' }
+            }),
+          ])
+        }
+
+        invalidateAlumnos()
+        return NextResponse.json({ success: true, deleted: validIds.length })
+      }
+
       case 'resetPassword': {
         if (estudio && !hasPermission(estudio.rol, 'edit:alumnos')) {
           return forbidden('No tienes permiso para resetear contraseñas')

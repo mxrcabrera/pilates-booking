@@ -5,7 +5,7 @@ import { Plus, Check, Clock, Trash2, DollarSign, Search, X, ChevronDown, Downloa
 import { PagoDialog } from './pago-dialog'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
-import { marcarPagadoAPI, marcarPendienteAPI, deletePagoAPI } from '@/lib/api'
+import { marcarPagadoAPI, marcarPendienteAPI, deletePagoAPI, bulkDeletePagosAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import { formatMes, diasDiferencia } from '@/lib/dates'
 import { exportToCSV, PAGOS_COLUMNS } from '@/lib/export'
@@ -217,7 +217,7 @@ export function PagosClient({
     setIsDeleting(true)
     try {
       const idsToDelete = Array.from(selectedPagos)
-      await Promise.all(idsToDelete.map(id => deletePagoAPI(id)))
+      await bulkDeletePagosAPI(idsToDelete)
       setPagos(prev => prev.filter(p => !selectedPagos.has(p.id)))
       showSuccess(`${idsToDelete.length} pago(s) eliminado(s)`)
       setBulkDeleteConfirm(false)

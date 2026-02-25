@@ -61,7 +61,7 @@ export const resetPasswordSchema = z.object({
 
 export const bulkDeleteAlumnoSchema = z.object({
   action: z.literal('bulkDelete'),
-  ids: z.array(z.string().uuid('ID inválido')).min(1, 'Se requiere al menos un ID')
+  ids: z.array(z.string().uuid('ID inválido')).min(1, 'Se requiere al menos un ID').max(100)
 })
 
 export const alumnoActionSchema = z.discriminatedUnion('action', [

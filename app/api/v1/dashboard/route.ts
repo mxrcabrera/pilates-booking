@@ -16,7 +16,7 @@ export async function GET() {
       return unauthorized()
     }
 
-    const { userId, estudio } = context
+    const { userId } = context
     const ownerFilter = getOwnerFilter(context)
 
     // Obtener inicio del día local y convertir a UTC

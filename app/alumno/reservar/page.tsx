@@ -61,7 +61,7 @@ export default function AlumnoReservarPage() {
   useEffect(() => {
     async function fetchProfesores() {
       try {
-        const res = await fetch('/api/alumno/dashboard')
+        const res = await fetch('/api/v1/alumno/dashboard')
         const data = await res.json()
         if (data.error) return
         const profs = data.profesores || []
@@ -80,7 +80,7 @@ export default function AlumnoReservarPage() {
     setLoadingSlots(true)
     setSlotsData(null)
     try {
-      const res = await fetch(`/api/alumno/slots?profesorId=${profesorId}`)
+      const res = await fetch(`/api/v1/alumno/slots?profesorId=${profesorId}`)
       const data = await res.json()
       if (!data.error) {
         setSlotsData(data)
@@ -101,7 +101,7 @@ export default function AlumnoReservarPage() {
     setMessage(null)
 
     try {
-      const res = await fetch('/api/alumno/reservar', {
+      const res = await fetch('/api/v1/alumno/reservar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

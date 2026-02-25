@@ -38,7 +38,7 @@ type AlumnoDashboardData = {
 export default function AlumnoDashboardPage() {
   const { data, error, isLoading } = usePageData<AlumnoDashboardData>({
     cacheKey: 'alumno-dashboard',
-    apiUrl: '/api/alumno/dashboard'
+    apiUrl: '/api/v1/alumno/dashboard'
   })
 
   if (error) {

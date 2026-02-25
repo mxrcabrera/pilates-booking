@@ -1,6 +1,11 @@
+import type { Metadata } from 'next'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PerfilClient } from './perfil-client'
+
+export const metadata: Metadata = {
+  title: 'Perfil | Pilates Booking'
+}
 
 export default async function PerfilPage() {
   const userId = await getCurrentUser()

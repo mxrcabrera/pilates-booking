@@ -19,7 +19,8 @@ import {
   deleteClaseSchema,
   changeStatusSchema,
   changeAsistenciaSchema,
-  editSeriesSchema
+  editSeriesSchema,
+  bulkDeleteClaseSchema
 } from '@/lib/schemas/clase.schema'
 
 interface ScheduleConfig {
@@ -801,10 +802,11 @@ export async function POST(request: NextRequest) {
           return forbidden('No tienes permiso para eliminar clases')
         }
 
-        const { ids } = data
-        if (!ids || !Array.isArray(ids) || ids.length === 0) {
-          return badRequest('Se requiere un array de IDs')
+        const parsedBulk = bulkDeleteClaseSchema.safeParse({ action, ...data })
+        if (!parsedBulk.success) {
+          return badRequest(parsedBulk.error.issues[0].message)
         }
+        const { ids } = parsedBulk.data
 
         const validClases = await prisma.clase.findMany({
           where: { id: { in: ids }, ...ownerFilter, deletedAt: null },

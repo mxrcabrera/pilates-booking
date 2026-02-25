@@ -78,11 +78,17 @@ export const editSeriesSchema = z.object({
   })
 })
 
+export const bulkDeleteClaseSchema = z.object({
+  action: z.literal('bulkDelete'),
+  ids: z.array(z.string().uuid('ID inválido')).min(1, 'Se requiere al menos un ID').max(100)
+})
+
 export const claseActionSchema = z.discriminatedUnion('action', [
   createClaseSchema,
   updateClaseSchema,
   deleteClaseSchema,
   changeStatusSchema,
   changeAsistenciaSchema,
-  editSeriesSchema
+  editSeriesSchema,
+  bulkDeleteClaseSchema
 ])

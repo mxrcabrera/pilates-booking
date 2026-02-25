@@ -15,7 +15,10 @@ export const createClaseSchema = z.object({
   esRecurrente: z.boolean().optional().default(false),
   diasSemana: z.union([
     z.array(z.number().min(0).max(6)),
-    z.string().transform(v => JSON.parse(v) as number[])
+    z.string().transform((v, ctx) => {
+      try { return JSON.parse(v) as number[] }
+      catch { ctx.addIssue({ code: 'custom', message: 'diasSemana JSON inválido' }); return z.NEVER }
+    })
   ]).optional().default([]),
   alumnosDias: z.record(z.string(), z.array(z.number().min(0).max(6))).optional(),
   fecha: z.string().regex(fechaRegex, 'Formato de fecha inválido (YYYY-MM-DD)')
@@ -36,7 +39,10 @@ export const updateClaseSchema = z.object({
   }),
   diasSemana: z.union([
     z.array(z.number().min(0).max(6)),
-    z.string().transform(v => JSON.parse(v) as number[])
+    z.string().transform((v, ctx) => {
+      try { return JSON.parse(v) as number[] }
+      catch { ctx.addIssue({ code: 'custom', message: 'diasSemana JSON inválido' }); return z.NEVER }
+    })
   ]).optional().default([]),
   fecha: z.string().regex(fechaRegex, 'Formato de fecha inválido (YYYY-MM-DD)')
 })

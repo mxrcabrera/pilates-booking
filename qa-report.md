@@ -16,7 +16,10 @@ Pilates Booking is a functional multi-role class management system with solid co
 | 🔴 Critical | 12 | 12 | 0 | 0 |
 | 🟠 High | 14 | 12 | 2 (H7, H13) | 0 |
 | 🟡 Medium | 22 | 20 | 2 (M4, M10) | 0 |
-| 🔵 Low | 12 | 0 | 0 | 12 |
+| 🔵 Low | 12 | 12 | 0 | 0 |
+| **Total** | **60** | **56** | **4** | **0** |
+
+**Phase 16B Verification (2026-02-25):** ✅ tsc clean, ✅ eslint clean, ✅ build passes
 
 ---
 
@@ -479,71 +482,83 @@ jobs:
 - **File:** `lib/logger.ts:10`
 - **Description:** `// TODO: Integrar con servicio de logging (Sentry, LogRocket, etc.)`
 - **Fix:** Covered by C9.
+- **Status:** ✅ Fixed (addressed with C9 Sentry integration)
 
 ### L2: ownerFilter pattern repeated in every route
 - **Phase:** 1 — Code Quality
 - **Files:** alumnos, clases, pagos, configuracion, dashboard, reportes routes
 - **Description:** `const ownerFilter = estudio ? { estudioId: estudio.estudioId } : { profesorId: userId }` copy-pasted everywhere.
 - **Fix:** Extract `getOwnerFilter(context)` helper to `auth-utils.ts`.
+- **Status:** ✅ Fixed — `getOwnerFilter(context)` now used in all 6 API routes; return type narrowed to `{ estudioId: string } | { profesorId: string }` (commit `02fa9bb`)
 
 ### L3: DIAS_SEMANA constant duplicated in 5+ files
 - **Phase:** 6 — UI Components
 - **Files:** `calendario-client.tsx`, `clase-dialog.tsx`, `alumno-dialog.tsx`, `horario-dialog.tsx`, `reservar/page.tsx`
 - **Description:** Different formats and slightly different values across files.
 - **Fix:** Consolidate to `lib/constants.ts`.
+- **Status:** ✅ Fixed — Removed local constants from `alumno-dialog.tsx`, `horarios-section.tsx`, `configuracion-client.tsx`; all now import from `lib/constants.ts` (commit `77e8077`)
 
 ### L4: Unused state variables in components
 - **Phase:** 9 — Dead Code
 - **Files:** `calendario-client.tsx:38` (`_vista`, `_setVista`, `_currentUserId`), `horario-dialog.tsx:41` (`_setIsDeleting`)
 - **Description:** Underscore-prefixed variables silencing linter warnings.
 - **Fix:** Remove unused state and clean up component interfaces.
+- **Status:** ✅ Fixed (addressed in earlier refactor commits)
 
 ### L5: Unused SVGs in public folder
 - **Phase:** 9 — Dead Code
 - **Files:** `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, `public/window.svg`
 - **Description:** Default Next.js boilerplate files never referenced.
 - **Fix:** Delete them.
+- **Status:** ✅ Fixed (deleted in earlier cleanup commit `7396199`)
 
 ### L6: Unused fonts loaded
 - **Phase:** 9 — Dead Code
 - **File:** `app/layout.tsx`
 - **Description:** `Cormorant_Garamond` and `Raleway` fonts imported but CSS variables `--font-serif` and `--font-body` never used.
-- **Fix:** Remove font imports.
+- **Fix:** N/A — fonts ARE actively used. `--font-serif` and `--font-body` referenced 60+ times in `globals.css`.
+- **Status:** ✅ Not a bug — verified fonts are in active use
 
 ### L7: Magic numbers/strings
 - **Phase:** 5 — Clean Code
 - **Files:** Multiple
 - **Description:** `8` (recurring weeks), `60` (overdue days), `4` (weeks per month), `2 * 60 * 60 * 1000` (waitlist expiry).
 - **Fix:** Extract to `lib/constants.ts`.
+- **Status:** ✅ Fixed (constants extracted in earlier commit `ace8eee`)
 
 ### L8: Unversioned alumno API routes
 - **Phase:** 10 — API Contracts
 - **Files:** `app/api/alumno/*`
 - **Description:** Teacher API uses `/api/v1/` prefix but student API uses `/api/alumno/` without versioning.
 - **Fix:** Move to `/api/v1/alumno/` for consistency.
+- **Status:** ✅ Fixed — All 7 routes moved to `/api/v1/alumno/`, all client references and middleware updated (commit `04d476f`)
 
 ### L9: mesCorrespondiente format inconsistency
 - **Phase:** 10 — API Contracts
 - **File:** `app/api/v1/pagos/route.ts:120-133`
 - **Description:** Some pagos use "YYYY-MM" format, others use "month year" format.
 - **Fix:** Standardize to "YYYY-MM".
+- **Status:** ✅ Fixed — `pago-dialog.tsx` now sends YYYY-MM directly; backend normalization kept as fallback for legacy data (commit `d61a961`)
 
 ### L10: Emojis in UI code
 - **Phase:** 7 — UX
 - **Files:** `configuracion/confirm-dialog.tsx:19-29`, `pagos-client.tsx:86`
 - **Description:** Emoji strings used in UI. Project convention forbids emojis.
 - **Fix:** Replace with Lucide icons.
+- **Status:** ✅ Fixed (addressed in earlier refactor commits)
 
 ### L11: No Open Graph tags
 - **Phase:** 8 — Performance & SEO
 - **Description:** No OG tags for social media sharing.
 - **Fix:** Add to root layout metadata.
+- **Status:** ✅ Fixed (OG tags added in earlier commit `cb4127b`)
 
 ### L12: Error boundary silences errors in production
 - **Phase:** 12 — Error Handling
 - **File:** `app/error.tsx:14`
 - **Description:** Only logs in development mode.
 - **Fix:** Integrate with Sentry when C9 is implemented.
+- **Status:** ✅ Fixed (addressed with C9 Sentry integration)
 
 ---
 

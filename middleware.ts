@@ -9,7 +9,10 @@ if (!jwtSecret) {
 }
 const secret = new TextEncoder().encode(jwtSecret)
 
-const authSecret = process.env.AUTH_SECRET || ''
+const authSecret = process.env.AUTH_SECRET
+if (!authSecret) {
+  throw new Error('AUTH_SECRET environment variable is required')
+}
 
 async function getRoleFromToken(token: string): Promise<string | null> {
   try {

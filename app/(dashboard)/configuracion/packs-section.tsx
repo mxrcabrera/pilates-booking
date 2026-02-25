@@ -9,6 +9,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import type { Pack } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
+import { formatCurrency } from '@/lib/format'
 
 type PacksSectionProps = {
   packs: Pack[]
@@ -84,7 +85,7 @@ export function PacksSection({ packs: initialPacks, renderButton }: PacksSection
               <div className="pack-card-info">
                 <span className="pack-nombre">{pack.nombre}</span>
                 <span className="pack-meta">
-                  {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''}/sem · ${parseFloat(pack.precio).toLocaleString('es-AR')}
+                  {pack.clasesPorSemana} clase{pack.clasesPorSemana > 1 ? 's' : ''}/sem · {formatCurrency(pack.precio)}
                 </span>
               </div>
               <div className="pack-card-actions">

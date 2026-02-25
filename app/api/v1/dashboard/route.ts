@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserContext } from '@/lib/auth'
+import { getUserContext, getOwnerFilter } from '@/lib/auth'
 import { startOfDay } from 'date-fns'
 import { getCachedProfesorConfig } from '@/lib/server-cache'
 import { logger } from '@/lib/logger'
@@ -17,11 +17,7 @@ export async function GET() {
     }
 
     const { userId, estudio } = context
-
-    // Filtro por estudio o profesor
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
+    const ownerFilter = getOwnerFilter(context)
 
     // Obtener inicio del día local y convertir a UTC
     const ahora = new Date()

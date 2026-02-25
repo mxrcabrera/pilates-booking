@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserContext, hasPermission } from '@/lib/auth'
+import { getUserContext, hasPermission, getOwnerFilter } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
 import { argentinaToUTC } from '@/lib/dates'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
@@ -118,10 +118,7 @@ export async function GET(request: NextRequest) {
     const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
     const finRango = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0)
 
-    // Filtro por estudio o profesor
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
+    const ownerFilter = getOwnerFilter(context)
 
     // Obtener config del estudio o del usuario
     const configData = estudio
@@ -311,10 +308,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { action, ...data } = body
 
-    // Filtro por estudio o profesor
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
+    const ownerFilter = getOwnerFilter(context)
 
     switch (action) {
       case 'create': {

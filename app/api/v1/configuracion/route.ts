@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserContext, hasPermission, hashPassword, verifyPassword } from '@/lib/auth'
+import { getUserContext, hasPermission, hashPassword, verifyPassword, getOwnerFilter } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getCachedPacks, getCachedHorarios, getCachedProfesorConfig, type OwnerType } from '@/lib/server-cache'
 import { invalidatePacks, invalidateHorarios, invalidateConfig } from '@/lib/cache-utils'
@@ -98,10 +98,7 @@ export async function POST(request: NextRequest) {
 
     const { userId, estudio } = context
 
-    // Filtro por estudio o profesor
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
+    const ownerFilter = getOwnerFilter(context)
 
     const body = await request.json()
     const { action, ...data } = body

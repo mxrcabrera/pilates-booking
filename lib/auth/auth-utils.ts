@@ -150,7 +150,7 @@ export async function getCurrentEstudioId(): Promise<string | null> {
   return context?.estudio?.estudioId || null
 }
 
-export function getOwnerFilter(context: UserContext): Record<string, string> {
+export function getOwnerFilter(context: UserContext): { estudioId: string } | { profesorId: string } {
   return context.estudio
     ? { estudioId: context.estudio.estudioId }
     : { profesorId: context.userId }

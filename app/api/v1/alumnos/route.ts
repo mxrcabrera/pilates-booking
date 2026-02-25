@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserContext, hasPermission } from '@/lib/auth'
+import { getUserContext, hasPermission, getOwnerFilter } from '@/lib/auth'
 import { Decimal } from '@prisma/client/runtime/library'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { userId, estudio } = context
+    const ownerFilter = getOwnerFilter(context)
 
     const { page, limit, skip } = getPaginationParams(request)
     const { searchParams } = new URL(request.url)
@@ -35,11 +36,6 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1)
     const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-
-    // Filtrar por estudioId si existe, sino por profesorId (backwards compatible)
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
 
     // Construir where con búsqueda opcional
     const where = {
@@ -177,6 +173,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId, estudio } = context
+    const ownerFilter = getOwnerFilter(context)
 
     // Validar con Zod schema
     const body = await request.json()
@@ -212,9 +209,6 @@ export async function POST(request: NextRequest) {
           return unauthorized()
         }
 
-        const ownerFilter = estudio
-          ? { estudioId: estudio.estudioId }
-          : { profesorId: userId }
 
         const maxAlumnos = getEffectiveMaxAlumnos(planInfo.plan, planInfo.trialEndsAt)
         const alumnosActuales = await prisma.alumno.count({
@@ -268,9 +262,6 @@ export async function POST(request: NextRequest) {
         const { id, nombre, email, telefono, genero, cumpleanos, patologias, packType, precio, consentimientoTutor, diaInicioCiclo } = parsed.data
 
         // Filtro por estudio o profesor
-        const ownerFilter = estudio
-          ? { estudioId: estudio.estudioId }
-          : { profesorId: userId }
 
         // Validar que el alumno pertenece al estudio/profesor
         const alumnoExistente = await prisma.alumno.findFirst({
@@ -405,9 +396,6 @@ export async function POST(request: NextRequest) {
         const { id } = parsed.data
 
         // Filtro por estudio o profesor
-        const ownerFilter = estudio
-          ? { estudioId: estudio.estudioId }
-          : { profesorId: userId }
 
         const alumno = await prisma.alumno.findFirst({
           where: { id, ...ownerFilter, deletedAt: null }
@@ -435,9 +423,6 @@ export async function POST(request: NextRequest) {
         const { id } = parsed.data
 
         // Filtro por estudio o profesor
-        const ownerFilter = estudio
-          ? { estudioId: estudio.estudioId }
-          : { profesorId: userId }
 
         const alumno = await prisma.alumno.findFirst({
           where: { id, ...ownerFilter, deletedAt: null }
@@ -472,9 +457,6 @@ export async function POST(request: NextRequest) {
 
         const { ids } = parsed.data
 
-        const ownerFilter = estudio
-          ? { estudioId: estudio.estudioId }
-          : { profesorId: userId }
 
         const now = new Date()
         const validAlumnos = await prisma.alumno.findMany({
@@ -511,9 +493,6 @@ export async function POST(request: NextRequest) {
 
         const { id, newPassword } = parsed.data
 
-        const ownerFilter = estudio
-          ? { estudioId: estudio.estudioId }
-          : { profesorId: userId }
 
         const alumno = await prisma.alumno.findFirst({
           where: { id, ...ownerFilter, deletedAt: null },

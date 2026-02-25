@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserContext, hasPermission } from '@/lib/auth'
+import { getUserContext, hasPermission, getOwnerFilter } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { pagoActionSchema } from '@/lib/schemas/pago.schema'
@@ -26,11 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { userId, estudio } = context
-
-    // Filtro por estudio o profesor
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
+    const ownerFilter = getOwnerFilter(context)
 
     const { page, limit, skip } = getPaginationParams(request)
 
@@ -252,11 +248,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId, estudio } = context
-
-    // Filtro por estudio o profesor
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
+    const ownerFilter = getOwnerFilter(context)
 
     // Validar con Zod schema
     const body = await request.json()

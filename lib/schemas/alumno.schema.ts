@@ -6,7 +6,7 @@ const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]
 export const createAlumnoSchema = z.object({
   action: z.literal('create'),
   nombre: z.string().min(1, 'El nombre es obligatorio').max(100, 'Nombre muy largo'),
-  email: z.string().max(254).regex(emailRegex, 'Email inválido'),
+  email: z.string().max(254).regex(emailRegex, 'Email inválido').transform(v => v.toLowerCase().trim()),
   telefono: z.string().min(1, 'El teléfono es obligatorio'),
   genero: z.enum(['F', 'M', 'O']).optional().default('F'),
   cumpleanos: z.string().optional().nullable(),
@@ -25,7 +25,7 @@ export const updateAlumnoSchema = z.object({
   action: z.literal('update'),
   id: z.string().uuid('ID inválido'),
   nombre: z.string().min(1).max(100).optional(),
-  email: z.string().max(254).regex(emailRegex, 'Email inválido').optional(),
+  email: z.string().max(254).regex(emailRegex, 'Email inválido').transform(v => v.toLowerCase().trim()).optional(),
   telefono: z.string().min(1).optional(),
   genero: z.enum(['F', 'M', 'O']).optional(),
   cumpleanos: z.string().optional().nullable(),

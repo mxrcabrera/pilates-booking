@@ -3,16 +3,15 @@ import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 import { decode } from 'next-auth/jwt'
 
-const jwtSecret = process.env.JWT_SECRET
-if (!jwtSecret) {
-  throw new Error('JWT_SECRET environment variable is required')
+function getRequiredEnv(name: string): string {
+  const value = process.env[name]
+  if (!value) throw new Error(`${name} environment variable is required`)
+  return value
 }
-const secret = new TextEncoder().encode(jwtSecret)
 
-const authSecret = process.env.AUTH_SECRET
-if (!authSecret) {
-  throw new Error('AUTH_SECRET environment variable is required')
-}
+const jwtSecret = getRequiredEnv('JWT_SECRET')
+const secret = new TextEncoder().encode(jwtSecret)
+const authSecret = getRequiredEnv('AUTH_SECRET')
 
 async function getRoleFromToken(token: string): Promise<string | null> {
   try {

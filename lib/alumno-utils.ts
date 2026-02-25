@@ -1,5 +1,4 @@
-// lib/alumno-utils.ts
-// Utilidades compartidas para manejo de estado de alumnos
+import { OVERDUE_DAYS_THRESHOLD, WEEKS_PER_MONTH } from '@/lib/constants'
 
 type PaymentStatus = {
   texto: string
@@ -36,7 +35,7 @@ export function getPaymentStatus(alumno: AlumnoPaymentData): PaymentStatus {
   if (dias < 0) {
     const diasAtraso = Math.abs(dias)
     // Más de 60 días = datos incorrectos, mostrar al día
-    if (diasAtraso > 60) return { texto: 'Al día', clase: 'al-dia' }
+    if (diasAtraso > OVERDUE_DAYS_THRESHOLD) return { texto: 'Al día', clase: 'al-dia' }
     return { texto: 'Pago atrasado', clase: 'vencido' }
   }
 
@@ -134,6 +133,6 @@ export function calcularRangoCiclo(diaInicioCiclo: number, fechaReferencia: Date
  * y la cantidad de clases por semana (4 semanas por mes)
  */
 export function calcularPrecioImplicitoPorClase(precioPack: number, clasesPorSemana: number): number {
-  const clasesPorMes = clasesPorSemana * 4
+  const clasesPorMes = clasesPorSemana * WEEKS_PER_MONTH
   return precioPack / clasesPorMes
 }

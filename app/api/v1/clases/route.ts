@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission, getOwnerFilter } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
+import { RECURRING_WEEKS } from '@/lib/constants'
 import { argentinaToUTC } from '@/lib/dates'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
@@ -565,7 +566,7 @@ export async function POST(request: NextRequest) {
                 const primeraOcurrencia = new Date(fecha)
                 primeraOcurrencia.setUTCDate(fecha.getUTCDate() + diasHastaProximoDia)
 
-                for (let i = 0; i < 8; i++) {
+                for (let i = 0; i < RECURRING_WEEKS; i++) {
                   const fechaClase = addWeeks(primeraOcurrencia, i)
 
                   clasesACrear.push({

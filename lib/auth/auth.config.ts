@@ -1,3 +1,5 @@
+// next-auth v5 is pinned to beta.30 — no stable release yet.
+// Monitor https://github.com/nextauthjs/next-auth/releases for GA.
 import Google from 'next-auth/providers/google'
 import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'

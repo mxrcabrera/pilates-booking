@@ -115,9 +115,21 @@ export async function deleteAlumno(id: string) {
   if (!alumno) throw new Error('Alumno no encontrado')
 
   try {
-    await prisma.alumno.delete({
-      where: { id }
-    })
+    const now = new Date()
+    await prisma.$transaction([
+      prisma.alumno.update({
+        where: { id },
+        data: { deletedAt: now }
+      }),
+      prisma.pago.updateMany({
+        where: { alumnoId: id, estado: 'pendiente', deletedAt: null },
+        data: { deletedAt: now }
+      }),
+      prisma.clase.updateMany({
+        where: { alumnoId: id, estado: 'reservada', fecha: { gte: now }, deletedAt: null },
+        data: { estado: 'cancelada' }
+      }),
+    ])
   } catch {
     throw new Error('Error al eliminar alumno')
   }

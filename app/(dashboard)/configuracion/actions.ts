@@ -145,8 +145,9 @@ export async function deleteHorario(id: string) {
   })
   if (!horario) throw new Error('Horario no encontrado')
 
-  await prisma.horarioDisponible.delete({
-    where: { id }
+  await prisma.horarioDisponible.update({
+    where: { id },
+    data: { deletedAt: new Date() }
   })
 
   revalidatePath('/configuracion')
@@ -292,8 +293,9 @@ export async function deletePack(id: string) {
   })
   if (!pack) throw new Error('Pack no encontrado')
 
-  await prisma.pack.delete({
-    where: { id }
+  await prisma.pack.update({
+    where: { id },
+    data: { deletedAt: new Date() }
   })
 
   revalidatePath('/configuracion')

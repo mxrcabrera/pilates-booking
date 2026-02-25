@@ -15,7 +15,7 @@ Pilates Booking is a functional multi-role class management system with solid co
 |----------|-------|-------|------------------|------|
 | 🔴 Critical | 12 | 12 | 0 | 0 |
 | 🟠 High | 14 | 12 | 2 (H7, H13) | 0 |
-| 🟡 Medium | 22 | 0 | 0 | 22 |
+| 🟡 Medium | 22 | 20 | 2 (M4, M10) | 0 |
 | 🔵 Low | 12 | 0 | 0 | 12 |
 
 ---
@@ -301,7 +301,7 @@ jobs:
 - **Description:** File-wide `eslint-disable @typescript-eslint/no-explicit-any` with 5 `as any` casts for NextAuth types.
 - **Business Impact:** Loss of type safety in the authentication layer.
 - **Fix:** Create `types/next-auth.d.ts` with proper module augmentation for Session, User, and JWT interfaces.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` + security H1 — proper type casts, types/next-auth.d.ts created)
 
 ### M2: Floating promises with empty catch
 - **Phase:** 1 — Code Quality
@@ -309,7 +309,7 @@ jobs:
 - **Description:** Calendar event and notification calls use `.catch(() => {})`, silently discarding errors.
 - **Business Impact:** Failed calendar syncs and notifications are invisible.
 - **Fix:** `.catch(err => logger.error('Calendar event creation failed', err))`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199`)
 
 ### M3: Duplicated schedule validation logic
 - **Phase:** 1 — Code Quality
@@ -317,7 +317,7 @@ jobs:
 - **Description:** Nearly identical validation blocks for minimum anticipation, schedule validation, and weekend availability.
 - **Business Impact:** Bug fixed in one location may be missed in the other.
 - **Fix:** Extract to `validateClaseSchedule()` helper.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commits `7396199` + `b5221ed` — `validateScheduleTiming()` + `validateWeekendSchedule()` helpers)
 
 ### M4: Rate limiting ineffective on serverless (in-memory Map)
 - **Phase:** 3 — Security / 15 — CI/CD
@@ -325,7 +325,7 @@ jobs:
 - **Description:** Rate limiter uses in-memory `Map`. Netlify Functions are stateless — each invocation has a fresh Map.
 - **Business Impact:** Brute-force password attacks are not rate-limited in production.
 - **Fix:** Migrate to Upstash Redis (`@upstash/ratelimit`).
-- **Status:** 🔲 Open
+- **Status:** ⏭️ Skipped — needs infrastructure decision (Upstash Redis)
 
 ### M5: Alumno horarios endpoint broken for studio-wide students
 - **Phase:** 3 — Security
@@ -333,7 +333,7 @@ jobs:
 - **Description:** Query filters by `profesorId` but studio-wide students have `profesorId: null`, causing the lookup to fail.
 - **Business Impact:** Studio-wide students cannot view available schedules.
 - **Fix:** Also search by `estudioId` when the student has no direct `profesorId`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — OR condition with estudioId + estudioMiembro)
 
 ### M6: CSRF vulnerability on logout GET endpoint
 - **Phase:** 3 — Security
@@ -341,7 +341,7 @@ jobs:
 - **Description:** Logout is available via GET. A malicious `<img src="/api/auth/logout">` can force-logout users.
 - **Business Impact:** Users can be involuntarily logged out via CSRF.
 - **Fix:** Remove GET handler. Logout should be POST-only.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — POST-only logout)
 
 ### M7: Queries without LIMIT in reportes and slots
 - **Phase:** 4 — Database
@@ -349,7 +349,7 @@ jobs:
 - **Description:** Queries return ALL matching records without pagination or limits.
 - **Business Impact:** Large studios could return thousands of records, causing slow responses and high memory usage.
 - **Fix:** Add reasonable limits or pagination.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — take limits added)
 
 ### M8: Configuracion endpoint skips Zod validation for horario actions
 - **Phase:** 1 — Code Quality
@@ -357,7 +357,7 @@ jobs:
 - **Description:** `saveHorario`, `toggleHorario`, `deleteHorario`, and `saveHorariosBatch` actions destructure the body directly without passing through their defined Zod schemas.
 - **Business Impact:** Malformed inputs can cause unexpected DB errors or invalid data.
 - **Fix:** Apply `saveHorarioSchema.safeParse()` for each horario action.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` + security M4 — all actions use Zod validation)
 
 ### M9: Missing transaction for recurring class creation
 - **Phase:** 4 — Database
@@ -365,7 +365,7 @@ jobs:
 - **Description:** Original class and recurring instances created in separate queries. If `createMany` fails, the original remains without its series.
 - **Business Impact:** Partial recurring series with orphaned original class.
 - **Fix:** Wrap in `prisma.$transaction()`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — Serializable transaction)
 
 ### M10: globals.css is 9,557 lines (limit: 200)
 - **Phase:** 6 — UI Components
@@ -373,7 +373,7 @@ jobs:
 - **Description:** Project rule states globals.css must stay under 200 lines. It is 48x over the limit.
 - **Business Impact:** Every page loads ~200KB+ of CSS, most unused. Developer maintainability severely degraded.
 - **Fix:** Gradually extract component-scoped styles to CSS modules or co-located files.
-- **Status:** 🔲 Open
+- **Status:** ⏭️ Deferred to Phase 18 cleanup
 
 ### M11: setState-during-render anti-pattern in pagos
 - **Phase:** 6 — UI Components
@@ -381,7 +381,7 @@ jobs:
 - **Description:** Filter key comparison and `setVisibleCount()` happens during render, not in a useEffect.
 - **Business Impact:** Causes double renders on every filter/search change.
 - **Fix:** Move to `useEffect` with `[filter, search]` dependency array.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — useEffect with filterKey dependency)
 
 ### M12: Missing error boundaries in critical routes
 - **Phase:** 6 — UI Components
@@ -389,7 +389,7 @@ jobs:
 - **Description:** Only root error.tsx exists. Sub-route errors crash the entire dashboard.
 - **Business Impact:** One broken component takes down the whole page instead of just that section.
 - **Fix:** Add `error.tsx` to each critical route group.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commits `7396199` + `26038db` — error.tsx in calendario, pagos, alumno, alumnos)
 
 ### M13: Multiple forms issue in configuracion
 - **Phase:** 6 — UI Components
@@ -397,7 +397,7 @@ jobs:
 - **Description:** Three `<form>` elements share the same `handleSubmit`. The "clase suelta" section has a nested form that only submits `precioPorClase`.
 - **Business Impact:** Submitting from the wrong form may lose configuration data.
 - **Fix:** Consolidate to a single form or ensure each form has all necessary fields.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — single form with modular child components)
 
 ### M14: Native confirm()/alert() instead of app modals
 - **Phase:** 7 — UX
@@ -405,14 +405,14 @@ jobs:
 - **Description:** Uses browser native `confirm()` and `alert()` instead of the app's `ConfirmModal` and toast components.
 - **Business Impact:** Inconsistent UX. Native dialogs are not styled and look out of place.
 - **Fix:** Replace with `ConfirmModal` and `useToast().showError()`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — state-based modals)
 
 ### M15: No sitemap.xml or robots.txt
 - **Phase:** 8 — Performance & SEO
 - **Description:** Neither file exists. Limited impact since most pages are authenticated.
 - **Business Impact:** Search engines have no guidance for public pages (login, terms, privacy).
 - **Fix:** Create `app/sitemap.ts` and `app/robots.ts`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `fa0292e` — sitemap.ts and robots.ts created)
 
 ### M16: Same page title on all routes
 - **Phase:** 8 — Performance & SEO
@@ -420,7 +420,7 @@ jobs:
 - **Description:** Only one global title "Pilates Booking". No page exports its own metadata.
 - **Business Impact:** All browser tabs show the same title, making it hard to distinguish pages.
 - **Fix:** Add `export const metadata` with unique titles to each page.tsx.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `a104fe0` — route-specific layouts + metadata exports)
 
 ### M17: API response format inconsistency
 - **Phase:** 10 — API Contracts
@@ -428,7 +428,7 @@ jobs:
 - **Description:** Success responses vary: `{ success: true, alumno: {...} }` vs `{ pago: {...} }` vs `{ success: true }`. No standard envelope.
 - **Business Impact:** Frontend must handle different response shapes per endpoint.
 - **Fix:** Standardize: `{ data: {...} }` for entities, `{ data: [...], pagination: {...} }` for lists.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — consistent response format with paginatedResponse helper)
 
 ### M18: Wrong HTTP status codes (200 for creates, 200 for deletes)
 - **Phase:** 10 — API Contracts
@@ -436,7 +436,7 @@ jobs:
 - **Description:** Creates return 200 instead of 201. Deletes return 200 instead of 204.
 - **Business Impact:** Non-standard REST semantics. Minor but indicates API design gaps.
 - **Fix:** Return 201 for creates, 204 for deletes.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — creates return 201)
 
 ### M19: Bulk operations send N individual API calls
 - **Phase:** 10 — API Contracts
@@ -444,7 +444,7 @@ jobs:
 - **Description:** Bulk delete uses `Promise.all()` to send N separate HTTP requests. No atomic rollback.
 - **Business Impact:** Deleting 50 items sends 50 requests. Partial failure leaves inconsistent state.
 - **Fix:** Add bulk action endpoints accepting arrays of IDs.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `b3475e2` — bulkDelete actions in alumnos, clases, pagos routes)
 
 ### M20: E2E tests use waitForTimeout as synchronization
 - **Phase:** 11 — Tests
@@ -452,7 +452,7 @@ jobs:
 - **Description:** ~30 instances of `page.waitForTimeout(300-2000)`. Makes tests slow and flaky.
 - **Business Impact:** Flaky tests reduce confidence and slow down development.
 - **Fix:** Replace with proper Playwright waitFor patterns.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `fa0292e` — proper waitFor patterns)
 
 ### M21: Currency formatting inconsistent and not centralized
 - **Phase:** 13 — i18n
@@ -460,7 +460,7 @@ jobs:
 - **Description:** Each file formats currency independently. Email uses raw `$${monto}` without locale formatting.
 - **Business Impact:** Emails show "$25000" instead of "$25.000". Visual inconsistency across pages.
 - **Fix:** Create `lib/format.ts` with `formatCurrency()` helper and use everywhere.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commits `7396199` + `28f26fe` — lib/format.ts + used in reportes, pagos, alumnos, email)
 
 ### M22: .env.example missing RESEND_API_KEY and EMAIL_FROM
 - **Phase:** 14 — Git Hygiene
@@ -468,7 +468,7 @@ jobs:
 - **Description:** Required email service variables are not documented.
 - **Business Impact:** New developers won't know email configuration is needed until runtime errors.
 - **Fix:** Add `RESEND_API_KEY=` and `EMAIL_FROM=` to `.env.example`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `fa0292e`)
 
 ---
 

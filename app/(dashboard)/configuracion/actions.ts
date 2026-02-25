@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentUser, hashPassword, verifyPassword } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { validateTimeRange, validateTimeInRange } from '@/lib/validation'
+import { updatePreferenciasSchema } from '@/lib/schemas/configuracion.schema'
 
 export async function updateProfile(formData: FormData) {
   const userId = await getCurrentUser()
@@ -176,66 +177,46 @@ export async function updatePreferencias(formData: FormData) {
   const userId = await getCurrentUser()
   if (!userId) throw new Error('No autorizado')
 
-  // Construir objeto de datos solo con campos presentes
-  const data: Record<string, unknown> = {}
+  const raw: Record<string, unknown> = {}
 
-  const horasAnticipacionMinimaStr = formData.get('horasAnticipacionMinima') as string | null
-  if (horasAnticipacionMinimaStr) {
-    data.horasAnticipacionMinima = parseInt(horasAnticipacionMinimaStr)
+  const stringFields = [
+    'horarioMananaInicio', 'horarioMananaFin',
+    'horarioTardeInicio', 'horarioTardeFin'
+  ] as const
+  for (const field of stringFields) {
+    const val = formData.get(field) as string | null
+    if (val) raw[field] = val
   }
 
-  const maxAlumnosPorClaseStr = formData.get('maxAlumnosPorClase') as string | null
-  if (maxAlumnosPorClaseStr) {
-    data.maxAlumnosPorClase = parseInt(maxAlumnosPorClaseStr)
+  const numberFields = [
+    'horasAnticipacionMinima', 'maxAlumnosPorClase', 'precioPorClase'
+  ] as const
+  for (const field of numberFields) {
+    const val = formData.get(field) as string | null
+    if (val) raw[field] = val
   }
 
-  const horarioMananaInicio = formData.get('horarioMananaInicio') as string | null
-  if (horarioMananaInicio) {
-    data.horarioMananaInicio = horarioMananaInicio
+  const boolFields = [
+    'turnoMananaActivo', 'turnoTardeActivo', 'syncGoogleCalendar'
+  ] as const
+  for (const field of boolFields) {
+    if (formData.has(field)) {
+      raw[field] = formData.get(field) === 'on'
+    }
   }
 
-  const horarioMananaFin = formData.get('horarioMananaFin') as string | null
-  if (horarioMananaFin) {
-    data.horarioMananaFin = horarioMananaFin
-  }
-
-  // turnoMananaActivo: si el campo existe en el form, usar su valor
-  if (formData.has('turnoMananaActivo')) {
-    data.turnoMananaActivo = formData.get('turnoMananaActivo') === 'on'
-  }
-
-  const horarioTardeInicio = formData.get('horarioTardeInicio') as string | null
-  if (horarioTardeInicio) {
-    data.horarioTardeInicio = horarioTardeInicio
-  }
-
-  const horarioTardeFin = formData.get('horarioTardeFin') as string | null
-  if (horarioTardeFin) {
-    data.horarioTardeFin = horarioTardeFin
-  }
-
-  // turnoTardeActivo: si el campo existe en el form, usar su valor
-  if (formData.has('turnoTardeActivo')) {
-    data.turnoTardeActivo = formData.get('turnoTardeActivo') === 'on'
-  }
-
-  if (formData.has('syncGoogleCalendar')) {
-    data.syncGoogleCalendar = formData.get('syncGoogleCalendar') === 'on'
-  }
-
-  const precioPorClaseStr = formData.get('precioPorClase') as string | null
-  if (precioPorClaseStr) {
-    data.precioPorClase = parseFloat(precioPorClaseStr) || 0
-  }
-
-  // Solo actualizar si hay datos
-  if (Object.keys(data).length === 0) {
+  if (Object.keys(raw).length === 0) {
     throw new Error('No hay datos para actualizar')
+  }
+
+  const parsed = updatePreferenciasSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0].message)
   }
 
   await prisma.user.update({
     where: { id: userId },
-    data
+    data: parsed.data
   })
 
   revalidatePath('/configuracion')

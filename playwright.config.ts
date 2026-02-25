@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices, type Project } from '@playwright/test'
 import dotenv from 'dotenv'
 import path from 'path'
 
@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env.test') })
 
 const skipDb = process.env.SKIP_DB_TESTS === '1'
 
-const projects = [
+const projects: Project[] = [
   {
     name: 'auth',
     testMatch: /auth\.spec\.ts/,

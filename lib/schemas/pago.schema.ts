@@ -3,7 +3,6 @@ import { z } from 'zod'
 export const createPagoSchema = z.object({
   action: z.literal('create'),
   alumnoId: z.string().uuid('ID de alumno inválido'),
-  profesorId: z.string().uuid('ID de profesor inválido').optional(),
   monto: z.union([z.string(), z.number()]).transform(v => {
     const num = typeof v === 'string' ? parseFloat(v) : v
     if (isNaN(num) || num <= 0) throw new Error('El monto debe ser mayor a 0')

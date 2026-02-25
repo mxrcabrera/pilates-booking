@@ -24,7 +24,7 @@ export function exportToCSV<T extends CSVRow>(
       if (typeof value === 'string') {
         const escaped = value.replace(/"/g, '""')
         // Prefix formula-triggering chars to prevent Excel injection
-        if (/^[=+\-@\t\r]/.test(escaped)) {
+        if (/^[=+\-@\t\r\n]/.test(escaped)) {
           return `"'${escaped}"`
         }
         return `"${escaped}"`

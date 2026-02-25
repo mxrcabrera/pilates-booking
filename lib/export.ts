@@ -22,8 +22,12 @@ export function exportToCSV<T extends CSVRow>(
         return '""'
       }
       if (typeof value === 'string') {
-        // Escapar comillas dobles
-        return `"${value.replace(/"/g, '""')}"`
+        const escaped = value.replace(/"/g, '""')
+        // Prefix formula-triggering chars to prevent Excel injection
+        if (/^[=+\-@\t\r]/.test(escaped)) {
+          return `"'${escaped}"`
+        }
+        return `"${escaped}"`
       }
       return `"${value}"`
     }).join(',')

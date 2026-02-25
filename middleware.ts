@@ -129,7 +129,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
+    const allowedPrefixes = ['/dashboard', '/calendario', '/alumnos', '/pagos', '/configuracion', '/planes', '/reportes', '/equipo', '/perfil', '/onboarding', '/alumno']
+    if (allowedPrefixes.some(p => pathname.startsWith(p))) {
+      loginUrl.searchParams.set('callbackUrl', pathname)
+    }
     return NextResponse.redirect(loginUrl)
   }
 

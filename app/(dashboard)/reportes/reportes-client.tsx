@@ -4,6 +4,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Users, DollarSign, Calendar, TrendingUp, TrendingDown, Minus, ChevronLeft, ChevronRight, Target, Award, BarChart3 } from 'lucide-react'
 import type { ReportesData } from '@/lib/types'
+import { formatCurrency } from '@/lib/format'
 
 const IngresosChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.IngresosChart })), { ssr: false })
 const ClasesAlumnosChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.ClasesAlumnosChart })), { ssr: false })
@@ -12,11 +13,6 @@ const DistribucionPacksChart = dynamic(() => import('@/components/charts').then(
 const HorariosPopularesChart = dynamic(() => import('@/components/charts').then(m => ({ default: m.HorariosPopularesChart })), { ssr: false })
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-
-function formatPrecio(num: number): string {
-  if (num === 0) return '$0'
-  return `$${num.toLocaleString('es-AR')}`
-}
 
 function formatPorcentaje(num: number): string {
   const sign = num > 0 ? '+' : ''
@@ -105,7 +101,7 @@ export function ReportesClient({ data }: { data: ReportesData }) {
           </div>
           <div className="reportes-card-content">
             <span className="reportes-card-label">Ingresos del Mes</span>
-            <span className="reportes-card-value">{formatPrecio(data.metricas.ingresosMes)}</span>
+            <span className="reportes-card-value">{formatCurrency(data.metricas.ingresosMes)}</span>
             <span className={`reportes-card-trend ${data.metricas.ingresosTrend > 0 ? 'up' : data.metricas.ingresosTrend < 0 ? 'down' : ''}`}>
               <TrendIcon value={data.metricas.ingresosTrend} />
               {formatPorcentaje(data.metricas.ingresosTrend)} vs mes anterior
@@ -238,7 +234,7 @@ export function ReportesClient({ data }: { data: ReportesData }) {
                 </div>
                 <div className="reportes-card-content">
                   <span className="reportes-card-label">Proyección Anual</span>
-                  <span className="reportes-card-value">{formatPrecio(data.avanzados.proyeccionIngresos)}</span>
+                  <span className="reportes-card-value">{formatCurrency(data.avanzados.proyeccionIngresos)}</span>
                   <span className="reportes-card-hint">Basado en últimos 3 meses</span>
                 </div>
               </div>
@@ -249,7 +245,7 @@ export function ReportesClient({ data }: { data: ReportesData }) {
                 </div>
                 <div className="reportes-card-content">
                   <span className="reportes-card-label">Ingreso por Alumno</span>
-                  <span className="reportes-card-value">{formatPrecio(data.avanzados.ingresosPorAlumno)}</span>
+                  <span className="reportes-card-value">{formatCurrency(data.avanzados.ingresosPorAlumno)}</span>
                   <span className="reportes-card-hint">Promedio mensual</span>
                 </div>
               </div>
@@ -272,12 +268,12 @@ export function ReportesClient({ data }: { data: ReportesData }) {
             <div className="reportes-comparativa">
               <div className="reportes-comparativa-item">
                 <span className="reportes-comparativa-label">Este año</span>
-                <span className="reportes-comparativa-value">{formatPrecio(data.avanzados.comparativaAnual.ingresosEsteAño)}</span>
+                <span className="reportes-comparativa-value">{formatCurrency(data.avanzados.comparativaAnual.ingresosEsteAño)}</span>
               </div>
               <div className="reportes-comparativa-vs">vs</div>
               <div className="reportes-comparativa-item">
                 <span className="reportes-comparativa-label">Año anterior</span>
-                <span className="reportes-comparativa-value">{formatPrecio(data.avanzados.comparativaAnual.ingresosAñoAnterior)}</span>
+                <span className="reportes-comparativa-value">{formatCurrency(data.avanzados.comparativaAnual.ingresosAñoAnterior)}</span>
               </div>
               <div className="reportes-comparativa-result">
                 <span className={`reportes-comparativa-variacion ${data.avanzados.comparativaAnual.variacion >= 0 ? 'up' : 'down'}`}>

@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
           return forbidden('No tienes permiso para registrar pagos')
         }
 
-        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente: mesRaw, tipoPago, clasesEsperadas, profesorId: profesorIdParam } = parsed.data
+        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente: mesRaw, tipoPago, clasesEsperadas } = parsed.data
 
         // Normalize mesCorrespondiente to YYYY-MM format
         const mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -314,14 +314,11 @@ export async function POST(request: NextRequest) {
         // Si el alumno tiene saldo a favor, limpiar el saldo al crear el pago
         const saldoAnterior = Number(alumno.saldoAFavor) || 0
 
-        // El pago va al profesor que lo crea (userId), o se puede especificar otro
-        const profesorDelPago = profesorIdParam || userId
-
         const operaciones = [
           prisma.pago.create({
             data: {
               alumnoId,
-              profesorId: profesorDelPago,
+              profesorId: userId,
               ...(estudio && { estudioId: estudio.estudioId }),
               monto,
               fechaVencimiento: new Date(fechaVencimiento),

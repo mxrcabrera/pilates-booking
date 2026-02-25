@@ -10,6 +10,7 @@ import { SelectInput } from '@/components/select-input'
 import { Lock } from 'lucide-react'
 import type { Alumno, Pack } from '@/lib/types'
 import { PLAN_NAMES, DIAS_SEMANA_OPTIONS } from '@/lib/constants'
+import { formatCurrency } from '@/lib/format'
 
 type DialogStep = 'form' | 'seriesPrompt'
 
@@ -500,7 +501,7 @@ export function AlumnoDialog({
                           </div>
                         </div>
                         <div className="pack-option-price">
-                          ${parseFloat(pack.precio).toLocaleString('es-AR')}
+                          {formatCurrency(pack.precio)}
                         </div>
                       </div>
                     </button>
@@ -549,7 +550,7 @@ export function AlumnoDialog({
             <span className="form-label">Precio por Clase</span>
             <div className="precio-info-box">
               <div className="precio-info-amount">
-                ${parseFloat(precioPorClase).toLocaleString('es-AR')}
+                {formatCurrency(precioPorClase)}
               </div>
               <div className="precio-info-note">
                 Precio configurado en ajustes

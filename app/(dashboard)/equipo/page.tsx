@@ -1,8 +1,13 @@
+import type { Metadata } from 'next'
 import { getCurrentUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { getEffectiveFeatures } from '@/lib/plans'
 import { EquipoClient } from './equipo-client'
+
+export const metadata: Metadata = {
+  title: 'Equipo | Pilates Booking'
+}
 
 export default async function EquipoPage() {
   const userId = await getCurrentUser()

@@ -1,8 +1,13 @@
+import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { PlanesClient } from './planes-client'
 import { getDaysLeftInTrial, isTrialActive } from '@/lib/plans'
+
+export const metadata: Metadata = {
+  title: 'Planes | Pilates Booking'
+}
 
 export default async function PlanesPage() {
   const userId = await getCurrentUser()

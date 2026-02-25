@@ -42,7 +42,7 @@ export async function createToken(userId: string, role: string = 'PROFESOR') {
   return new SignJWT({ userId, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime('24h')
     .sign(getJwtSecret())
 }
 
@@ -61,7 +61,7 @@ export async function setAuthCookie(token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 días
+    maxAge: 60 * 60 * 24, // 24 hours
     path: '/',
   })
 }

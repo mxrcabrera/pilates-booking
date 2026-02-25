@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserContext } from '@/lib/auth'
+import { getUserContext, getOwnerFilter } from '@/lib/auth'
 import { startOfMonth, endOfMonth, subMonths, format, startOfYear, endOfYear, subYears } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { logger } from '@/lib/logger'
@@ -17,12 +17,9 @@ export async function GET(request: Request) {
       return unauthorized()
     }
 
-    const { userId, estudio } = context
+    const { userId } = context
 
-    // Filtro por estudio o profesor
-    const ownerFilter = estudio
-      ? { estudioId: estudio.estudioId }
-      : { profesorId: userId }
+    const ownerFilter = getOwnerFilter(context)
 
     // Verificar permisos del plan
     const user = await prisma.user.findUnique({

@@ -45,8 +45,8 @@ export function LoginForm() {
       return
     }
 
-    if (!password || password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+    if (!password || password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres')
       setIsLoading(false)
       return
     }
@@ -153,7 +153,7 @@ export function LoginForm() {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 className="auth-input"
-                placeholder="Min. 6 caracteres"
+                placeholder="Min. 8 caracteres"
                 disabled={isLoading}
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
               />

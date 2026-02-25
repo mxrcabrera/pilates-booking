@@ -11,12 +11,12 @@
 
 Pilates Booking is a functional multi-role class management system with solid core architecture (NextAuth, Prisma ORM, Zod validation, soft deletes). However, the codebase has **critical gaps in data integrity** (soft-delete filters missing in dashboard/reportes, removed studio members retaining access), **no CI pipeline** (code goes directly to production without automated checks), and **no production monitoring** (errors are invisible). The most impactful immediate actions are: fix deletedAt filtering, add CI, and integrate Sentry.
 
-| Severity | Count |
-|----------|-------|
-| 🔴 Critical | 12 |
-| 🟠 High | 14 |
-| 🟡 Medium | 22 |
-| 🔵 Low | 12 |
+| Severity | Total | Fixed | Skipped/Deferred | Open |
+|----------|-------|-------|------------------|------|
+| 🔴 Critical | 12 | 12 | 0 | 0 |
+| 🟠 High | 14 | 12 | 2 (H7, H13) | 0 |
+| 🟡 Medium | 22 | 0 | 0 | 22 |
+| 🔵 Low | 12 | 0 | 0 | 12 |
 
 ---
 
@@ -185,7 +185,7 @@ jobs:
 - **Description:** Soft-deleting a student only sets `deletedAt` on the Alumno record. Pending pagos and future reserved clases remain active.
 - **Business Impact:** Deleted students appear in pending payments list and have ghost reserved classes.
 - **Fix:** Wrap in transaction: soft-delete alumno + soft-delete pending pagos + cancel future clases.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (security audit C2, commit `9b02ef0`)
 
 ### H2: Hardcoded timezone offset (hora - 3)
 - **Phase:** 2 — Business Logic / 13 — i18n
@@ -193,7 +193,7 @@ jobs:
 - **Description:** Argentina UTC-3 offset is hardcoded as `hora - 3` in 5 locations. Can produce negative hours, doesn't account for server timezone, and breaks if business expands.
 - **Business Impact:** Classes could have wrong times if Netlify server region changes.
 - **Fix:** Use `date-fns-tz` with `'America/Argentina/Buenos_Aires'` timezone. Extract to `lib/dates/`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `ace8eee` — `lib/dates/index.ts` with `argentinaToUTC`, `getNowArgentinaHour`)
 
 ### H3: Alumno self-booking accepts unvalidated profesorId
 - **Phase:** 2 — Business Logic / 3 — Security
@@ -201,7 +201,7 @@ jobs:
 - **Description:** `profesorId` comes from request body (client-controlled). While slot existence is validated, an alumno could theoretically book with a profesor outside their studio.
 - **Business Impact:** Cross-studio booking if a student guesses a valid slot for another studio's profesor.
 - **Fix:** Verify that `profesorId` belongs to the alumno's estudio/profesor chain.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — validation at `reservar/route.ts:70-82`)
 
 ### H4: Recurring class creation skips capacity validation for future dates
 - **Phase:** 2 — Business Logic
@@ -209,7 +209,7 @@ jobs:
 - **Description:** Only the first date is checked for capacity. The 8 weeks of future classes are created via `createMany` without capacity checks.
 - **Business Impact:** Overbooking on future dates where slots are already full.
 - **Fix:** Check capacity for each future date before bulk creation, or at minimum validate and skip dates that conflict.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — per-date capacity check at `clases/route.ts:580-607`)
 
 ### H5: Missing transaction in alumno update with pack change
 - **Phase:** 4 — Database
@@ -217,7 +217,7 @@ jobs:
 - **Description:** Pack change with proration reads pack, counts classes, reads last payment, and updates alumno in separate queries without a transaction.
 - **Business Impact:** If any query fails mid-way, saldo_a_favor could be left in an inconsistent state. Financial data corruption.
 - **Fix:** Wrap the entire pack change logic in `prisma.$transaction()`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — transaction at `alumnos/route.ts:292`)
 
 ### H6: Estado/asistencia fields are unconstrained strings (no DB enum)
 - **Phase:** 4 — Database
@@ -225,7 +225,7 @@ jobs:
 - **Description:** Status fields stored as plain `String` without CHECK constraints or Prisma enums. Any arbitrary string can be persisted.
 - **Business Impact:** Invalid states can be stored, breaking downstream logic that assumes known values.
 - **Fix:** Define Prisma enums: `enum ClaseEstado { reservada completada cancelada }` etc.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — enums at `schema.prisma:230-246`)
 
 ### H7: allowDangerousEmailAccountLinking enabled
 - **Phase:** 3 — Security
@@ -233,7 +233,7 @@ jobs:
 - **Description:** This NextAuth option auto-links accounts by email. An attacker could pre-register with a victim's email via credentials, then when the victim logs in via Google, the accounts merge.
 - **Business Impact:** Account takeover vector if the attacker registers before the legitimate user.
 - **Fix:** Add email verification before linking, or disable this flag and handle account linking explicitly.
-- **Status:** 🔲 Open
+- **Status:** ⏭️ Skipped — needs human review (requires email verification flow)
 
 ### H8: No global-error.tsx for root layout failures
 - **Phase:** 12 — Error Handling
@@ -241,7 +241,7 @@ jobs:
 - **Description:** `error.tsx` exists but `global-error.tsx` does not. Root layout errors show a blank page.
 - **Business Impact:** If fonts fail to load or a provider crashes, users see a white screen with no recovery option.
 - **Fix:** Create `app/global-error.tsx` with a basic HTML layout and reset button.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — `app/global-error.tsx` created)
 
 ### H9: No health check endpoint
 - **Phase:** 12 — Error Handling
@@ -249,7 +249,7 @@ jobs:
 - **Description:** No endpoint to verify app and database health.
 - **Business Impact:** Monitoring services cannot detect when the database is down but the app is "healthy" on Netlify.
 - **Fix:** Create `app/api/health/route.ts` with `prisma.$queryRaw('SELECT 1')`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` + security M6 `595542d`)
 
 ### H10: External service calls have no retry logic
 - **Phase:** 12 — Error Handling
@@ -257,7 +257,7 @@ jobs:
 - **Description:** Google Calendar and Resend API calls use single `fetch` without retry. Transient failures are lost silently (`.catch(() => {})`).
 - **Business Impact:** Calendar events and notification emails silently disappear on network hiccups.
 - **Fix:** Implement `fetchWithRetry()` wrapper with exponential backoff. Log when retries are exhausted.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — `lib/fetch-retry.ts` + integrated in google-calendar.ts, email.ts)
 
 ### H11: PLAN_NAMES constant duplicated in 7 files with inconsistencies
 - **Phase:** 6 — UI Components
@@ -265,7 +265,7 @@ jobs:
 - **Description:** Each file defines its own `PLAN_NAMES` object. At least one inconsistency exists: `alumnos-client.tsx` maps ESTUDIO to 'Estudio' while `pagos-client.tsx` maps it to 'Max'.
 - **Business Impact:** Users see different plan names on different pages. Confusing and unprofessional.
 - **Fix:** Extract to `lib/constants.ts` and import everywhere.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — `lib/constants.ts:28-33`, imported in all 7 files)
 
 ### H12: Form labels not associated with inputs (accessibility)
 - **Phase:** 7 — UX & Accessibility
@@ -273,7 +273,7 @@ jobs:
 - **Description:** Most `<label>` elements lack `htmlFor` attributes and inputs lack matching `id`s. Only 21 `htmlFor` usages across 8 files, while dozens of inputs exist without label associations.
 - **Business Impact:** Screen readers cannot associate labels with inputs. Clicking labels does not focus inputs. WCAG failure.
 - **Fix:** Add `htmlFor` to every label and matching `id` to every input element.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `cb4127b` — htmlFor/id pairs across form components)
 
 ### H13: Recharts not lazy-loaded
 - **Phase:** 8 — Performance
@@ -281,7 +281,7 @@ jobs:
 - **Description:** Recharts (~300KB+ bundled) is loaded for every page even if the user never visits reports.
 - **Business Impact:** Slower initial page load for all users.
 - **Fix:** `const Charts = dynamic(() => import('@/components/charts'), { ssr: false })`.
-- **Status:** 🔲 Open
+- **Status:** ⏭️ Deferred to Phase 17 refactor
 
 ### H14: Netlify build does not run lint/typecheck/tests
 - **Phase:** 15 — CI/CD
@@ -289,7 +289,7 @@ jobs:
 - **Description:** Build command is only `npm run build` (prisma generate + next build). No linting, type checking, or test execution.
 - **Business Impact:** TypeScript errors and failing tests can be deployed to production.
 - **Fix:** Change to: `command = "npm run lint && npx tsc --noEmit && npm test -- --passWithNoTests && npm run build"`.
-- **Status:** 🔲 Open
+- **Status:** ✅ Fixed (commit `7396199` — netlify.toml updated)
 
 ---
 

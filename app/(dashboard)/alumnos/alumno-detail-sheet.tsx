@@ -6,6 +6,7 @@ import { toggleAlumnoStatus, deleteAlumno } from './actions'
 import { resetPasswordAlumnoAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { DialogBase } from '@/components/ui/dialog-base'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import type { Alumno } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
 import { getPaymentStatus, getStatusText, getClasesRestantesDetalle } from '@/lib/alumno-utils'
@@ -26,6 +27,7 @@ export function AlumnoDetailSheet({
   onEdit: () => void
 }) {
   const [isLoading, setIsLoading] = useState<'toggle' | 'delete' | 'resetPassword' | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -46,8 +48,12 @@ export function AlumnoDetailSheet({
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirm(`¿Estás segura de eliminar a ${alumno.nombre}? Esta acción no se puede deshacer.`)) return
+  const handleDelete = () => {
+    setShowDeleteConfirm(true)
+  }
+
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false)
     setIsLoading('delete')
     try {
       await deleteAlumno(alumno.id)
@@ -191,6 +197,17 @@ export function AlumnoDetailSheet({
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="¿Eliminar alumno?"
+        description={`¿Estas segura de eliminar a ${alumno.nombre}? Esta accion no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isLoading === 'delete'}
+      />
 
       <DialogBase
         isOpen={showResetDialog}

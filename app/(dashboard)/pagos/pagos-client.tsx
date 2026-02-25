@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, Check, Clock, Trash2, DollarSign, Search, X, ChevronDown, Download, Lock } from 'lucide-react'
 import { PagoDialog } from './pago-dialog'
 import { useToast } from '@/components/ui/toast'
@@ -77,7 +77,7 @@ export function PagosClient({
     const completadas = pago.clasesCompletadas || 0
     const esperadas = pago.clasesEsperadas
     const restantes = esperadas - completadas
-    if (restantes <= 0) return `${completadas}/${esperadas} clases ✓`
+    if (restantes <= 0) return `${completadas}/${esperadas} clases (completo)`
     return `${completadas}/${esperadas} clases`
   }
 
@@ -136,11 +136,9 @@ export function PagosClient({
   const remaining = processedPagos.length - visibleCount
 
   const filterKey = `${filter}-${search}`
-  const [lastFilterKey, setLastFilterKey] = useState(filterKey)
-  if (filterKey !== lastFilterKey) {
+  useEffect(() => {
     setVisibleCount(10)
-    setLastFilterKey(filterKey)
-  }
+  }, [filterKey])
 
   const pendientes = pagos.filter(p => p.estado === 'pendiente').length
   const pagadosCount = pagos.filter(p => p.estado === 'pagado').length

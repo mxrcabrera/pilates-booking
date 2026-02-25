@@ -32,17 +32,14 @@ test.describe('Pagos - Complete CRUD Flow', () => {
 
     if (await pendientesTab.isVisible()) {
       await pendientesTab.click()
-      await page.waitForTimeout(300)
     }
 
     if (await pagadosTab.isVisible()) {
       await pagadosTab.click()
-      await page.waitForTimeout(300)
     }
 
     if (await todosTab.isVisible()) {
       await todosTab.click()
-      await page.waitForTimeout(300)
     }
   })
 
@@ -51,7 +48,6 @@ test.describe('Pagos - Complete CRUD Flow', () => {
 
     if (await alumnoFilter.isVisible()) {
       await alumnoFilter.click()
-      await page.waitForTimeout(300)
       // Select first option
       const option = page.locator('option').nth(1)
       if (await option.isVisible()) {
@@ -65,7 +61,6 @@ test.describe('Pagos - Complete CRUD Flow', () => {
 
     if (await monthFilter.isVisible()) {
       await monthFilter.click()
-      await page.waitForTimeout(300)
     }
   })
 

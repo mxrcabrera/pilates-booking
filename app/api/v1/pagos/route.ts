@@ -275,7 +275,21 @@ export async function POST(request: NextRequest) {
           return forbidden('No tienes permiso para registrar pagos')
         }
 
-        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente, tipoPago, clasesEsperadas, profesorId: profesorIdParam } = parsed.data
+        const { alumnoId, monto, fechaVencimiento, mesCorrespondiente: mesRaw, tipoPago, clasesEsperadas, profesorId: profesorIdParam } = parsed.data
+
+        // Normalize mesCorrespondiente to YYYY-MM format
+        const mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                              'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+        let mesCorrespondiente = mesRaw
+        const matchYYYYMM = mesRaw.match(/^(\d{4})-(\d{2})$/)
+        if (!matchYYYYMM) {
+          const parts = mesRaw.toLowerCase().split(' ')
+          const monthIdx = mesesNombres.indexOf(parts[0])
+          const year = parseInt(parts[1])
+          if (monthIdx >= 0 && year) {
+            mesCorrespondiente = `${year}-${(monthIdx + 1).toString().padStart(2, '0')}`
+          }
+        }
 
         // Verificar que el alumno pertenece al estudio/profesor
         const alumno = await prisma.alumno.findFirst({
@@ -348,7 +362,7 @@ export async function POST(request: NextRequest) {
             clasesCompletadas: 0
           },
           saldoAplicado: saldoAnterior
-        })
+        }, { status: 201 })
       }
 
       case 'marcarPagado': {

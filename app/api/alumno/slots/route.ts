@@ -108,7 +108,8 @@ export async function GET(request: NextRequest) {
           estado: { not: 'cancelada' },
           deletedAt: null
         },
-        select: { fecha: true, horaInicio: true, alumnoId: true, profesorId: true }
+        select: { fecha: true, horaInicio: true, alumnoId: true, profesorId: true },
+        take: 1000
       })
     ])
 

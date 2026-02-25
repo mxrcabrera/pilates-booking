@@ -4,9 +4,6 @@ import { prisma } from '../prisma'
 import { authConfig } from './auth.config'
 import { getTrialEndDate } from '../plans'
 
-// NextAuth types don't include custom fields like role, accessToken, refreshToken
-// These are added via type augmentation in types/next-auth.d.ts but callbacks need explicit casting
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
@@ -24,7 +21,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             data: {
               email: profile.email,
               nombre: profile.name || profile.email.split('@')[0],
-              image: (profile as any).picture || null,
+              image: (profile as { picture?: string }).picture || null,
               role: 'PROFESOR',
               plan: 'FREE',
               trialEndsAt: getTrialEndDate(),
@@ -44,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Primera vez que se crea el token (después del sign in)
       if (user && user.id) {
         token.sub = user.id
-        token.role = (user as any).role || 'PROFESOR'
+        token.role = (user as { role?: string }).role || 'PROFESOR'
       }
 
       // Guardar tokens de Google para Calendar API
@@ -62,13 +59,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.sub
       }
       if (token.role) {
-        (session.user as any).role = token.role
+        session.user.role = token.role as string
       }
       if (token.accessToken) {
-        (session as any).accessToken = token.accessToken
+        session.accessToken = token.accessToken as string
       }
       if (token.refreshToken) {
-        (session as any).refreshToken = token.refreshToken
+        session.refreshToken = token.refreshToken as string
       }
       return session
     },

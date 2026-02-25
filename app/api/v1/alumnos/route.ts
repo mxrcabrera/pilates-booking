@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
         })
 
         invalidateAlumnos()
-        return NextResponse.json({ success: true, alumno })
+        return NextResponse.json({ success: true, alumno }, { status: 201 })
       }
 
       case 'update': {

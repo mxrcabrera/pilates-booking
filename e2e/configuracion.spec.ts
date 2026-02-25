@@ -24,7 +24,7 @@ test.describe('Configuracion - Complete Flow', () => {
         const saveBtn = page.getByRole('button', { name: /guardar/i }).first()
         if (await saveBtn.isVisible()) {
           await saveBtn.click()
-          await page.waitForTimeout(2000)
+          await page.waitForLoadState('networkidle')
         }
 
         // Reload page and verify
@@ -126,7 +126,7 @@ test.describe('Configuracion - Complete Flow', () => {
       const saveBtn = page.getByRole('button', { name: /guardar/i }).first()
       if (await saveBtn.isVisible()) {
         await saveBtn.click()
-        await page.waitForTimeout(2000)
+        await page.waitForLoadState('networkidle')
       }
 
       // Restore original
@@ -147,11 +147,11 @@ test.describe('Configuracion - Complete Flow', () => {
 
       // Toggle
       await firstToggle.click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState('networkidle')
 
       // Toggle back
       await firstToggle.click()
-      await page.waitForTimeout(500)
+      await page.waitForLoadState('networkidle')
     }
   })
 

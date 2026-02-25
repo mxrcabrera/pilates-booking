@@ -17,7 +17,6 @@ test.describe('Clases - Complete CRUD Flow', () => {
     if (await alumnoSelect.isVisible()) {
       // Use selectOption with index for native select (first real alumno, not placeholder)
       await alumnoSelect.selectOption({ index: 1 })
-      await page.waitForTimeout(300)
     }
 
     // Set date to tomorrow to avoid "at least 1 hour in advance" error
@@ -40,7 +39,6 @@ test.describe('Clases - Complete CRUD Flow', () => {
     const pruebaBtn = page.getByRole('button', { name: /prueba/i })
     if (await pruebaBtn.isVisible()) {
       await pruebaBtn.click()
-      await page.waitForTimeout(300)
     }
 
     // Submit
@@ -48,7 +46,7 @@ test.describe('Clases - Complete CRUD Flow', () => {
     await submitButton.click()
 
     // Wait for dialog to close or show error
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('networkidle')
     const dialogStillOpen = await page.locator('[role="dialog"], .dialog').isVisible()
 
     if (!dialogStillOpen) {
@@ -89,19 +87,16 @@ test.describe('Clases - Complete CRUD Flow', () => {
     // Navigate next
     if (await nextBtn.isVisible()) {
       await nextBtn.click()
-      await page.waitForTimeout(300)
     }
 
     // Navigate prev
     if (await prevBtn.isVisible()) {
       await prevBtn.click()
-      await page.waitForTimeout(300)
     }
 
     // Go to today
     if (await todayBtn.isVisible()) {
       await todayBtn.click()
-      await page.waitForTimeout(300)
     }
 
     // Page should still work
@@ -132,12 +127,10 @@ test.describe('Clases - Complete CRUD Flow', () => {
 
     if (await manianaBtn.isVisible()) {
       await manianaBtn.click()
-      await page.waitForTimeout(300)
     }
 
     if (await tardeBtn.isVisible()) {
       await tardeBtn.click()
-      await page.waitForTimeout(300)
     }
   })
 })

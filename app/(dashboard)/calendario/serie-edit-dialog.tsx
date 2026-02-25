@@ -6,16 +6,7 @@ import { useToast } from '@/components/ui/toast'
 import { DialogBase } from '@/components/ui/dialog-base'
 import { getErrorMessage } from '@/lib/utils'
 import type { Clase } from '@/lib/types'
-
-const DIAS_SEMANA = [
-  { value: 1, label: 'Lun' },
-  { value: 2, label: 'Mar' },
-  { value: 3, label: 'Mie' },
-  { value: 4, label: 'Jue' },
-  { value: 5, label: 'Vie' },
-  { value: 6, label: 'Sab' },
-  { value: 0, label: 'Dom' },
-]
+import { DIAS_SEMANA_OPTIONS } from '@/lib/constants'
 
 type Scope = 'future' | 'all_unattended'
 
@@ -128,7 +119,7 @@ export function SerieEditDialog({
         <div className="form-group">
           <label>Días de clase</label>
           <div className="dias-grid compact">
-            {DIAS_SEMANA.map(dia => (
+            {DIAS_SEMANA_OPTIONS.map(dia => (
               <label key={dia.value} className="dia-option" htmlFor={`serie-dia-${dia.value}`}>
                 <input
                   type="checkbox"
@@ -137,7 +128,7 @@ export function SerieEditDialog({
                   onChange={() => handleDiaToggle(dia.value)}
                   disabled={isLoading}
                 />
-                <span>{dia.label}</span>
+                <span>{dia.short}</span>
               </label>
             ))}
           </div>

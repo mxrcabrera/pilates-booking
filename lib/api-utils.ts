@@ -1,3 +1,11 @@
+/**
+ * API Response Conventions:
+ * - Success with entity: { success: true, [entity]: {...} }
+ * - Success with list: { ...pagination, [entities]: [...] }
+ * - Success action: { success: true }
+ * - Error: { error: "message" } with appropriate HTTP status
+ * - Creates return 201, deletes return 200, updates return 200
+ */
 import { NextResponse } from 'next/server'
 import { logger } from './logger'
 

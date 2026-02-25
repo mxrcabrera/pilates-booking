@@ -31,6 +31,11 @@ const raleway = Raleway({
 export const metadata: Metadata = {
   title: "Pilates Booking",
   description: "Sistema de gestión para clases de pilates",
+  openGraph: {
+    title: "Pilates Booking",
+    description: "Sistema de gestión para clases de pilates",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {

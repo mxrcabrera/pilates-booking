@@ -10,10 +10,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log error to console in development only
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Application error:', error)
-    }
+    console.error('Application error:', error)
   }, [error])
 
   return (

@@ -7,6 +7,10 @@ import { invalidatePacks, invalidateHorarios, invalidateConfig } from '@/lib/cac
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
 import { canUseFeature, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
 import {
+  saveHorarioSchema,
+  saveHorariosBatchSchema,
+  deleteHorarioSchema,
+  toggleHorarioSchema,
   savePackSchema,
   deletePackSchema,
   updateProfileSchema,
@@ -109,7 +113,11 @@ export async function POST(request: NextRequest) {
           return forbidden('No tienes permiso para modificar horarios')
         }
 
-        const { id, diaSemana, horaInicio, horaFin, esManiana } = data
+        const parsedHorario = saveHorarioSchema.safeParse(data)
+        if (!parsedHorario.success) {
+          return badRequest(parsedHorario.error.issues[0].message)
+        }
+        const { id, diaSemana, horaInicio, horaFin, esManiana } = parsedHorario.data
 
         // Obtener horarios por defecto configurados y plan
         const configData = estudio
@@ -222,13 +230,11 @@ export async function POST(request: NextRequest) {
           return forbidden('No tienes permiso para modificar horarios')
         }
 
-        const { horarios: horariosData } = data as {
-          horarios: Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }>
+        const parsedBatch = saveHorariosBatchSchema.safeParse(data)
+        if (!parsedBatch.success) {
+          return badRequest(parsedBatch.error.issues[0].message)
         }
-
-        if (!horariosData || !Array.isArray(horariosData) || horariosData.length === 0) {
-          return NextResponse.json({ error: 'No hay horarios para crear' }, { status: 400 })
-        }
+        const { horarios: horariosData } = parsedBatch.data
 
         // Verificar que el plan permita configuración de horarios
         const configBatch = estudio
@@ -308,7 +314,11 @@ export async function POST(request: NextRequest) {
           return forbidden('No tienes permiso para eliminar horarios')
         }
 
-        const { id } = data
+        const parsedDeleteHorario = deleteHorarioSchema.safeParse(data)
+        if (!parsedDeleteHorario.success) {
+          return badRequest(parsedDeleteHorario.error.issues[0].message)
+        }
+        const { id } = parsedDeleteHorario.data
 
         // Validar que el horario pertenece al estudio/profesor
         const horario = await prisma.horarioDisponible.findFirst({
@@ -333,7 +343,11 @@ export async function POST(request: NextRequest) {
           return forbidden('No tienes permiso para modificar horarios')
         }
 
-        const { id } = data
+        const parsedToggle = toggleHorarioSchema.safeParse(data)
+        if (!parsedToggle.success) {
+          return badRequest(parsedToggle.error.issues[0].message)
+        }
+        const { id } = parsedToggle.data
 
         // Validar que el horario pertenece al estudio/profesor
         const horario = await prisma.horarioDisponible.findFirst({

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Calendar, Clock, ChevronRight, AlertCircle, Check, Users } from 'lucide-react'
 import { PageLoading } from '@/components/ui/loading'
 import { EmptyState } from '@/components/ui/empty-state'
+import { DIAS_SEMANA } from '@/lib/constants'
 
 type Profesor = { id: string; nombre: string }
 
@@ -29,8 +30,6 @@ type SlotsResponse = {
 }
 
 type Message = { type: 'success' | 'error'; text: string }
-
-const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab']
 
 function formatFecha(fechaStr: string): string {
   const date = new Date(fechaStr + 'T00:00:00')

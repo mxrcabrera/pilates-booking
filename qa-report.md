@@ -1,9 +1,9 @@
 # QA Report — Pilates Booking
 
-**Date:** 2026-02-24
+**Date:** 2026-02-24 (updated 2026-02-25)
 **Reviewed by:** QA Orchestrator (Claude Opus 4.6)
 **Stack:** Next.js 15, React 19, Prisma 6, PostgreSQL (Supabase), NextAuth v5, Custom CSS, Netlify
-**Scope:** Full review (Phases 0–15)
+**Scope:** Full review (Phases 0–15) + Phase 19 post-fix review
 
 ---
 
@@ -20,6 +20,8 @@ Pilates Booking is a functional multi-role class management system with solid co
 | **Total** | **60** | **56** | **4** | **0** |
 
 **Phase 16B Verification (2026-02-25):** ✅ tsc clean, ✅ eslint clean, ✅ build passes
+**Phase 19 Post-Fix Review (2026-02-25):** 14 findings found, 14/14 fixed
+**Phase 16B Re-Verification (2026-02-26):** ✅ tsc clean, ✅ eslint clean (0 errors), ✅ build passes
 
 ---
 
@@ -559,6 +561,113 @@ jobs:
 - **Description:** Only logs in development mode.
 - **Fix:** Integrate with Sentry when C9 is implemented.
 - **Status:** ✅ Fixed (addressed with C9 Sentry integration)
+
+---
+
+## Phase 19 — Post-Fix Review Findings
+
+14 issues discovered during post-fix review of Phases 0–15 fixes. All resolved.
+
+| # | Finding | File(s) | Commit |
+|---|---------|---------|--------|
+| P19-1 | `/api/v1/alumno` blocked by profesor route guard in middleware | `middleware.ts` | `09565b2` |
+| P19-2 | `AUTH_SECRET` env var not validated at middleware startup | `middleware.ts` | `9c23ad4` |
+| P19-3 | `bulkDeleteClase` action missing Zod schema with UUID validation | `lib/schemas/clase.schema.ts` | `9b64609` |
+| P19-4 | Constants defined in `lib/constants.ts` not wired to all consumers | Multiple | `ce34f1e` |
+| P19-5 | CSP `unsafe-eval` included in production (should be dev-only) | `middleware.ts` | `746024b` |
+| P19-6 | CSV export formula injection regex missing LF (`\n`) character | CSV export utils | `01530a7` |
+| P19-7 | `bulkDelete` ID arrays unbounded — no max length validation | `lib/schemas/*.schema.ts` | `0902f6a` |
+| P19-8 | `DIAS_SEMANA_OPTIONS` short labels missing Spanish accents | `lib/constants.ts` | `df05c04` |
+| P19-9 | `MESES` duplicated locally instead of importing from `lib/constants` | Form components | `3eac8c7` |
+| P19-10 | Auth schemas not normalizing email (missing `toLowerCase`/`trim`) | `lib/schemas/auth.schema.ts` | `94ec74f` |
+| P19-11 | Manual `toLocaleString('es-AR')` instead of `formatCurrency()` | `pago-dialog.tsx`, `planes-client.tsx`, others | `0191d0d`, `dc9eaee` |
+| P19-12 | Orphaned `ownerFilter` comments left after L2 refactor | `app/api/v1/alumnos/route.ts` | `ea754d1` |
+| P19-13 | Unused `currentUserId` prop passed to calendario components | `calendario/` components | `57c515d` |
+| P19-14 | Error boundary props missing `digest` type (Next.js requirement) | `app/error.tsx` | `1ed5b98` |
+
+### P19-1: Alumno API routes blocked by profesor middleware guard
+- **Severity:** 🔴 Blocker
+- **Description:** After moving alumno routes to `/api/v1/alumno/` (L8 fix), the middleware profesor guard blocked them because it matched the `/api/v1/` prefix without excluding alumno paths.
+- **Fix:** Added exclusion for `/api/v1/alumno` in the profesor route check.
+- **Status:** ✅ Fixed
+
+### P19-2: AUTH_SECRET not validated at startup
+- **Severity:** 🟠 High
+- **Description:** Middleware used `process.env.AUTH_SECRET` without validation. Missing value would cause cryptic JWT errors at runtime.
+- **Fix:** Added `getRequiredEnv()` helper that throws a clear error if env var is missing.
+- **Status:** ✅ Fixed
+
+### P19-3: Missing bulkDeleteClase Zod schema
+- **Severity:** 🟡 Medium
+- **Description:** Bulk delete for clases accepted unvalidated IDs from client. No UUID format validation.
+- **Fix:** Added `bulkDeleteClaseSchema` with `z.array(z.string().uuid())`.
+- **Status:** ✅ Fixed
+
+### P19-4: Constants not wired to consumers
+- **Severity:** 🟡 Medium
+- **Description:** Constants extracted to `lib/constants.ts` (L7 fix) but several components still used local magic numbers.
+- **Fix:** Replaced remaining magic numbers with constant imports.
+- **Status:** ✅ Fixed
+
+### P19-5: CSP unsafe-eval in production
+- **Severity:** 🟠 High
+- **Description:** Content Security Policy included `unsafe-eval` in all environments. Should only be present in development for React Fast Refresh.
+- **Fix:** Conditionally include `unsafe-eval` only when `NODE_ENV === 'development'`.
+- **Status:** ✅ Fixed
+
+### P19-6: CSV formula injection incomplete
+- **Severity:** 🟡 Medium
+- **Description:** CSV export sanitization regex caught `\r` but not `\n`, allowing formula injection via newline.
+- **Fix:** Added `\n` to the prevention regex.
+- **Status:** ✅ Fixed
+
+### P19-7: Unbounded bulk delete arrays
+- **Severity:** 🟡 Medium
+- **Description:** Bulk delete schemas accepted unlimited IDs, enabling potential DoS via massive arrays.
+- **Fix:** Added `.max(100)` to all bulk delete ID array schemas.
+- **Status:** ✅ Fixed
+
+### P19-8: Missing accents in day labels
+- **Severity:** 🔵 Low
+- **Description:** `DIAS_SEMANA_OPTIONS` short labels like "Mie" and "Sab" were missing accents ("Mi\u00e9", "S\u00e1b").
+- **Fix:** Added correct Spanish accents.
+- **Status:** ✅ Fixed
+
+### P19-9: MESES duplicated locally
+- **Severity:** 🔵 Low
+- **Description:** Month names array duplicated in form components instead of importing from `lib/constants`.
+- **Fix:** Removed local duplicates, imported from `lib/constants`.
+- **Status:** ✅ Fixed
+
+### P19-10: Email not normalized in auth schemas
+- **Severity:** 🟠 High
+- **Description:** Login/signup schemas did not normalize email input. Users could register with "User@Email.com" and fail to login with "user@email.com".
+- **Fix:** Added `.toLowerCase().trim()` transforms to email fields in auth Zod schemas.
+- **Status:** ✅ Fixed
+
+### P19-11: Manual currency formatting instead of formatCurrency()
+- **Severity:** 🟡 Medium
+- **Description:** Several components used `$${value.toLocaleString('es-AR')}` instead of the centralized `formatCurrency()` from `lib/format.ts`.
+- **Fix:** Replaced all manual formatting with `formatCurrency()` across pago-dialog, planes-client, alumno-dialog, and packs-section.
+- **Status:** ✅ Fixed (2 commits)
+
+### P19-12: Orphaned comments from L2 refactor
+- **Severity:** 🔵 Low
+- **Description:** After extracting `getOwnerFilter()`, old `ownerFilter` comments remained in alumnos route.
+- **Fix:** Removed orphaned comments.
+- **Status:** ✅ Fixed
+
+### P19-13: Unused currentUserId prop in calendario
+- **Severity:** 🔵 Low
+- **Description:** `currentUserId` prop was passed to calendario components but never used after an earlier refactor.
+- **Fix:** Removed the prop from component interfaces and call sites.
+- **Status:** ✅ Fixed
+
+### P19-14: Error boundary missing digest type
+- **Severity:** 🟡 Medium
+- **Description:** Next.js error boundaries receive `error: Error & { digest?: string }` but the component typed it as plain `Error`, causing a TypeScript error in strict mode.
+- **Fix:** Added `{ digest?: string }` to the error type intersection.
+- **Status:** ✅ Fixed
 
 ---
 

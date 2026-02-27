@@ -21,6 +21,7 @@ Pilates Booking is a functional multi-role class management system with solid co
 
 **Phase 16B Verification (2026-02-25):** ✅ tsc clean, ✅ eslint clean, ✅ build passes
 **Phase 19 Post-Fix Review (2026-02-25):** 14 findings found, 14/14 fixed
+**Phase 19 Review (2026-02-26):** 1 regression found in P19-1 (path prefix bug), fixed in P19-1b
 **Phase 16B Re-Verification (2026-02-26):** ✅ tsc clean, ✅ eslint clean (0 errors), ✅ build passes
 
 ---
@@ -570,7 +571,7 @@ jobs:
 
 | # | Finding | File(s) | Commit |
 |---|---------|---------|--------|
-| P19-1 | `/api/v1/alumno` blocked by profesor route guard in middleware | `middleware.ts` | `09565b2` |
+| P19-1 | `/api/v1/alumno` blocked by profesor route guard in middleware | `middleware.ts` | `09565b2`, `f497a69` |
 | P19-2 | `AUTH_SECRET` env var not validated at middleware startup | `middleware.ts` | `9c23ad4` |
 | P19-3 | `bulkDeleteClase` action missing Zod schema with UUID validation | `lib/schemas/clase.schema.ts` | `9b64609` |
 | P19-4 | Constants defined in `lib/constants.ts` not wired to all consumers | Multiple | `ce34f1e` |
@@ -589,7 +590,8 @@ jobs:
 - **Severity:** 🔴 Blocker
 - **Description:** After moving alumno routes to `/api/v1/alumno/` (L8 fix), the middleware profesor guard blocked them because it matched the `/api/v1/` prefix without excluding alumno paths.
 - **Fix:** Added exclusion for `/api/v1/alumno` in the profesor route check.
-- **Status:** ✅ Fixed
+- **Regression (P19-1b):** The exclusion `!pathname.startsWith('/api/v1/alumno')` also matched `/api/v1/alumnos` (plural, profesor route) because `startsWith` is a prefix match. This allowed ALUMNO users to bypass the role guard on the profesor's student management endpoint. Fixed by using trailing slash: `/api/v1/alumno/` (`f497a69`).
+- **Status:** ✅ Fixed (2 commits)
 
 ### P19-2: AUTH_SECRET not validated at startup
 - **Severity:** 🟠 High

@@ -7,6 +7,7 @@ import { DialogBase } from '@/components/ui/dialog-base'
 import { SelectInput } from '@/components/select-input'
 import type { Pago, AlumnoPago } from '@/lib/types'
 import { MESES } from '@/lib/constants'
+import { formatCurrency } from '@/lib/format'
 import { getErrorMessage } from '@/lib/utils'
 
 export function PagoDialog({
@@ -212,7 +213,7 @@ export function PagoDialog({
               {saldoAFavor > 0 ? (
                 <>
                   <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Pack ${precioBase.toLocaleString('es-AR')} - Saldo ${saldoAFavor.toLocaleString('es-AR')} = <strong style={{ color: '#10b981' }}>${parseFloat(monto).toLocaleString('es-AR')}</strong>
+                    Pack {formatCurrency(precioBase)} - Saldo {formatCurrency(saldoAFavor)} = <strong style={{ color: '#10b981' }}>{formatCurrency(monto)}</strong>
                   </div>
                   <div style={{ color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem' }}>
                     Saldo a favor aplicado
@@ -221,7 +222,7 @@ export function PagoDialog({
               ) : (
                 <>
                   <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Pack ${precioBase.toLocaleString('es-AR')} + Debe ${Math.abs(saldoAFavor).toLocaleString('es-AR')} = <strong style={{ color: '#ef4444' }}>${parseFloat(monto).toLocaleString('es-AR')}</strong>
+                    Pack {formatCurrency(precioBase)} + Debe {formatCurrency(Math.abs(saldoAFavor))} = <strong style={{ color: '#ef4444' }}>{formatCurrency(monto)}</strong>
                   </div>
                   <div style={{ color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.25rem' }}>
                     Deuda de ciclo anterior

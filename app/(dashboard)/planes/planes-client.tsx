@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Check, Crown, Zap, Building2, Sparkles, Clock, Mail, ChevronDown } from 'lucide-react'
 import { PLAN_CONFIGS } from '@/lib/plans'
+import { formatCurrency } from '@/lib/format'
 import type { PlanType } from '@prisma/client'
 
 type Props = {
@@ -59,7 +60,7 @@ const FEATURE_LABELS: Record<string, string> = {
 function formatPrice(price: number): string {
   if (price === 0) return 'Gratis'
   if (price === -1) return 'A convenir'
-  return `$${price.toLocaleString('es-AR')}`
+  return formatCurrency(price)
 }
 
 export function PlanesClient({ userPlan, inTrial, trialDaysLeft }: Props) {

@@ -143,8 +143,8 @@ export async function middleware(request: NextRequest) {
   // ===========================================
 
   // Rutas de ALUMNO - Solo para rol ALUMNO
-  // Note: Use exact /alumno path to avoid matching /alumnos (profesor route)
-  if (pathname === '/alumno' || pathname.startsWith('/alumno/') || pathname.startsWith('/api/v1/alumno')) {
+  // Note: Use exact /alumno path and trailing slash to avoid matching /alumnos (profesor route)
+  if (pathname === '/alumno' || pathname.startsWith('/alumno/') || pathname.startsWith('/api/v1/alumno/')) {
     if (userRole && userRole !== 'ALUMNO') {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Acceso denegado', redirect: '/dashboard' }, { status: 403 })
@@ -159,7 +159,7 @@ export async function middleware(request: NextRequest) {
 
   const isProfesorRoute = profesorPaths.some(path => pathname.startsWith(path))
   const isProfesorApi = profesorApiPaths.some(path => pathname.startsWith(path))
-    && !pathname.startsWith('/api/v1/alumno')
+    && !pathname.startsWith('/api/v1/alumno/')
 
   if (isProfesorRoute || isProfesorApi) {
     if (userRole && userRole === 'ALUMNO') {

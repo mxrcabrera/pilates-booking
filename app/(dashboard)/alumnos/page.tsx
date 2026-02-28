@@ -16,7 +16,7 @@ export default function AlumnosPage() {
     return (
       <div className="page-container">
         <div className="content-card page-error-state">
-          <p className="page-error-text">Error: {error}</p>
+          <p className="page-error-text" role="alert">Error: {error}</p>
         </div>
       </div>
     )

@@ -1,10 +1,14 @@
 /**
- * Rate limiting en memoria para proteger endpoints de abuso.
+ * In-memory rate limiting to protect endpoints from abuse.
  *
  * WARNING: In-memory only — does NOT work across multiple serverless
  * instances (Vercel, Netlify Functions). Each cold start gets a fresh Map.
  * For distributed rate limiting, replace with Upstash Redis:
  *   https://upstash.com/docs/oss/sdks/ts/ratelimit/overview
+ *
+ * DEFERRED (M4): Migrating to Upstash Redis requires infrastructure
+ * decision. Window constants are defined in lib/constants.ts
+ * (RATE_LIMIT_WINDOW_MS). See qa-report.md for tracking.
  */
 
 type RateLimitRecord = {

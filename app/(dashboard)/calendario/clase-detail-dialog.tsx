@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { DialogBase } from '@/components/ui/dialog-base'
 import type { Clase } from '@/lib/types'
-import { DIAS_SEMANA_COMPLETO, ESTADO_LABELS, ASISTENCIA_LABELS } from '@/lib/constants'
+import { DIAS_SEMANA_COMPLETO, ESTADO_LABELS, ASISTENCIA_LABELS, MS_PER_HOUR } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/utils'
 
 const DIAS_NOMBRES: Record<number, string> = DIAS_SEMANA_COMPLETO.reduce((acc, dia, index) => {
@@ -66,7 +66,7 @@ export function ClaseDetailDialog({
 
   // Cancelar: habilitado si faltan más de X horas antes de la clase
   const tiempoHastaClase = fechaHoraClase.getTime() - ahora.getTime()
-  const horasHastaClase = tiempoHastaClase / (1000 * 60 * 60)
+  const horasHastaClase = tiempoHastaClase / MS_PER_HOUR
   const puedeCancelar = horasHastaClase >= horasAnticipacionMinima
 
   // Presente/Ausente: habilitado solo desde que empieza la clase

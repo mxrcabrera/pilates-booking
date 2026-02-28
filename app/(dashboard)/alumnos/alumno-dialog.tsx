@@ -9,7 +9,7 @@ import { DateInput } from '@/components/date-input'
 import { SelectInput } from '@/components/select-input'
 import { Lock } from 'lucide-react'
 import type { Alumno, Pack } from '@/lib/types'
-import { PLAN_NAMES, DIAS_SEMANA_OPTIONS } from '@/lib/constants'
+import { PLAN_NAMES, DIAS_SEMANA_OPTIONS, MS_PER_DAY } from '@/lib/constants'
 import { formatCurrency } from '@/lib/format'
 
 type DialogStep = 'form' | 'seriesPrompt'
@@ -132,7 +132,7 @@ export function AlumnoDialog({
     if (cumpleanosStr) {
       const cumpleanos = new Date(cumpleanosStr)
       const hoy = new Date()
-      const edad = Math.floor((hoy.getTime() - cumpleanos.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+      const edad = Math.floor((hoy.getTime() - cumpleanos.getTime()) / (365.25 * MS_PER_DAY))
 
       if (edad < 18 && !consentimientoTutor) {
         setError('Los menores de 18 años requieren consentimiento de padre, madre o tutor')
@@ -201,7 +201,7 @@ export function AlumnoDialog({
 
     const cumpleanos = new Date(fechaStr)
     const hoy = new Date()
-    const edad = Math.floor((hoy.getTime() - cumpleanos.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    const edad = Math.floor((hoy.getTime() - cumpleanos.getTime()) / (365.25 * MS_PER_DAY))
 
     setEsMenor(edad < 18)
     if (edad >= 18) {

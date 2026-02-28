@@ -5,7 +5,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { pagoActionSchema } from '@/lib/schemas/pago.schema'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
-import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
+import { RATE_LIMIT_WINDOW_MS, MESES } from '@/lib/constants'
 import { getEffectiveFeatures } from '@/lib/plans'
 import type { PagoEstado } from '@prisma/client'
 
@@ -114,8 +114,7 @@ export async function GET(request: NextRequest) {
       let minDate: Date | null = null
       let maxDate: Date | null = null
 
-      const mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+      const mesesLower = MESES.map(m => m.toLowerCase())
 
       for (const pago of pagosMensuales) {
         let year: number, month: number
@@ -125,7 +124,7 @@ export async function GET(request: NextRequest) {
           month = parseInt(matchYYYYMM[2])
         } else {
           const parts = pago.mesCorrespondiente.toLowerCase().split(' ')
-          month = mesesNombres.indexOf(parts[0]) + 1
+          month = mesesLower.indexOf(parts[0]) + 1
           year = parseInt(parts[1])
         }
 
@@ -155,7 +154,7 @@ export async function GET(request: NextRequest) {
           const year = clase.fecha.getFullYear()
           const month = clase.fecha.getMonth() + 1
           const mesKey1 = `${year}-${month.toString().padStart(2, '0')}`
-          const mesKey2 = `${mesesNombres[month - 1]} ${year}`
+          const mesKey2 = `${mesesLower[month - 1]} ${year}`
 
           for (const pago of pagosMensuales) {
             if (pago.alumnoId === clase.alumnoId) {
@@ -270,13 +269,12 @@ export async function POST(request: NextRequest) {
         const { alumnoId, monto, fechaVencimiento, mesCorrespondiente: mesRaw, tipoPago, clasesEsperadas } = parsed.data
 
         // Normalize mesCorrespondiente to YYYY-MM format
-        const mesesNombres = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                              'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+        const mesesLowerCreate = MESES.map(m => m.toLowerCase())
         let mesCorrespondiente = mesRaw
         const matchYYYYMM = mesRaw.match(/^(\d{4})-(\d{2})$/)
         if (!matchYYYYMM) {
           const parts = mesRaw.toLowerCase().split(' ')
-          const monthIdx = mesesNombres.indexOf(parts[0])
+          const monthIdx = mesesLowerCreate.indexOf(parts[0])
           const year = parseInt(parts[1])
           if (monthIdx >= 0 && year) {
             mesCorrespondiente = `${year}-${(monthIdx + 1).toString().padStart(2, '0')}`

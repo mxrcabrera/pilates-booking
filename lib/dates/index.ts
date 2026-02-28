@@ -2,14 +2,9 @@
 // Utilidades para manejo de fechas
 
 import { fromZonedTime } from 'date-fns-tz'
-import { MS_PER_DAY } from '@/lib/constants'
+import { MS_PER_DAY, MESES } from '@/lib/constants'
 
 export const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires'
-
-const MESES_ES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-]
 
 /**
  * Obtiene la fecha actual en timezone Argentina
@@ -44,7 +39,7 @@ export function getNowArgentinaHour(): number {
 export function formatMes(mesStr: string): string {
   if (/^\d{4}-\d{2}$/.test(mesStr)) {
     const [year, month] = mesStr.split('-')
-    return `${MESES_ES[parseInt(month) - 1]} ${year}`
+    return `${MESES[parseInt(month) - 1]} ${year}`
   }
   return mesStr
 }

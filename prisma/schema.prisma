@@ -325,7 +325,7 @@ model ListaEspera {
   fecha       DateTime  @db.Date
   horaInicio  String    @map("hora_inicio")
   posicion    Int       @default(1) @map("posicion")
-  estado      String    @default("esperando") // esperando, notificado, confirmado, expirado, cancelado
+  estado      ListaEsperaEstado @default(esperando)
   notificadoEn DateTime? @map("notificado_en")
   expiraEn    DateTime? @map("expira_en")
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -349,6 +349,14 @@ model FechaBloqueada {
 
   @@unique([profesorId, fecha])
   @@map("fechas_bloqueadas")
+}
+
+enum ListaEsperaEstado {
+  esperando
+  notificado
+  confirmado
+  expirado
+  cancelado
 }
 
 enum NotificationType {

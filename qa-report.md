@@ -841,6 +841,40 @@ esperando ──→ notificado ──→ confirmado
 
 ---
 
+## Final Audit (2026-02-28)
+
+20 findings from final audit. 16 fixed, 4 deferred/accepted.
+
+### Deferred Items
+| # | Finding | Reason |
+|---|---------|--------|
+| 3 | Rate limiter in-memory | Requires Upstash Redis infrastructure decision (same as M4) |
+| 13 | 12 files over 300 lines | Structural refactor — same scope as M10 |
+| 14 | globals.css 9569 lines | Requires gradual CSS module extraction (same as M10) |
+| 19 | Dual-format mesCorrespondiente | Accepted — defensive parsing for legacy data, new records use YYYY-MM |
+
+### Fixed Items
+| # | Fix | Commit |
+|---|-----|--------|
+| 1 | Track .env.example in git | `fix: track .env.example` |
+| 2 | API integration test for auth/login | `test: add API integration tests` |
+| 4 | Serializable isolation for recurring transaction | `fix: add Serializable isolation` |
+| 5 | X-Frame-Options SAMEORIGIN to DENY | `fix: change X-Frame-Options` |
+| 6 | HSTS inconsistency in netlify.toml | `fix: align HSTS policy` |
+| 7 | global-error.tsx doesn't log errors | `fix: add error logging` |
+| 8 | Error boundaries missing digest | `fix: include error.digest` |
+| 9 | 11 dead underscore-prefixed variables | `refactor: remove dead variables` |
+| 10 | Alumno API response inconsistency | `refactor: standardize alumno API` |
+| 11 | WINDOW_MS / MS_PER_DAY magic numbers | `refactor: extract constants` |
+| 12 | MESES_ES duplicate in lib/dates | `refactor: remove duplicate` |
+| 15 | Spanish comments in lib/ files | `refactor: translate comments` |
+| 16 | ListaEspera.estado String to enum | `refactor: migrate to enum` |
+| 17 | OG tags incomplete | `fix: add missing OG tags` |
+| 18 | robots.ts missing sitemap URL | `fix: add sitemap to robots` |
+| 20 | alumno/configuracion swallows errors | `fix: add error handling` |
+
+---
+
 ## Review Metadata
 
 | Phase | Status | Findings |

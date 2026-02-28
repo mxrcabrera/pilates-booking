@@ -89,7 +89,7 @@ export function LoginForm() {
         </p>
 
         {error && (
-          <div className="auth-error">{error}</div>
+          <div className="auth-error" role="alert">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">

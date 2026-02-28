@@ -314,7 +314,7 @@ export function ClaseDialog({
       footer={footerButtons}
     >
       {error && (
-        <div className="form-message error">{error}</div>
+        <div className="form-message error" role="alert">{error}</div>
       )}
 
       <form id="clase-form" onSubmit={handleSubmit}>
@@ -440,7 +440,7 @@ export function ClaseDialog({
               </div>
             ))}
             {assignError && (
-              <div className="form-message error" style={{ marginTop: '0.5rem' }}>{assignError}</div>
+              <div className="form-message error" role="alert" style={{ marginTop: '0.5rem' }}>{assignError}</div>
             )}
           </div>
         )}

@@ -147,7 +147,7 @@ input[type="time"],
 input[type="date"] {
   color-scheme: dark !important;
   background: rgba(25, 30, 50, 0.6) !important;
-  border: 1px solid rgba(100, 130, 200, 0.20) !important;
+  border: 1px solid rgba(100, 130, 200, 0.35) !important;
   border-radius: var(--radius-md) !important;
   color: rgba(255, 255, 255, 0.9) !important;
   min-height: var(--height-input);
@@ -3933,7 +3933,7 @@ input[type="checkbox"]:disabled {
 .form-group select {
   width: 100%;
   background: rgba(25, 30, 50, 0.6);
-  border: 1px solid rgba(100, 130, 200, 0.20);
+  border: 1px solid rgba(100, 130, 200, 0.35);
   border-radius: var(--radius-md);
   padding: 0.875rem 2.5rem 0.875rem 1rem;
   color: rgba(255, 255, 255, 0.95);
@@ -5435,7 +5435,7 @@ input[type="checkbox"]:disabled {
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   background: rgba(25, 30, 50, 0.6);
-  border: 1px solid rgba(100, 130, 200, 0.20);
+  border: 1px solid rgba(100, 130, 200, 0.35);
   border-radius: var(--radius-md);
   color: rgba(255, 255, 255, 0.9);
   min-height: var(--height-input);
@@ -8380,7 +8380,7 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   gap: var(--space-md);
   padding: var(--space-md) var(--space-lg);
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(100, 130, 200, 0.2);
+  border: 1px solid rgba(100, 130, 200, 0.35);
   border-radius: var(--radius-lg);
   transition: border-color 0.2s, background 0.2s;
 }

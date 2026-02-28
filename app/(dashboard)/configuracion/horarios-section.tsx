@@ -38,7 +38,7 @@ export function HorariosSection({
     id: null,
     isBulk: false
   })
-  const [isDeleting, _setIsDeleting] = useState(false)
+  const isDeleting = false
 
   const handleEdit = (horario: Horario) => {
     setEditingHorario(horario)

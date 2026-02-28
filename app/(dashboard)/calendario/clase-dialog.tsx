@@ -41,13 +41,9 @@ export function ClaseDialog({
   alumnos,
   packs,
   horarioMananaInicio,
-  horarioMananaFin: _horarioMananaFin,
-  horarioTardeInicio: _horarioTardeInicio,
-  horarioTardeFin: _horarioTardeFin,
   maxAlumnosPorClase,
   onSuccess,
   canUseRecurrentes = true,
-  currentPlan: _currentPlan = 'STARTER'
 }: {
   isOpen: boolean
   onClose: () => void
@@ -56,13 +52,9 @@ export function ClaseDialog({
   alumnos: AlumnoSimple[]
   packs: Pack[]
   horarioMananaInicio: string
-  horarioMananaFin: string
-  horarioTardeInicio: string
-  horarioTardeFin: string
   maxAlumnosPorClase: number
   onSuccess?: (data: { clase?: Clase; clases?: Clase[]; isNew: boolean }) => void
   canUseRecurrentes?: boolean
-  currentPlan?: string
 }) {
   const { showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)

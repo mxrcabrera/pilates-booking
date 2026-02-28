@@ -20,7 +20,6 @@ interface Props {
   onEliminar: (id: string) => void
   onAgregarDisponibilidad: (dia: string) => void
   canConfigureHorarios?: boolean
-  currentPlan?: string
 }
 
 export function HorariosDisponibles({
@@ -30,7 +29,6 @@ export function HorariosDisponibles({
   onEliminar,
   onAgregarDisponibilidad,
   canConfigureHorarios = true,
-  currentPlan: _currentPlan = 'STARTER'
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
 

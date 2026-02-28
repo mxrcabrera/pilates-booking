@@ -1,14 +1,14 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { logger } from '@/lib/logger'
+import { unauthorized, badRequest, forbidden, serverError } from '@/lib/api-utils'
 
 export async function GET(request: NextRequest) {
   try {
     const userId = await getCurrentUser()
 
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -17,17 +17,16 @@ export async function GET(request: NextRequest) {
     })
 
     if (!user || user.role !== 'ALUMNO') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+      return forbidden('Acceso denegado')
     }
 
     const { searchParams } = new URL(request.url)
     const profesorId = searchParams.get('profesorId')
 
     if (!profesorId) {
-      return NextResponse.json({ error: 'profesorId requerido' }, { status: 400 })
+      return badRequest('profesorId requerido')
     }
 
-    // Verify the alumno is linked to this profesor (directly or via studio)
     const alumnoVinculado = await prisma.alumno.findFirst({
       where: {
         userId: userId,
@@ -47,10 +46,9 @@ export async function GET(request: NextRequest) {
     })
 
     if (!alumnoVinculado) {
-      return NextResponse.json({ error: 'No estás vinculado a este profesor' }, { status: 403 })
+      return forbidden('No estas vinculado a este profesor')
     }
 
-    // Obtener horarios disponibles del profesor
     const horarios = await prisma.horarioDisponible.findMany({
       where: {
         profesorId: profesorId,
@@ -69,10 +67,6 @@ export async function GET(request: NextRequest) {
       }))
     })
   } catch (error) {
-    logger.error('Error fetching horarios', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

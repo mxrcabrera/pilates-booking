@@ -1,14 +1,14 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { logger } from '@/lib/logger'
+import { unauthorized, forbidden, serverError } from '@/lib/api-utils'
 
 export async function GET() {
   try {
     const userId = await getCurrentUser()
 
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -17,10 +17,9 @@ export async function GET() {
     })
 
     if (!user || user.role !== 'ALUMNO') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+      return forbidden('Acceso denegado')
     }
 
-    // Obtener todas las clases del usuario
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
 
@@ -52,10 +51,6 @@ export async function GET() {
       }))
     })
   } catch (error) {
-    logger.error('Error fetching mis clases', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

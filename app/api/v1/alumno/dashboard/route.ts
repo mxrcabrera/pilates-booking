@@ -1,14 +1,14 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { logger } from '@/lib/logger'
+import { unauthorized, forbidden, serverError } from '@/lib/api-utils'
 
 export async function GET() {
   try {
     const userId = await getCurrentUser()
 
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -24,10 +24,9 @@ export async function GET() {
     })
 
     if (!user || user.role !== 'ALUMNO') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+      return forbidden('Acceso denegado')
     }
 
-    // Buscar perfiles de alumno vinculados
     const alumnos = await prisma.alumno.findMany({
       where: {
         userId: userId,
@@ -44,7 +43,6 @@ export async function GET() {
       }
     })
 
-    // Obtener próximas clases
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
 
@@ -68,16 +66,13 @@ export async function GET() {
       take: 10
     })
 
-    // Verificar si el perfil está completo
     const hasProfile = Boolean(user.telefono && user.telefono.length >= 8)
     const hasProfesor = alumnos.length > 0
 
-    // Extraer profesores de alumnos legacy (con profesorId)
     const profesoresFromAlumnos = alumnos
       .filter(a => a.profesor !== null)
       .map(a => ({ id: a.profesor!.id, nombre: a.profesor!.nombre }))
 
-    // Para alumnos studio-wide, buscar profesores del estudio
     const estudioIds = [...new Set(
       alumnos.filter(a => a.estudioId).map(a => a.estudioId!)
     )]
@@ -101,7 +96,6 @@ export async function GET() {
       }))
     }
 
-    // Combinar y eliminar duplicados
     const allProfesores = [...profesoresFromAlumnos, ...profesoresFromEstudio]
     const profesoresMap = new Map(allProfesores.map(p => [p.id, p]))
     const profesores = [...profesoresMap.values()]
@@ -127,10 +121,6 @@ export async function GET() {
       }))
     })
   } catch (error) {
-    logger.error('Error fetching alumno dashboard', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

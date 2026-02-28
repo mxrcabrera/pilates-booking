@@ -2,9 +2,9 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
-import { logger } from '@/lib/logger'
 import { argentinaToUTC } from '@/lib/dates'
 import { Prisma } from '@prisma/client'
+import { unauthorized, badRequest, forbidden, tooManyRequests, serverError } from '@/lib/api-utils'
 
 const WRITE_LIMIT = 5
 const WINDOW_MS = 60 * 1000
@@ -14,12 +14,12 @@ export async function POST(request: NextRequest) {
     const ip = getClientIP(request)
     const { success } = rateLimit(`alumno-reservar:${ip}`, WRITE_LIMIT, WINDOW_MS)
     if (!success) {
-      return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429 })
+      return tooManyRequests()
     }
 
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -28,48 +28,43 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user || user.role !== 'ALUMNO') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+      return forbidden('Acceso denegado')
     }
 
     const body = await request.json()
     const { profesorId, fecha: fechaStr, horaInicio } = body
 
     if (!profesorId || !fechaStr || !horaInicio) {
-      return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
+      return badRequest('Faltan campos requeridos')
     }
 
-    // Validate date format
     const fecha = new Date(fechaStr + 'T00:00:00.000Z')
     if (isNaN(fecha.getTime())) {
-      return NextResponse.json({ error: 'Fecha invalida' }, { status: 400 })
+      return badRequest('Fecha invalida')
     }
 
-    // Validate time format
     if (!/^\d{2}:\d{2}$/.test(horaInicio)) {
-      return NextResponse.json({ error: 'Formato de hora invalido' }, { status: 400 })
+      return badRequest('Formato de hora invalido')
     }
 
-    // Must be in the future
     const now = new Date()
     const fechaHoraUTC = argentinaToUTC(fechaStr, horaInicio)
 
     if (fechaHoraUTC <= now) {
-      return NextResponse.json({ error: 'No se puede reservar una clase en el pasado' }, { status: 400 })
+      return badRequest('No se puede reservar una clase en el pasado')
     }
 
-    // Get alumno profile (by userId only, profesorId now nullable)
     const alumno = await prisma.alumno.findFirst({
       where: { userId, deletedAt: null },
       select: { id: true, packType: true, estudioId: true, profesorId: true }
     })
 
     if (!alumno) {
-      return NextResponse.json({ error: 'No estas vinculado a ningun profesor' }, { status: 403 })
+      return forbidden('No estas vinculado a ningun profesor')
     }
 
-    // Validate profesorId belongs to the alumno's profesor or studio
     if (alumno.profesorId && alumno.profesorId !== profesorId) {
-      return NextResponse.json({ error: 'Profesor no autorizado' }, { status: 403 })
+      return forbidden('Profesor no autorizado')
     }
     if (alumno.estudioId && !alumno.profesorId) {
       const isStudioProfesor = await prisma.estudioMiembro.findFirst({
@@ -77,11 +72,10 @@ export async function POST(request: NextRequest) {
         select: { id: true }
       })
       if (!isStudioProfesor) {
-        return NextResponse.json({ error: 'Profesor no pertenece a tu estudio' }, { status: 403 })
+        return forbidden('Profesor no pertenece a tu estudio')
       }
     }
 
-    // Get pack for weekly limit
     let clasesPorSemana: number | null = null
     if (alumno.packType && alumno.packType !== 'por_clase') {
       const pack = await prisma.pack.findFirst({
@@ -91,7 +85,6 @@ export async function POST(request: NextRequest) {
       if (pack) clasesPorSemana = pack.clasesPorSemana
     }
 
-    // Owner filter (from alumno record, not request)
     const ownerFilter = alumno.estudioId
       ? { estudioId: alumno.estudioId }
       : alumno.profesorId
@@ -99,10 +92,9 @@ export async function POST(request: NextRequest) {
         : null
 
     if (!ownerFilter) {
-      return NextResponse.json({ error: 'Alumno sin vinculacion valida' }, { status: 500 })
+      return serverError('Alumno sin vinculacion valida')
     }
 
-    // Get profesor/estudio config
     const config = alumno.estudioId
       ? await prisma.estudio.findUnique({
           where: { id: alumno.estudioId },
@@ -116,23 +108,18 @@ export async function POST(request: NextRequest) {
     const maxCapacity = config?.maxAlumnosPorClase ?? 4
     const horasAnticipacion = config?.horasAnticipacionMinima ?? 1
 
-    // Validate anticipation time
     const minTime = new Date(now.getTime() + horasAnticipacion * 3600000)
     if (fechaHoraUTC < minTime) {
-      return NextResponse.json({
-        error: `Debes reservar con al menos ${horasAnticipacion} hora(s) de anticipacion`
-      }, { status: 400 })
+      return badRequest(`Debes reservar con al menos ${horasAnticipacion} hora(s) de anticipacion`)
     }
 
-    // Check blocked date
     const isBlocked = await prisma.fechaBloqueada.findFirst({
       where: { ...ownerFilter, fecha }
     })
     if (isBlocked) {
-      return NextResponse.json({ error: 'Esta fecha esta bloqueada' }, { status: 400 })
+      return badRequest('Esta fecha esta bloqueada')
     }
 
-    // Validate slot exists within a HorarioDisponible range AND profesorId matches
     const diaSemana = fecha.getUTCDay()
     const horaNum = parseInt(horaInicio.split(':')[0])
     const horariosDelDia = await prisma.horarioDisponible.findMany({
@@ -147,7 +134,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!matchingHorario) {
-      return NextResponse.json({ error: 'Este horario no esta disponible' }, { status: 400 })
+      return badRequest('Este horario no esta disponible')
     }
 
     // Serializable transaction for concurrency safety
@@ -167,7 +154,6 @@ export async function POST(request: NextRequest) {
         throw new Error('SLOT_FULL')
       }
 
-      // Check if alumno already booked at this slot
       const alreadyBooked = await tx.clase.findFirst({
         where: {
           ...ownerFilter,
@@ -183,7 +169,6 @@ export async function POST(request: NextRequest) {
         throw new Error('ALREADY_BOOKED')
       }
 
-      // Check weekly class limit (if pack-based)
       if (clasesPorSemana) {
         const dayOfWeek = fecha.getUTCDay()
         const monday = new Date(fecha)
@@ -247,10 +232,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    logger.error('Error reservando clase', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

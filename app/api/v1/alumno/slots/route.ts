@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { logger } from '@/lib/logger'
 import { getNowArgentinaHour } from '@/lib/dates'
+import { unauthorized, forbidden, serverError } from '@/lib/api-utils'
 
 const WEEKS_AHEAD = 4
 const MS_PER_DAY = 86400000
@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest) {
   try {
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -40,20 +40,18 @@ export async function GET(_request: NextRequest) {
     })
 
     if (!user || user.role !== 'ALUMNO') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+      return forbidden('Acceso denegado')
     }
 
-    // Find alumno by userId only (no profesorId filter)
     const alumno = await prisma.alumno.findFirst({
       where: { userId, deletedAt: null },
       select: { id: true, nombre: true, packType: true, estudioId: true, profesorId: true }
     })
 
     if (!alumno) {
-      return NextResponse.json({ error: 'No estas vinculado a ningun profesor' }, { status: 403 })
+      return forbidden('No estas vinculado a ningun profesor')
     }
 
-    // Determine ownerFilter from alumno record
     const ownerFilter = alumno.estudioId
       ? { estudioId: alumno.estudioId }
       : alumno.profesorId
@@ -61,7 +59,7 @@ export async function GET(_request: NextRequest) {
         : null
 
     if (!ownerFilter) {
-      return NextResponse.json({ error: 'Alumno sin vinculacion valida' }, { status: 500 })
+      return serverError('Alumno sin vinculacion valida')
     }
 
     let clasesPorSemana: number | null = null
@@ -117,7 +115,6 @@ export async function GET(_request: NextRequest) {
       fechasBloqueadas.map(f => f.fecha.toISOString().split('T')[0])
     )
 
-    // Get unique profesorIds from horarios
     const profesorIds = [...new Set(horarios.map(h => h.profesorId))]
     const profesores = await prisma.user.findMany({
       where: { id: { in: profesorIds } },
@@ -125,7 +122,6 @@ export async function GET(_request: NextRequest) {
     })
     const profesorMap = new Map(profesores.map(p => [p.id, p.nombre]))
 
-    // Index horarios by (day, profesorId) with set of hours per profesor
     const slotsByDayAndProfesor = new Map<string, Set<string>>()
     for (const horario of horarios) {
       const key = `${horario.diaSemana}|${horario.profesorId}`
@@ -138,7 +134,6 @@ export async function GET(_request: NextRequest) {
       }
     }
 
-    // Index classes by "YYYY-MM-DD|HH:MM|profesorId"
     const classIndex = new Map<string, typeof clasesInRange>()
     for (const clase of clasesInRange) {
       const key = `${clase.fecha.toISOString().split('T')[0]}|${clase.horaInicio}|${clase.profesorId}`
@@ -146,7 +141,6 @@ export async function GET(_request: NextRequest) {
       classIndex.get(key)!.push(clase)
     }
 
-    // Generate virtual slots (one per profesor per timeslot)
     const slots: SlotInfo[] = []
     const currentDate = new Date(today)
 
@@ -155,7 +149,6 @@ export async function GET(_request: NextRequest) {
       const dayOfWeek = currentDate.getUTCDay()
 
       if (!blockedSet.has(fechaStr)) {
-        // Iterate over all profesores who have horarios on this day
         for (const profesorId of profesorIds) {
           const key = `${dayOfWeek}|${profesorId}`
           const daySlots = slotsByDayAndProfesor.get(key)
@@ -164,7 +157,6 @@ export async function GET(_request: NextRequest) {
             const sortedHours = [...daySlots].sort()
 
             for (const hora of sortedHours) {
-              // Skip past slots for today
               if (fechaStr === todayStr) {
                 const slotHour = parseInt(hora.split(':')[0])
                 if (slotHour <= nowArgHour) continue
@@ -206,10 +198,6 @@ export async function GET(_request: NextRequest) {
       }))
     })
   } catch (error) {
-    logger.error('Error fetching alumno slots', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

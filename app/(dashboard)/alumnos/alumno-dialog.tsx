@@ -332,7 +332,7 @@ export function AlumnoDialog({
       }
     >
       {error && (
-        <div className="form-message error">
+        <div className="form-message error" role="alert">
           {error}
         </div>
       )}

@@ -40,7 +40,7 @@ export function OnboardingClient({ user }: { user: User }) {
         <p className="onboarding-subtitle">Para continuar, por favor indicanos si sos:</p>
 
         {error && (
-          <div className="form-message error">
+          <div className="form-message error" role="alert">
             {error}
           </div>
         )}

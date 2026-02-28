@@ -8,9 +8,9 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 })
 
-// En desarrollo, reutilizar la conexión
-// En producción (serverless), cada request puede crear una nueva instancia
-// pero Prisma maneja el pooling internamente con PgBouncer
+// In development, reuse the connection
+// In production (serverless), each request may create a new instance
+// but Prisma handles pooling internally with PgBouncer
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }

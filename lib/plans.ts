@@ -13,7 +13,7 @@ export interface PlanFeatures {
   listaEspera: boolean
   notificacionesWhatsApp: boolean
   multiplesUsuarios: boolean
-  multiUsuarios: boolean // Alias para multiplesUsuarios
+  multiUsuarios: boolean // Alias for multiplesUsuarios
   rolesPermisos: boolean
   reportesAvanzados: boolean
   soportePrioritario: boolean
@@ -22,7 +22,7 @@ export interface PlanFeatures {
 
 export interface PlanConfig {
   name: string
-  price: number // en ARS, 0 = gratis, -1 = contactar
+  price: number // in ARS, 0 = free, -1 = contact
   features: PlanFeatures
 }
 
@@ -120,7 +120,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
 // Trial config
 export const TRIAL_DAYS = 14
 export const TRIAL_MAX_ALUMNOS = 10
-export const TRIAL_PLAN_FEATURES = PLAN_CONFIGS.PRO.features // Trial tiene features de Pro
+export const TRIAL_PLAN_FEATURES = PLAN_CONFIGS.PRO.features // Trial has Pro features
 
 export function getPlanFeatures(plan: PlanType): PlanFeatures {
   return PLAN_CONFIGS[plan].features
@@ -135,7 +135,7 @@ export function getEffectiveFeatures(
   plan: PlanType,
   trialEndsAt: Date | null
 ): PlanFeatures {
-  // Durante el trial, tiene features de Pro
+  // During trial, use Pro features
   if (isTrialActive(trialEndsAt)) {
     return TRIAL_PLAN_FEATURES
   }
@@ -146,7 +146,7 @@ export function getEffectiveMaxAlumnos(
   plan: PlanType,
   trialEndsAt: Date | null
 ): number {
-  // Durante el trial, máximo 10 alumnos
+  // During trial, max 10 students
   if (isTrialActive(trialEndsAt)) {
     return TRIAL_MAX_ALUMNOS
   }

@@ -27,7 +27,7 @@ export type Alumno = {
   }
 }
 
-// Versión simplificada para selects y listas (includes pack info for calendario)
+// Simplified version for selects and lists (includes pack info for calendario)
 export type AlumnoSimple = {
   id: string
   nombre: string
@@ -35,14 +35,14 @@ export type AlumnoSimple = {
   clasesPorSemana: number | null
 }
 
-// Versión para clases (con datos del pack)
+// Version for classes (with pack data)
 export type AlumnoClase = {
   id: string
   nombre: string
   clasesPorMes: number | null
 }
 
-// Versión para pagos (con precio y packType)
+// Version for payments (with price and packType)
 export type AlumnoPago = {
   id: string
   nombre: string
@@ -92,7 +92,7 @@ export type Pago = {
   estado: string
   mesCorrespondiente: string
   tipoPago: string // "mensual" (pack) o "clase"
-  clasesEsperadas: number | null // Clases que debe hacer en el mes
+  clasesEsperadas: number | null // Expected classes for the month
   clasesCompletadas: number // Clases efectivamente hechas en el mes (calculado)
   alumno: {
     id: string
@@ -162,7 +162,7 @@ export type PreferencesIncompleteResponse = {
   missingFields: string[]
 }
 
-// ----- DATA TYPES (para páginas) -----
+// ----- DATA TYPES (for pages) -----
 // Incluyen formato legacy (alumnos, pagos, clases) y nuevo formato paginado (data, pagination)
 export type PlanInfo = {
   plan: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
@@ -182,7 +182,7 @@ export type AlumnosData = {
   // Nuevo formato paginado
   data: Alumno[]
   pagination: Pagination
-  // Compatibilidad con formato anterior
+  // Backwards compatibility with previous format
   alumnos: Alumno[]
   packs: Pack[]
   precioPorClase: string
@@ -200,7 +200,7 @@ export type CalendarioData = {
   // Nuevo formato paginado
   data: Clase[]
   pagination: Pagination
-  // Compatibilidad con formato anterior
+  // Backwards compatibility with previous format
   clases: Clase[]
   alumnos: AlumnoSimple[]
   packs: Pack[]
@@ -242,7 +242,7 @@ export type PagosData = {
   // Nuevo formato paginado
   data: Pago[]
   pagination: Pagination
-  // Compatibilidad con formato anterior
+  // Backwards compatibility with previous format
   pagos: Pago[]
   alumnos: AlumnoPago[]
   features: PagosFeatures

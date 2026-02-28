@@ -5,14 +5,14 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { argentinaToUTC } from '@/lib/dates'
 import { Prisma } from '@prisma/client'
 import { unauthorized, badRequest, forbidden, tooManyRequests, serverError } from '@/lib/api-utils'
+import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 
 const WRITE_LIMIT = 5
-const WINDOW_MS = 60 * 1000
 
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIP(request)
-    const { success } = rateLimit(`alumno-reservar:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`alumno-reservar:${ip}`, WRITE_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }

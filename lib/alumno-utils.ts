@@ -1,4 +1,4 @@
-import { OVERDUE_DAYS_THRESHOLD, WEEKS_PER_MONTH } from '@/lib/constants'
+import { OVERDUE_DAYS_THRESHOLD, WEEKS_PER_MONTH, MS_PER_DAY } from '@/lib/constants'
 
 type PaymentStatus = {
   texto: string
@@ -30,7 +30,7 @@ export function getPaymentStatus(alumno: AlumnoPaymentData): PaymentStatus {
   hoy.setHours(0, 0, 0, 0)
   const vencimiento = new Date(alumno.proximoPagoVencimiento)
   vencimiento.setHours(0, 0, 0, 0)
-  const dias = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+  const dias = Math.ceil((vencimiento.getTime() - hoy.getTime()) / MS_PER_DAY)
 
   if (dias < 0) {
     const diasAtraso = Math.abs(dias)

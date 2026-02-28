@@ -4,13 +4,12 @@ import { hashPassword, verifyPassword, createToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { rateLimit, getClientIP, rateLimitExceeded } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 
 export const runtime = 'nodejs'
 
-// Rate limits: login=5/min, signup=3/min
 const LOGIN_LIMIT = 5
 const SIGNUP_LIMIT = 3
-const WINDOW_MS = 60 * 1000 // 1 minuto
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest) {
     // Rate limiting
     const rateLimitKey = isSignup ? `signup:${ip}` : `login:${ip}`
     const limit = isSignup ? SIGNUP_LIMIT : LOGIN_LIMIT
-    const { success, resetIn } = rateLimit(rateLimitKey, limit, WINDOW_MS)
+    const { success, resetIn } = rateLimit(rateLimitKey, limit, RATE_LIMIT_WINDOW_MS)
 
     if (!success) {
       const { error, status, headers } = rateLimitExceeded(resetIn)

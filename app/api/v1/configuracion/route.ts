@@ -5,6 +5,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getCachedPacks, getCachedHorarios, getCachedProfesorConfig, type OwnerType } from '@/lib/server-cache'
 import { invalidatePacks, invalidateHorarios, invalidateConfig } from '@/lib/cache-utils'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
+import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 import { canUseFeature, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
 import {
   saveHorarioSchema,
@@ -22,7 +23,6 @@ export const runtime = 'nodejs'
 
 // Rate limit: 20 requests por minuto para POST
 const POST_LIMIT = 20
-const WINDOW_MS = 60 * 1000
 
 export async function GET() {
   try {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIP(request)
-    const { success } = rateLimit(`config:${ip}`, POST_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`config:${ip}`, POST_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }

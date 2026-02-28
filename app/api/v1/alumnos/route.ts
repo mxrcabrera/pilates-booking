@@ -9,6 +9,7 @@ import { calcularRangoCiclo, calcularPrecioImplicitoPorClase } from '@/lib/alumn
 import { invalidateAlumnos } from '@/lib/cache-utils'
 import { hashPassword } from '@/lib/auth'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
+import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 import { getEffectiveMaxAlumnos, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
 import type { PlanType } from '@prisma/client'
 
@@ -16,7 +17,6 @@ export const runtime = 'nodejs'
 
 // Rate limit: 30 requests por minuto para POST
 const POST_LIMIT = 30
-const WINDOW_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIP(request)
-    const { success } = rateLimit(`alumnos:${ip}`, POST_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`alumnos:${ip}`, POST_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }

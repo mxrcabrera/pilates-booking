@@ -2,6 +2,7 @@
 // Utilidades para manejo de fechas
 
 import { fromZonedTime } from 'date-fns-tz'
+import { MS_PER_DAY } from '@/lib/constants'
 
 export const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires'
 
@@ -59,5 +60,5 @@ export function diasDiferencia(fecha: Date | string): number {
   const target = typeof fecha === 'string' ? new Date(fecha) : new Date(fecha)
   target.setHours(0, 0, 0, 0)
 
-  return Math.ceil((target.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.ceil((target.getTime() - hoy.getTime()) / MS_PER_DAY)
 }

@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { getNowArgentinaHour } from '@/lib/dates'
 import { unauthorized, forbidden, serverError } from '@/lib/api-utils'
+import { MS_PER_DAY } from '@/lib/constants'
 
 const WEEKS_AHEAD = 4
-const MS_PER_DAY = 86400000
 
 interface SlotInfo {
   fecha: string

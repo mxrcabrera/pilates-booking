@@ -186,13 +186,13 @@ describe('plans', () => {
 
   describe('getSuggestedUpgrade', () => {
     it('should suggest next plan in hierarchy', () => {
-      expect(getSuggestedUpgrade('FREE', 'alumnos')).toBe('STARTER')
-      expect(getSuggestedUpgrade('STARTER', 'feature')).toBe('PRO')
-      expect(getSuggestedUpgrade('PRO', 'alumnos')).toBe('ESTUDIO')
+      expect(getSuggestedUpgrade('FREE')).toBe('STARTER')
+      expect(getSuggestedUpgrade('STARTER')).toBe('PRO')
+      expect(getSuggestedUpgrade('PRO')).toBe('ESTUDIO')
     })
 
     it('should return null for ESTUDIO', () => {
-      expect(getSuggestedUpgrade('ESTUDIO', 'alumnos')).toBeNull()
+      expect(getSuggestedUpgrade('ESTUDIO')).toBeNull()
     })
   })
 })

@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 
         // Verificar que el plan permita configuración de horarios
         if (!canUseFeature('configuracionHorarios', configData.plan, configData.trialEndsAt)) {
-          const suggestedPlan = getSuggestedUpgrade(configData.plan, 'feature')
+          const suggestedPlan = getSuggestedUpgrade(configData.plan)
           return NextResponse.json({
             error: 'La configuración de horarios no está disponible en tu plan',
             code: 'FEATURE_NOT_AVAILABLE',
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
             })
 
         if (configBatch && !canUseFeature('configuracionHorarios', configBatch.plan, configBatch.trialEndsAt)) {
-          const suggestedPlan = getSuggestedUpgrade(configBatch.plan, 'feature')
+          const suggestedPlan = getSuggestedUpgrade(configBatch.plan)
           return NextResponse.json({
             error: 'La configuración de horarios no está disponible en tu plan',
             code: 'FEATURE_NOT_AVAILABLE',

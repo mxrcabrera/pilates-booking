@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
         })
 
         if (alumnosActuales >= maxAlumnos) {
-          const suggestedPlan = getSuggestedUpgrade(planInfo.plan, 'alumnos')
+          const suggestedPlan = getSuggestedUpgrade(planInfo.plan)
           return NextResponse.json({
             error: 'Límite de alumnos alcanzado',
             code: 'PLAN_LIMIT_REACHED',

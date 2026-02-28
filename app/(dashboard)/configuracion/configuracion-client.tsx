@@ -198,13 +198,12 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
               setHorarioDialogOpen(true)
             }
           }}
-          onEliminar={(_id) => { /* Eliminación manejada en HorariosSection */ }}
-          onAgregarDisponibilidad={(_dia) => {
+          onEliminar={() => { /* Handled in HorariosSection */ }}
+          onAgregarDisponibilidad={() => {
             setHorarioToEdit(null)
             setHorarioDialogOpen(true)
           }}
           canConfigureHorarios={features.configuracionHorarios}
-          currentPlan={features.plan}
         />
       </div>
 

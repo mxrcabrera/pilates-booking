@@ -5,16 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Check, User, Phone, Calendar, FileText, AlertCircle } from 'lucide-react'
 import { PageLoading } from '@/components/ui/loading'
 
-type UserData = {
-  id: string
-  nombre: string
-  email: string
-  telefono: string | null
-  genero: string
-  cumpleanos: string | null
-  patologias: string | null
-}
-
 type FormErrors = {
   nombre?: string
   telefono?: string
@@ -25,7 +15,6 @@ export default function AlumnoConfiguracionPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [_user, setUser] = useState<UserData | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [errors, setErrors] = useState<FormErrors>({})
   const [form, setForm] = useState({
@@ -41,7 +30,6 @@ export default function AlumnoConfiguracionPage() {
       .then(res => res.json())
       .then(data => {
         if (data.user) {
-          setUser(data.user)
           setForm({
             nombre: data.user.nombre || '',
             telefono: data.user.telefono || '',

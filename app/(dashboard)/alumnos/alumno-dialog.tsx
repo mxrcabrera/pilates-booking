@@ -27,7 +27,6 @@ export function AlumnoDialog({
   packs,
   precioPorClase,
   canUseProrrateo = true,
-  currentPlan: _currentPlan = 'STARTER'
 }: {
   isOpen: boolean
   onClose: () => void
@@ -36,7 +35,6 @@ export function AlumnoDialog({
   packs: Pack[]
   precioPorClase: string
   canUseProrrateo?: boolean
-  currentPlan?: string
 }) {
   const { showSuccess, showError: showErrorToast } = useToast()
   const [isLoading, setIsLoading] = useState(false)

@@ -716,13 +716,9 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
         alumnos={alumnos}
         packs={packs}
         horarioMananaInicio={horarioMananaInicio}
-        horarioMananaFin={horarioMananaFin}
-        horarioTardeInicio={horarioTardeInicio}
-        horarioTardeFin={horarioTardeFin}
         maxAlumnosPorClase={maxAlumnosPorClase}
         onSuccess={handleClaseSuccess}
         canUseRecurrentes={features.clasesRecurrentes}
-        currentPlan={features.plan}
       />
 
       <ClaseDialog
@@ -733,13 +729,9 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
         alumnos={alumnos}
         packs={packs}
         horarioMananaInicio={horarioMananaInicio}
-        horarioMananaFin={horarioMananaFin}
-        horarioTardeInicio={horarioTardeInicio}
-        horarioTardeFin={horarioTardeFin}
         maxAlumnosPorClase={maxAlumnosPorClase}
         onSuccess={handleClaseSuccess}
         canUseRecurrentes={features.clasesRecurrentes}
-        currentPlan={features.plan}
       />
 
       {claseSeleccionada && (

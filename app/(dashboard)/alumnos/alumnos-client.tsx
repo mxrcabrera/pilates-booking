@@ -387,7 +387,6 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
         packs={packs}
         precioPorClase={precioPorClase}
         canUseProrrateo={features.prorrateoAutomatico}
-        currentPlan={features.plan}
       />
 
       <AlumnoDetailSheet

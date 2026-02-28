@@ -154,7 +154,7 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
   const ausentes = clases.filter(c => c.asistencia === 'ausente').length
 
   // Función para renderizar cada clase
-  function renderClaseItem(clase: ClaseHoy, _isPastGroup: boolean) {
+  function renderClaseItem(clase: ClaseHoy) {
     const isLoading = loadingId === clase.id
     const esPresente = clase.asistencia === 'presente'
     const esAusente = clase.asistencia === 'ausente'
@@ -302,7 +302,7 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
                 {isSoon && !isNow && <span className="dash-hora-badge soon">Próxima</span>}
               </div>
               <div className="dash-hora-clases">
-                {grupo.clases.map(clase => renderClaseItem(clase, false))}
+                {grupo.clases.map(clase => renderClaseItem(clase))}
               </div>
             </div>
           </>

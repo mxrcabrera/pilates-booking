@@ -14,6 +14,7 @@ type FormErrors = {
 export default function AlumnoConfiguracionPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -40,7 +41,11 @@ export default function AlumnoConfiguracionPage() {
         }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        console.error('Failed to load profile:', err)
+        setFetchError(true)
+        setLoading(false)
+      })
   }, [])
 
   const validateForm = (): boolean => {
@@ -106,6 +111,15 @@ export default function AlumnoConfiguracionPage() {
   }
 
   if (loading) return <PageLoading />
+
+  if (fetchError) return (
+    <div className="page-container">
+      <div className="content-card" style={{ textAlign: 'center', padding: '2rem' }}>
+        <AlertCircle size={32} style={{ margin: '0 auto 1rem', color: 'var(--color-error, #ef4444)' }} />
+        <p>No se pudo cargar tu perfil. Intenta recargar la página.</p>
+      </div>
+    </div>
+  )
 
   return (
     <div className="page-container">

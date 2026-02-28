@@ -4,8 +4,9 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { UserRole } from '@prisma/client'
+import { MS_PER_HOUR } from '@/lib/constants'
 
-const ONBOARDING_WINDOW_MS = 60 * 60 * 1000
+const ONBOARDING_WINDOW_MS = MS_PER_HOUR
 
 export async function updateUserRole(role: UserRole) {
   const session = await auth()

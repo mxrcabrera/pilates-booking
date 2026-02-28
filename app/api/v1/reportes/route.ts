@@ -3,9 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { getUserContext, getOwnerFilter } from '@/lib/auth'
 import { startOfMonth, endOfMonth, subMonths, format, startOfYear, endOfYear, subYears } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { logger } from '@/lib/logger'
 import { getEffectiveFeatures } from '@/lib/plans'
-import { unauthorized } from '@/lib/api-utils'
+import { unauthorized, serverError } from '@/lib/api-utils'
 import { DIAS_SEMANA_COMPLETO, DIAS_SEMANA } from '@/lib/constants'
 
 export const runtime = 'nodejs'
@@ -411,7 +410,6 @@ export async function GET(request: Request) {
       avanzados
     })
   } catch (error) {
-    logger.error('Reportes GET error', error)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return serverError(error)
   }
 }

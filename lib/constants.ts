@@ -50,6 +50,7 @@ export const OVERDUE_DAYS_THRESHOLD = 60
 export const WEEKS_PER_MONTH = 4
 export const WAITLIST_EXPIRY_MS = 2 * 60 * 60 * 1000 // 2 hours
 export const RATE_LIMIT_WINDOW_MS = 60 * 1000 // 1 minute
+export const MS_PER_HOUR = 60 * 60 * 1000
 export const MS_PER_DAY = 1000 * 60 * 60 * 24
 
 // DIAS_SEMANA with objects for use in day selection components

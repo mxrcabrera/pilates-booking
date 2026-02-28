@@ -3,9 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { getUserContext, getOwnerFilter } from '@/lib/auth'
 import { startOfDay } from 'date-fns'
 import { getCachedProfesorConfig } from '@/lib/server-cache'
-import { logger } from '@/lib/logger'
 import { getEffectiveFeatures } from '@/lib/plans'
-import { unauthorized } from '@/lib/api-utils'
+import { unauthorized, serverError } from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
 
@@ -159,7 +158,6 @@ export async function GET() {
       }
     })
   } catch (error) {
-    logger.error('Dashboard GET error', error)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return serverError(error)
   }
 }

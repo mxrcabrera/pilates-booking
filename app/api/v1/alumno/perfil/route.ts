@@ -2,8 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
-import { logger } from '@/lib/logger'
 import { updateAlumnoPerfilSchema } from '@/lib/schemas/alumno-perfil.schema'
+import { unauthorized, badRequest, forbidden, tooManyRequests, serverError } from '@/lib/api-utils'
 
 const WRITE_LIMIT = 10
 const WINDOW_MS = 60 * 1000
@@ -13,7 +13,7 @@ export async function GET() {
     const userId = await getCurrentUser()
 
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -29,7 +29,7 @@ export async function GET() {
     })
 
     if (!user || user.role !== 'ALUMNO') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+      return forbidden('Acceso denegado')
     }
 
     return NextResponse.json({
@@ -44,27 +44,22 @@ export async function GET() {
       }
     })
   } catch (error) {
-    logger.error('Error fetching alumno perfil', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    // Rate limiting
     const ip = getClientIP(request)
     const { success } = rateLimit(`alumno-perfil:${ip}`, WRITE_LIMIT, WINDOW_MS)
     if (!success) {
-      return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429 })
+      return tooManyRequests()
     }
 
     const userId = await getCurrentUser()
 
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -73,14 +68,14 @@ export async function PUT(request: NextRequest) {
     })
 
     if (!user || user.role !== 'ALUMNO') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
+      return forbidden('Acceso denegado')
     }
 
     const body = await request.json()
     const parsed = updateAlumnoPerfilSchema.safeParse(body)
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+      return badRequest(parsed.error.issues[0].message)
     }
 
     const { nombre, telefono, genero } = parsed.data
@@ -96,10 +91,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    logger.error('Error updating alumno perfil', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return serverError(error)
   }
 }

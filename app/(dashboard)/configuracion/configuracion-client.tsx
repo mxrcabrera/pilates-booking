@@ -372,7 +372,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
       {/* Boton de guardar */}
       <div className="settings-actions">
         {message && (
-          <div className={`form-message ${message.type}`}>
+          <div className={`form-message ${message.type}`} role="alert">
             {message.text}
           </div>
         )}

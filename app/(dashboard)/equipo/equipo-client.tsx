@@ -131,7 +131,7 @@ export function EquipoClient() {
   if (error) {
     return (
       <div className="page-container">
-        <div className="error-state">{error}</div>
+        <div className="error-state" role="alert">{error}</div>
       </div>
     )
   }

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission } from '@/lib/auth/auth-utils'
 import { logger } from '@/lib/logger'
 import { invitarMiembroSchema, cambiarRolSchema } from '@/lib/schemas/equipo.schema'
-import { badRequest, tooManyRequests } from '@/lib/api-utils'
+import { unauthorized, badRequest, tooManyRequests, serverError } from '@/lib/api-utils'
 import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
@@ -16,7 +16,7 @@ export async function GET() {
   try {
     const context = await getUserContext()
     if (!context) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     if (!context.estudio) {
@@ -59,8 +59,7 @@ export async function GET() {
       miRol: context.estudio.rol
     })
   } catch (error) {
-    logger.error('Equipo GET error', error)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return serverError(error)
   }
 }
 
@@ -76,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     const context = await getUserContext()
     if (!context) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     if (!context.estudio) {
@@ -178,8 +177,7 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
-    logger.error('Equipo POST error', error)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return serverError(error)
   }
 }
 
@@ -195,7 +193,7 @@ export async function PUT(request: NextRequest) {
 
     const context = await getUserContext()
     if (!context) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     if (!context.estudio) {
@@ -255,8 +253,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, miembro: actualizado })
   } catch (error) {
-    logger.error('Equipo PUT error', error)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return serverError(error)
   }
 }
 
@@ -272,7 +269,7 @@ export async function DELETE(request: NextRequest) {
 
     const context = await getUserContext()
     if (!context) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     if (!context.estudio) {
@@ -326,7 +323,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    logger.error('Equipo DELETE error', error)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return serverError(error)
   }
 }

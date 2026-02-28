@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
-import { logger } from '@/lib/logger'
+import { unauthorized, notFound, serverError } from '@/lib/api-utils'
 import { PLAN_CONFIGS, getDaysLeftInTrial, isTrialActive, getEffectiveFeatures, getEffectiveMaxAlumnos } from '@/lib/plans'
 
 export const runtime = 'nodejs'
@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const userId = await getCurrentUser()
     if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return unauthorized()
     }
 
     const user = await prisma.user.findUnique({
@@ -26,7 +26,7 @@ export async function GET() {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+      return notFound('Usuario no encontrado')
     }
 
     const planConfig = PLAN_CONFIGS[user.plan]
@@ -52,7 +52,6 @@ export async function GET() {
       }
     })
   } catch (error) {
-    logger.error('Auth me error', error)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+    return serverError(error)
   }
 }

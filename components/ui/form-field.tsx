@@ -21,6 +21,8 @@ export function FormField({
   className = '',
   htmlFor
 }: FormFieldProps) {
+  const errorId = htmlFor ? `${htmlFor}-error` : undefined
+
   return (
     <div className={`form-group ${error ? 'has-error' : ''} ${className}`}>
       <label htmlFor={htmlFor}>
@@ -29,20 +31,21 @@ export function FormField({
       </label>
       {children}
       {hint && !error && <p className="form-hint">{hint}</p>}
-      {error && <FormError message={error} />}
+      {error && <FormError message={error} id={errorId} />}
     </div>
   )
 }
 
 interface FormErrorProps {
   message?: string
+  id?: string
 }
 
-export function FormError({ message }: FormErrorProps) {
+export function FormError({ message, id }: FormErrorProps) {
   if (!message) return null
 
   return (
-    <p className="form-error">{message}</p>
+    <p className="form-error" id={id} role="alert">{message}</p>
   )
 }
 

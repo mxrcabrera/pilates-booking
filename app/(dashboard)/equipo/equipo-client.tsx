@@ -167,7 +167,7 @@ export function EquipoClient() {
             <div key={miembro.id} className="equipo-card">
               <div className="equipo-card-header">
                 {miembro.image ? (
-                  <Image src={miembro.image} alt="" width={48} height={48} className="equipo-avatar" />
+                  <Image src={miembro.image} alt={`Avatar de ${miembro.nombre || miembro.email}`} width={48} height={48} className="equipo-avatar" />
                 ) : (
                   <div className="equipo-avatar equipo-avatar-placeholder">
                     {(miembro.nombre || miembro.email)[0].toUpperCase()}

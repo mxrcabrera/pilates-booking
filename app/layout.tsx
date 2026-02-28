@@ -38,6 +38,11 @@ export const metadata: Metadata = {
     url: process.env.AUTH_URL,
     siteName: "Pilates Booking",
   },
+  twitter: {
+    card: "summary",
+    title: "Pilates Booking",
+    description: "Sistema de gestión para clases de pilates",
+  },
 };
 
 export const viewport: Viewport = {

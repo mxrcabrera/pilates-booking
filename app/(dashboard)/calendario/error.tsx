@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 export default function CalendarioError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error('Calendario error:', error)
+    console.error('Calendario error:', error, error.digest ? `[digest: ${error.digest}]` : '')
   }, [error])
 
   return (

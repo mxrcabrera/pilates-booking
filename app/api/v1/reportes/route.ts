@@ -35,10 +35,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ canAccess: false })
     }
 
-    // Parsear query params
     const { searchParams } = new URL(request.url)
     const mes = parseInt(searchParams.get('mes') || String(new Date().getMonth()))
     const año = parseInt(searchParams.get('año') || String(new Date().getFullYear()))
+
+    if (isNaN(mes) || mes < 0 || mes > 11 || isNaN(año) || año < 2020 || año > 2100) {
+      return NextResponse.json({ error: 'Parámetros de fecha inválidos' }, { status: 400 })
+    }
 
     const fechaInicio = startOfMonth(new Date(año, mes))
     const fechaFin = endOfMonth(new Date(año, mes))

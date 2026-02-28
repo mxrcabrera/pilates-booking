@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission, getOwnerFilter } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
-import { RECURRING_WEEKS, RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
+import { RECURRING_WEEKS, RATE_LIMIT_WINDOW_MS, MS_PER_HOUR } from '@/lib/constants'
 import { argentinaToUTC } from '@/lib/dates'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
@@ -77,7 +77,7 @@ function validateScheduleTiming(
 ): string | null {
   const fechaHoraClaseUTC = argentinaToUTC(fechaStr, horaInicio)
   const ahora = new Date()
-  const tiempoMinimo = new Date(ahora.getTime() + config.horasAnticipacionMinima * 60 * 60 * 1000)
+  const tiempoMinimo = new Date(ahora.getTime() + config.horasAnticipacionMinima * MS_PER_HOUR)
 
   if (fechaHoraClaseUTC < tiempoMinimo) {
     const horasTexto = config.horasAnticipacionMinima === 1 ? '1 hora' : `${config.horasAnticipacionMinima} horas`

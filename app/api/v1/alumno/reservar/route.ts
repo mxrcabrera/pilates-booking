@@ -5,7 +5,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { argentinaToUTC } from '@/lib/dates'
 import { Prisma } from '@prisma/client'
 import { unauthorized, badRequest, forbidden, tooManyRequests, serverError } from '@/lib/api-utils'
-import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
+import { RATE_LIMIT_WINDOW_MS, MS_PER_HOUR } from '@/lib/constants'
 
 const WRITE_LIMIT = 5
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const maxCapacity = config?.maxAlumnosPorClase ?? 4
     const horasAnticipacion = config?.horasAnticipacionMinima ?? 1
 
-    const minTime = new Date(now.getTime() + horasAnticipacion * 3600000)
+    const minTime = new Date(now.getTime() + horasAnticipacion * MS_PER_HOUR)
     if (fechaHoraUTC < minTime) {
       return badRequest(`Debes reservar con al menos ${horasAnticipacion} hora(s) de anticipacion`)
     }

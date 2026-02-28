@@ -52,9 +52,7 @@ export default function CalendarioPage() {
         alumnos={data.alumnos}
         packs={data.packs}
         horarioMananaInicio={data.horarioMananaInicio}
-        horarioMananaFin={data.horarioMananaFin}
         horarioTardeInicio={data.horarioTardeInicio}
-        horarioTardeFin={data.horarioTardeFin}
         maxAlumnosPorClase={data.maxAlumnosPorClase}
         horasAnticipacionMinima={data.horasAnticipacionMinima}
         features={data.features}

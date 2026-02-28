@@ -512,7 +512,7 @@ body {
   width: 100%;
   padding: 0.875rem 1rem;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   font-size: 1rem;
   color: #fff;
@@ -520,7 +520,7 @@ body {
 }
 
 .auth-input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .auth-input:focus {

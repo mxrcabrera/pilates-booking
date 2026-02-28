@@ -5,6 +5,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { pagoActionSchema } from '@/lib/schemas/pago.schema'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
+import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 import { getEffectiveFeatures } from '@/lib/plans'
 import type { PagoEstado } from '@prisma/client'
 
@@ -12,7 +13,6 @@ export const runtime = 'nodejs'
 
 // Rate limit: 20 requests por minuto para POST
 const POST_LIMIT = 20
-const WINDOW_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIP(request)
-    const { success } = rateLimit(`pagos:${ip}`, POST_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`pagos:${ip}`, POST_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }

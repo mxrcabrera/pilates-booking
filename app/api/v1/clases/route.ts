@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserContext, hasPermission, getOwnerFilter } from '@/lib/auth'
 import { addWeeks } from 'date-fns'
-import { RECURRING_WEEKS } from '@/lib/constants'
+import { RECURRING_WEEKS, RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 import { argentinaToUTC } from '@/lib/dates'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
@@ -103,7 +103,6 @@ export const runtime = 'nodejs'
 
 // Rate limit: 30 requests por minuto para POST
 const POST_LIMIT = 30
-const WINDOW_MS = 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
@@ -294,7 +293,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIP(request)
-    const { success } = rateLimit(`clases:${ip}`, POST_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`clases:${ip}`, POST_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }

@@ -178,7 +178,7 @@ describe('plans', () => {
       const trialEnd = getTrialEndDate()
 
       const diffTime = trialEnd.getTime() - now.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      const diffDays = Math.ceil(diffTime / (86400000))
 
       expect(diffDays).toBe(TRIAL_DAYS)
     })

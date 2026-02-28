@@ -4,12 +4,12 @@ import { getUserContext, hasPermission } from '@/lib/auth/auth-utils'
 import { logger } from '@/lib/logger'
 import { invitarMiembroSchema, cambiarRolSchema } from '@/lib/schemas/equipo.schema'
 import { badRequest, tooManyRequests } from '@/lib/api-utils'
+import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
 const WRITE_LIMIT = 10
-const WINDOW_MS = 60 * 1000
 
 // GET: Listar miembros del equipo
 export async function GET() {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIP(request)
-    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }
@@ -188,7 +188,7 @@ export async function PUT(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIP(request)
-    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }
@@ -265,7 +265,7 @@ export async function DELETE(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIP(request)
-    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`equipo:${ip}`, WRITE_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }

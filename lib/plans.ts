@@ -1,4 +1,5 @@
 import { PlanType } from '@prisma/client'
+import { MS_PER_DAY } from '@/lib/constants'
 
 export interface PlanFeatures {
   maxAlumnos: number
@@ -167,7 +168,7 @@ export function getDaysLeftInTrial(trialEndsAt: Date | null): number {
   const end = new Date(trialEndsAt)
   if (now >= end) return 0
   const diffTime = end.getTime() - now.getTime()
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return Math.ceil(diffTime / MS_PER_DAY)
 }
 
 export function getTrialEndDate(): Date {

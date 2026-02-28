@@ -4,9 +4,9 @@ import { getCurrentUser } from '@/lib/auth'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 import { updateAlumnoPerfilSchema } from '@/lib/schemas/alumno-perfil.schema'
 import { unauthorized, badRequest, forbidden, tooManyRequests, serverError } from '@/lib/api-utils'
+import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 
 const WRITE_LIMIT = 10
-const WINDOW_MS = 60 * 1000
 
 export async function GET() {
   try {
@@ -51,7 +51,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const ip = getClientIP(request)
-    const { success } = rateLimit(`alumno-perfil:${ip}`, WRITE_LIMIT, WINDOW_MS)
+    const { success } = rateLimit(`alumno-perfil:${ip}`, WRITE_LIMIT, RATE_LIMIT_WINDOW_MS)
     if (!success) {
       return tooManyRequests()
     }

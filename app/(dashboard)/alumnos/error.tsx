@@ -14,7 +14,7 @@ export default function AlumnosError({ error, reset }: { error: Error & { digest
           Error en Alumnos
         </h2>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '1.5rem' }}>
-          Ocurrio un error inesperado. Por favor, intenta de nuevo.
+          Ocurrió un error inesperado. Por favor, intenta de nuevo.
         </p>
         <button onClick={reset} className="btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer' }}>
           Reintentar

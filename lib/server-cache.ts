@@ -1,17 +1,17 @@
 import { unstable_cache } from 'next/cache'
 import { prisma } from './prisma'
 
-// Tipo para distinguir si filtramos por profesor o estudio
+// Type to distinguish whether we filter by profesor or estudio
 type OwnerType = 'profesor' | 'estudio'
 
-// Helper para construir el filtro según el tipo
+// Helper to build filter based on owner type
 function buildOwnerFilter(ownerId: string, ownerType: OwnerType) {
   return ownerType === 'estudio'
     ? { estudioId: ownerId }
     : { profesorId: ownerId }
 }
 
-// Cache de packs - cambian muy poco
+// Cache for packs - rarely change
 export const getCachedPacks = unstable_cache(
   async (ownerId: string, ownerType: OwnerType = 'profesor') => {
     const packs = await prisma.pack.findMany({
@@ -29,7 +29,7 @@ export const getCachedPacks = unstable_cache(
   { revalidate: 3600, tags: ['packs'] } // 1 hora
 )
 
-// Cache de horarios disponibles - cambian poco
+// Cache for available schedules - rarely change
 export const getCachedHorarios = unstable_cache(
   async (ownerId: string, ownerType: OwnerType = 'profesor') => {
     return prisma.horarioDisponible.findMany({
@@ -41,7 +41,7 @@ export const getCachedHorarios = unstable_cache(
   { revalidate: 3600, tags: ['horarios'] } // 1 hora
 )
 
-// Cache de configuración del profesor - cambia poco
+// Cache for profesor config - rarely changes
 export const getCachedProfesorConfig = unstable_cache(
   async (profesorId: string) => {
     const user = await prisma.user.findUnique({
@@ -104,5 +104,5 @@ export const getCachedAlumnosSimple = unstable_cache(
   { revalidate: 300, tags: ['alumnos'] } // 5 min
 )
 
-// Exportar el tipo para uso externo
+// Export type for external usage
 export type { OwnerType }

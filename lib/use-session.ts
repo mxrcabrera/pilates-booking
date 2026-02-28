@@ -23,11 +23,11 @@ type UseSessionReturn = {
   refresh: () => Promise<void>
 }
 
-// Caché global de sesión
+// Global session cache
 let sessionCache: UserSession | null = null
 let sessionPromise: Promise<UserSession | null> | null = null
 
-// Función para limpiar caché (exportada para uso externo)
+// Function to clear cache (exported for external use)
 export function clearSessionCache() {
   sessionCache = null
   sessionPromise = null
@@ -91,14 +91,14 @@ export function useSession(options?: { required?: boolean; redirectTo?: string }
   }, [router])
 
   useEffect(() => {
-    // Si ya tenemos caché, usarla
+    // If we already have cache, use it
     if (sessionCache) {
       setUser(sessionCache)
       setLoading(false)
       return
     }
 
-    // Si ya hay una petición en curso, esperarla
+    // If there's already a request in progress, wait for it
     if (sessionPromise) {
       sessionPromise.then(session => {
         setUser(session)
@@ -110,7 +110,7 @@ export function useSession(options?: { required?: boolean; redirectTo?: string }
       return
     }
 
-    // Iniciar nueva petición
+    // Start new request
     sessionPromise = fetchSession()
     sessionPromise.then(session => {
       setUser(session)
@@ -126,7 +126,7 @@ export function useSession(options?: { required?: boolean; redirectTo?: string }
   return { user, loading, error, logout, refresh }
 }
 
-// Hook específico para validar rol
+// Hook to validate user role
 export function useRequireRole(allowedRoles: string[], redirectTo?: string) {
   const { user, loading } = useSession()
   const router = useRouter()

@@ -27,15 +27,15 @@ export function formatearHora(hora: string): string {
   return hora.substring(0, 5) // "08:00:00" → "08:00"
 }
 
-// Formatea cualquier fecha a YYYY-MM-DD
-// - Strings de la DB: extraer directamente (vienen como "2025-12-19T00:00:00.000Z")
-// - Date objects de la DB: usar UTC (getUTCDate) porque son medianoche UTC
-// - Date objects locales (new Date()): usar local (getDate) porque representan el día del usuario
+// Format any date to YYYY-MM-DD
+// - DB strings: extract directly (come as "2025-12-19T00:00:00.000Z")
+// - DB Date objects: use UTC (getUTCDate) because they're midnight UTC
+// - Local Date objects (new Date()): use local (getDate) because they represent user's day
 //
-// El problema: no sabemos si un Date viene de la DB o es local.
-// Solución: usamos la hora UTC para determinar el origen:
-// - Si la hora UTC es 00:00:00.000 → viene de la DB, usar UTC
-// - Si no → es fecha local, usar local
+// The problem: we don't know if a Date comes from DB or is local.
+// Solution: use UTC time to determine origin:
+// - If UTC time is 00:00:00.000 → from DB, use UTC
+// - Otherwise → local date, use local
 export function formatearFechaDia(fecha: Date | string): string {
   if (typeof fecha === 'string') {
     return fecha.split('T')[0]

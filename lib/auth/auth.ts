@@ -16,7 +16,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!existingUser) {
-          // Crear nuevo usuario con trial de 14 días
+          // Create new user with 14-day trial
           const newUser = await prisma.user.create({
             data: {
               email: profile.email,
@@ -28,23 +28,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               planStartedAt: new Date(),
             },
           })
-          // Asignar el id al objeto user para que se use en el JWT
+          // Assign the id to the user object for JWT usage
           user.id = newUser.id
         } else {
-          // Usuario existente - asignar el id
+          // Existing user - assign the id
           user.id = existingUser.id
         }
       }
       return true
     },
     async jwt({ token, user, account }) {
-      // Primera vez que se crea el token (después del sign in)
+      // First time creating the token (after sign in)
       if (user && user.id) {
         token.sub = user.id
         token.role = (user as { role?: string }).role || 'PROFESOR'
       }
 
-      // Guardar tokens de Google para Calendar API
+      // Save Google tokens for Calendar API
       if (account?.access_token) {
         token.accessToken = account.access_token
       }

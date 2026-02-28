@@ -90,7 +90,7 @@ export async function notifyClassEvent({
         return
     }
 
-    // Crear notificación in-app si el alumno tiene cuenta
+    // Create in-app notification if the student has an account
     if (clase.alumno.userId) {
       await createNotification({
         userId: clase.alumno.userId,
@@ -109,7 +109,7 @@ export async function notifyClassEvent({
       tipo,
     }
 
-    // Enviar email si el plan lo permite
+    // Send email if plan allows it
     if (canUseFeature('notificacionesEmail', plan, trialEndsAt)) {
       const emailSent = await sendNotificationEmail(clase.alumno.email, notificationData)
 
@@ -152,7 +152,7 @@ export async function notifyWaitlistAvailable(
     const titulo = '¡Lugar disponible!'
     const mensaje = `Se liberó un lugar para la clase del ${fechaFormateada} a las ${entrada.horaInicio}`
 
-    // Crear notificación in-app
+    // Create in-app notification
     if (entrada.alumno.userId) {
       await createNotification({
         userId: entrada.alumno.userId,
@@ -170,12 +170,12 @@ export async function notifyWaitlistAvailable(
       tipo: 'LUGAR_DISPONIBLE' as const,
     }
 
-    // Enviar email si el plan lo permite
+    // Send email if plan allows it
     if (canUseFeature('notificacionesEmail', plan, trialEndsAt)) {
       await sendNotificationEmail(entrada.alumno.email, notificationData)
     }
 
-    // Actualizar estado de lista de espera
+    // Update waitlist status
     await prisma.listaEspera.update({
       where: { id: listaEsperaId },
       data: {

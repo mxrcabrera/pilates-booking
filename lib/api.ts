@@ -56,7 +56,7 @@ export async function deletePackAPI(id: string) {
   return apiCall('deletePack', { id })
 }
 
-// Helper genérico para otras APIs
+// Generic helper for other APIs
 async function apiCallTo(endpoint: string, action: string, data: Record<string, unknown> = {}) {
   const response = await fetch(endpoint, {
     method: 'POST',

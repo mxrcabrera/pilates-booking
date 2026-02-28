@@ -111,7 +111,7 @@ export async function getUserContext(): Promise<UserContext | null> {
   const userWithRole = await getCurrentUserWithRole()
   if (!userWithRole) return null
 
-  // Buscar el estudio del usuario
+  // Find the user's studio
   const miembro = await prisma.estudioMiembro.findFirst({
     where: { userId: userWithRole.userId, deletedAt: null },
     include: {

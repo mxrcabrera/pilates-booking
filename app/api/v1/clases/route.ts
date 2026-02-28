@@ -370,7 +370,7 @@ export async function POST(request: NextRequest) {
 
         // Verificar que el plan permita clases recurrentes
         if (esRecurrente && !canUseFeature('clasesRecurrentes', configData.plan, configData.trialEndsAt)) {
-          const suggestedPlan = getSuggestedUpgrade(configData.plan, 'feature')
+          const suggestedPlan = getSuggestedUpgrade(configData.plan)
           return NextResponse.json({
             error: 'Las clases recurrentes no están disponibles en tu plan',
             code: 'FEATURE_NOT_AVAILABLE',

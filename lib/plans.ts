@@ -179,8 +179,7 @@ export function getTrialEndDate(): Date {
 
 // Plan upgrade suggestions based on limits hit
 export function getSuggestedUpgrade(
-  currentPlan: PlanType,
-  _reason: 'alumnos' | 'feature'
+  currentPlan: PlanType
 ): PlanType | null {
   const upgradeMap: Record<PlanType, PlanType | null> = {
     FREE: 'STARTER',

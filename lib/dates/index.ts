@@ -1,5 +1,5 @@
 // lib/dates/index.ts
-// Utilidades para manejo de fechas
+// Date handling utilities
 
 import { fromZonedTime } from 'date-fns-tz'
 import { MS_PER_DAY, MESES } from '@/lib/constants'
@@ -7,7 +7,7 @@ import { MS_PER_DAY, MESES } from '@/lib/constants'
 export const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires'
 
 /**
- * Obtiene la fecha actual en timezone Argentina
+ * Gets the current date in Argentina timezone.
  */
 function now(): Date {
   return new Date(new Date().toLocaleString('en-US', { timeZone: ARGENTINA_TZ }))
@@ -34,7 +34,7 @@ export function getNowArgentinaHour(): number {
 }
 
 /**
- * Formatea un mes en formato "YYYY-MM" a formato legible
+ * Formats a month string "YYYY-MM" to a human-readable format.
  */
 export function formatMes(mesStr: string): string {
   if (/^\d{4}-\d{2}$/.test(mesStr)) {
@@ -45,8 +45,8 @@ export function formatMes(mesStr: string): string {
 }
 
 /**
- * Calcula la diferencia en días entre una fecha y hoy
- * Positivo = fecha en el futuro, Negativo = fecha en el pasado
+ * Calculates the difference in days between a date and today.
+ * Positive = future date, Negative = past date.
  */
 export function diasDiferencia(fecha: Date | string): number {
   const hoy = now()

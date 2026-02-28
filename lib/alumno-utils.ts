@@ -16,8 +16,8 @@ interface AlumnoClasesData {
 }
 
 /**
- * Calcula el estado de pago de un alumno
- * Retorna null si el alumno está inactivo
+ * Calculates the payment status of an alumno.
+ * Returns null if the alumno is inactive.
  */
 export function getPaymentStatus(alumno: AlumnoPaymentData): PaymentStatus {
   if (!alumno.estaActivo) return null
@@ -34,7 +34,7 @@ export function getPaymentStatus(alumno: AlumnoPaymentData): PaymentStatus {
 
   if (dias < 0) {
     const diasAtraso = Math.abs(dias)
-    // Más de 60 días = datos incorrectos, mostrar al día
+    // Over 60 days overdue = likely incorrect data, show as up-to-date
     if (diasAtraso > OVERDUE_DAYS_THRESHOLD) return { texto: 'Al día', clase: 'al-dia' }
     return { texto: 'Pago atrasado', clase: 'vencido' }
   }
@@ -51,7 +51,7 @@ export function getPaymentStatus(alumno: AlumnoPaymentData): PaymentStatus {
 }
 
 /**
- * Retorna el texto de estado considerando el género del alumno
+ * Returns the status text considering the alumno's gender
  */
 export function getStatusText(genero: string, estaActivo: boolean): string {
   if (genero === 'M') {
@@ -61,8 +61,8 @@ export function getStatusText(genero: string, estaActivo: boolean): string {
 }
 
 /**
- * Calcula las clases restantes del mes
- * Retorna null si no hay clasesPorMes definido o no quedan clases
+ * Calculates remaining classes for the month.
+ * Returns null if clasesPorMes is not defined or no classes remain.
  */
 export function getClasesRestantes(alumno: AlumnoClasesData): string | null {
   if (!alumno.clasesPorMes) return null
@@ -73,8 +73,8 @@ export function getClasesRestantes(alumno: AlumnoClasesData): string | null {
 }
 
 /**
- * Versión alternativa de clases restantes para vista de detalle
- * Incluye mensaje cuando no hay clases disponibles
+ * Alternative version of remaining classes for detail view.
+ * Includes a message when no classes are available.
  */
 export function getClasesRestantesDetalle(alumno: AlumnoClasesData): string | null {
   if (!alumno.clasesPorMes) return null
@@ -85,7 +85,7 @@ export function getClasesRestantesDetalle(alumno: AlumnoClasesData): string | nu
 }
 
 // ========================================
-// FUNCIONES DE CICLO DE FACTURACIÓN
+// BILLING CYCLE FUNCTIONS
 // ========================================
 
 export type RangoCiclo = {
@@ -94,12 +94,12 @@ export type RangoCiclo = {
 }
 
 /**
- * Calcula el rango del ciclo de facturación para un alumno
- * basado en su día de inicio de ciclo personalizado.
+ * Calculates the billing cycle range for an alumno
+ * based on their custom cycle start day.
  *
- * @param diaInicioCiclo - Día del mes en que inicia el ciclo (1-28)
- * @param fechaReferencia - Fecha desde la cual calcular (default: hoy)
- * @returns Objeto con fechas de inicio y fin del ciclo actual
+ * @param diaInicioCiclo - Day of the month the cycle starts (1-28)
+ * @param fechaReferencia - Reference date to calculate from (default: today)
+ * @returns Object with start and end dates of the current cycle
  */
 export function calcularRangoCiclo(diaInicioCiclo: number, fechaReferencia: Date = new Date()): RangoCiclo {
   const dia = Math.min(Math.max(1, diaInicioCiclo), 28)
@@ -112,16 +112,16 @@ export function calcularRangoCiclo(diaInicioCiclo: number, fechaReferencia: Date
   let fin: Date
 
   if (diaActual >= dia) {
-    // Estamos en el ciclo que empezó este mes
+    // Current cycle started this month
     inicio = new Date(año, mes, dia)
     fin = new Date(año, mes + 1, dia - 1)
   } else {
-    // Estamos en el ciclo que empezó el mes pasado
+    // Current cycle started last month
     inicio = new Date(año, mes - 1, dia)
     fin = new Date(año, mes, dia - 1)
   }
 
-  // Ajustar horas para incluir todo el día
+  // Set hours to include the full day
   inicio.setHours(0, 0, 0, 0)
   fin.setHours(23, 59, 59, 999)
 
@@ -129,8 +129,8 @@ export function calcularRangoCiclo(diaInicioCiclo: number, fechaReferencia: Date
 }
 
 /**
- * Calcula el precio implícito por clase basado en el precio del pack
- * y la cantidad de clases por semana (4 semanas por mes)
+ * Calculates the implicit price per class based on the pack price
+ * and the number of classes per week (4 weeks per month).
  */
 export function calcularPrecioImplicitoPorClase(precioPack: number, clasesPorSemana: number): number {
   const clasesPorMes = clasesPorSemana * WEEKS_PER_MONTH

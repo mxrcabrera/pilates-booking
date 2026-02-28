@@ -38,7 +38,7 @@ async function getRoleFromNextAuthToken(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Rutas estáticas - siempre permitir
+  // Static paths - always allow
   const staticPaths = [
     '/_next',
     '/favicon.ico',
@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Obtener tokens de sesión
+  // Get session tokens
   const authToken = request.cookies.get('auth-token')?.value
   const secureCookieName = '__Secure-next-auth.session-token'
   const plainCookieName = 'next-auth.session-token'
@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest) {
   const hasSession = hasValidToken
 
   // ===========================================
-  // RUTAS PÚBLICAS (sin autenticación requerida)
+  // PUBLIC ROUTES (no authentication required)
   // ===========================================
   const publicPaths = [
     '/api/auth/login',
@@ -94,25 +94,25 @@ export async function middleware(request: NextRequest) {
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
 
   // ===========================================
-  // PÁGINA DE LOGIN - Redirigir si ya está logueado
+  // LOGIN PAGE - Redirect if already logged in
   // ===========================================
   if (pathname === '/login' || pathname.startsWith('/login')) {
     if (hasSession && userRole) {
-      // Usuario logueado intentando acceder a login -> redirigir a su dashboard
+      // Logged-in user trying to access login -> redirect to their dashboard
       const redirectUrl = userRole === 'ALUMNO' ? '/alumno' : '/dashboard'
       return NextResponse.redirect(new URL(redirectUrl, request.url))
     }
-    // No logueado -> permitir acceso a login
+    // Not logged in -> allow access to login
     return NextResponse.next()
   }
 
-  // Permitir rutas públicas sin verificación adicional
+  // Allow public routes without further verification
   if (isPublicPath) {
     return NextResponse.next()
   }
 
   // ===========================================
-  // PÁGINA RAÍZ - Redirigir según estado
+  // ROOT PAGE - Redirect based on auth state
   // ===========================================
   if (pathname === '/') {
     if (hasSession && userRole) {
@@ -123,10 +123,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ===========================================
-  // RUTAS PROTEGIDAS - Requieren autenticación
+  // PROTECTED ROUTES - Require authentication
   // ===========================================
   if (!hasSession) {
-    // Sin sesión
+    // No session
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
@@ -139,10 +139,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ===========================================
-  // VALIDACIÓN DE ROLES EN RUTAS
+  // ROLE VALIDATION ON ROUTES
   // ===========================================
 
-  // Rutas de ALUMNO - Solo para rol ALUMNO
+  // ALUMNO routes - Only for ALUMNO role
   // Note: Use exact /alumno path and trailing slash to avoid matching /alumnos (profesor route)
   if (pathname === '/alumno' || pathname.startsWith('/alumno/') || pathname.startsWith('/api/v1/alumno/')) {
     if (userRole && userRole !== 'ALUMNO') {
@@ -153,7 +153,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Rutas de PROFESOR (dashboard, calendario, alumnos, etc.) - Solo para rol PROFESOR
+  // PROFESOR routes (dashboard, calendario, alumnos, etc.) - Only for PROFESOR role
   const profesorPaths = ['/dashboard', '/calendario', '/alumnos', '/pagos', '/configuracion', '/planes', '/reportes', '/equipo', '/perfil', '/onboarding']
   const profesorApiPaths = ['/api/v1/']
 

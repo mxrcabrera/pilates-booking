@@ -1,4 +1,4 @@
-// Utilidades para exportar datos a CSV
+// Utilities for exporting data to CSV
 
 type CSVRow = Record<string, string | number | boolean | null | undefined>
 
@@ -35,11 +35,11 @@ export function exportToCSV<T extends CSVRow>(
 
   const csvContent = [headers, ...rows].join('\n')
 
-  // BOM para UTF-8 (para que Excel lo abra bien con acentos)
+  // UTF-8 BOM so Excel handles accented characters correctly
   const BOM = '\uFEFF'
   const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
 
-  // Descargar
+  // Download
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   link.setAttribute('href', url)
@@ -51,7 +51,7 @@ export function exportToCSV<T extends CSVRow>(
   URL.revokeObjectURL(url)
 }
 
-// Configuraciones específicas para cada tipo de exportación
+// Column configurations for each export type
 export const ALUMNOS_COLUMNS = [
   { key: 'nombre' as const, label: 'Nombre' },
   { key: 'email' as const, label: 'Email' },

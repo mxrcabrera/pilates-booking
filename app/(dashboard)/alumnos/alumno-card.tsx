@@ -19,7 +19,6 @@ export function AlumnoCard({
   onEdit: () => void
   onView: () => void
   onDelete: () => void
-  onToggleStatus: () => void
   viewMode?: 'list' | 'grid'
   selectionMode?: boolean
   isSelected?: boolean

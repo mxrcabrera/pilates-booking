@@ -85,17 +85,6 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
     }
   }
 
-  const handleToggleStatus = async (alumno: Alumno) => {
-    setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, estaActivo: !a.estaActivo } : a))
-    try {
-      await toggleAlumnoStatusAPI(alumno.id)
-      showSuccess(alumno.estaActivo ? 'Alumno desactivado' : 'Alumno activado')
-    } catch (err) {
-      setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, estaActivo: !a.estaActivo } : a))
-      showError(getErrorMessage(err))
-    }
-  }
-
   const handleDeleteClick = (alumno: Alumno) => {
     setDeleteConfirm({ isOpen: true, alumno })
   }
@@ -337,7 +326,6 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
               onEdit={() => handleEdit(alumno)}
               onView={() => handleView(alumno)}
               onDelete={() => handleDeleteClick(alumno)}
-              onToggleStatus={() => handleToggleStatus(alumno)}
               viewMode={viewMode}
               selectionMode={selectionMode}
               isSelected={selectedAlumnos.has(alumno.id)}

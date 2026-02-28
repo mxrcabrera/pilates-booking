@@ -586,7 +586,7 @@ export async function POST(request: NextRequest) {
               }
 
               if (clasesACrear.length > 0) {
-                // H4: Validate capacity + create in a transaction to prevent race conditions
+                // H4: Validate capacity + create in Serializable transaction to prevent race conditions
                 await prisma.$transaction(async (tx) => {
                   const maxCap = configData.maxAlumnosPorClase
                   const futureDates = clasesACrear.map(c => c.fecha as Date)
@@ -613,7 +613,7 @@ export async function POST(request: NextRequest) {
                       skipDuplicates: true
                     })
                   }
-                })
+                }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
               }
             }
           }

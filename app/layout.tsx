@@ -35,6 +35,8 @@ export const metadata: Metadata = {
     title: "Pilates Booking",
     description: "Sistema de gestión para clases de pilates",
     type: "website",
+    url: process.env.AUTH_URL,
+    siteName: "Pilates Booking",
   },
 };
 

@@ -402,6 +402,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
                       type="button"
                       className="turno-accordion-header"
                       onClick={() => toggleTurno('mañana')}
+                      aria-expanded={turnosExpandidos.has('mañana')}
                     >
                       <div className="turno-accordion-left">
                         <div className="turno-accordion-info">
@@ -457,6 +458,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
                       type="button"
                       className="turno-accordion-header"
                       onClick={() => toggleTurno('tarde')}
+                      aria-expanded={turnosExpandidos.has('tarde')}
                     >
                       <div className="turno-accordion-left">
                         <div className="turno-accordion-info">

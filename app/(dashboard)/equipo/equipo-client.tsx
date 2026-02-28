@@ -232,7 +232,7 @@ export function EquipoClient() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Invitar miembro</h2>
-              <button className="btn-icon" onClick={() => setShowInviteModal(false)}>
+              <button className="btn-icon" onClick={() => setShowInviteModal(false)} aria-label="Cerrar">
                 <X size={20} />
               </button>
             </div>

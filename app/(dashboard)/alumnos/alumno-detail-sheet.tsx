@@ -97,7 +97,7 @@ export function AlumnoDetailSheet({
     <>
       <div className="sheet-overlay" onClick={onClose} />
       <div className="sheet-content">
-        <button onClick={onClose} className="sheet-close-btn">
+        <button onClick={onClose} className="sheet-close-btn" aria-label="Cerrar">
           <X size={16} />
         </button>
 

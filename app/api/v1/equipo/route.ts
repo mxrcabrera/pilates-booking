@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserContext, hasPermission } from '@/lib/auth/auth-utils'
+import { getUserContext, hasPermission } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { invitarMiembroSchema, cambiarRolSchema } from '@/lib/schemas/equipo.schema'
 import { unauthorized, badRequest, tooManyRequests, serverError } from '@/lib/api-utils'

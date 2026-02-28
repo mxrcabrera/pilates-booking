@@ -1,5 +1,5 @@
 // ===========================================
-// CONSTANTES - Pilates Booking
+// CONSTANTS - Pilates Booking
 // ===========================================
 
 export const PACK_LABELS: Record<string, string> = {

@@ -1,5 +1,5 @@
-// Cache global del cliente para datos de páginas
-// Los datos se mantienen en memoria mientras el usuario navega
+// Global client-side cache for page data.
+// Data is kept in memory while the user navigates.
 
 type CacheEntry<T> = {
   data: T
@@ -7,13 +7,13 @@ type CacheEntry<T> = {
 }
 
 const cache = new Map<string, CacheEntry<unknown>>()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 export function getCachedData<T>(key: string): T | null {
   const entry = cache.get(key)
   if (!entry) return null
 
-  // Verificar si expiró
+  // Check if expired
   if (Date.now() - entry.timestamp > CACHE_TTL) {
     cache.delete(key)
     return null
@@ -29,7 +29,7 @@ export function setCachedData<T>(key: string, data: T): void {
   })
 }
 
-// Keys para cada página
+// Keys for each page
 export const CACHE_KEYS = {
   ALUMNOS: 'alumnos-data',
   CALENDARIO: 'calendario-data',
@@ -38,7 +38,7 @@ export const CACHE_KEYS = {
   PAGOS: 'pagos-data',
 } as const
 
-// Dependencias entre caches: cuando se invalida una key, también se invalidan las relacionadas
+// Cache dependencies: when a key is invalidated, related keys are also invalidated
 const CACHE_DEPENDENCIES: Record<string, string[]> = {
   [CACHE_KEYS.ALUMNOS]: [CACHE_KEYS.CALENDARIO, CACHE_KEYS.DASHBOARD, CACHE_KEYS.PAGOS],
   [CACHE_KEYS.CALENDARIO]: [CACHE_KEYS.DASHBOARD],
@@ -46,11 +46,11 @@ const CACHE_DEPENDENCIES: Record<string, string[]> = {
   [CACHE_KEYS.PAGOS]: [CACHE_KEYS.DASHBOARD],
 }
 
-// Invalida cache con cascada de dependencias
+// Invalidates cache with dependency cascade
 export function invalidateCache(key?: string): void {
   if (key) {
     cache.delete(key)
-    // Invalidar dependencias en cascada
+    // Invalidate dependencies in cascade
     const deps = CACHE_DEPENDENCIES[key]
     if (deps) {
       for (const dep of deps) {

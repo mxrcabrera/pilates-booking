@@ -32,11 +32,11 @@ function pruneExpired() {
 setInterval(pruneExpired, 5 * 60 * 1000)
 
 /**
- * Verifica si una request está dentro del límite permitido
+ * Checks if a request is within the allowed rate limit.
  *
- * @param key - Identificador único (ej: "login:192.168.1.1")
- * @param limit - Número máximo de requests permitidas
- * @param windowMs - Ventana de tiempo en milisegundos
+ * @param key - Unique identifier (e.g. "login:192.168.1.1")
+ * @param limit - Maximum number of allowed requests
+ * @param windowMs - Time window in milliseconds
  * @returns { success, remaining, resetIn }
  */
 export function rateLimit(
@@ -47,7 +47,7 @@ export function rateLimit(
   const now = Date.now()
   const record = rateLimitMap.get(key)
 
-  // Si no hay registro o ya expiró, crear nuevo
+  // No record or expired, create new entry
   if (!record || now > record.resetTime) {
     if (rateLimitMap.size >= MAX_ENTRIES) {
       pruneExpired()
@@ -56,7 +56,7 @@ export function rateLimit(
     return { success: true, remaining: limit - 1, resetIn: windowMs }
   }
 
-  // Si excede el límite
+  // Limit exceeded
   if (record.count >= limit) {
     return {
       success: false,
@@ -65,7 +65,7 @@ export function rateLimit(
     }
   }
 
-  // Incrementar contador
+  // Increment counter
   record.count++
   return {
     success: true,
@@ -75,22 +75,22 @@ export function rateLimit(
 }
 
 /**
- * Obtiene la IP del cliente desde los headers
+ * Gets the client IP from request headers.
  */
 export function getClientIP(request: Request): string {
-  // En Netlify/Vercel, x-forwarded-for contiene la IP real
+  // On Netlify/Vercel, x-forwarded-for contains the real IP
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
-    // Puede ser una lista separada por comas, tomar la primera
+    // May be a comma-separated list, take the first one
     return forwarded.split(',')[0].trim()
   }
 
-  // Fallback para desarrollo local
+  // Fallback for local development
   return 'localhost'
 }
 
 /**
- * Helper para crear respuesta de rate limit excedido
+ * Helper to create a rate limit exceeded response.
  */
 export function rateLimitExceeded(resetIn: number) {
   const retryAfter = Math.ceil(resetIn / 1000)

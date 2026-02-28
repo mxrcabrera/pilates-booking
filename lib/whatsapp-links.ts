@@ -1,21 +1,21 @@
-// Utilidad para generar links wa.me con mensajes pre-armados
-// Esto abre WhatsApp Web/app con el mensaje listo para enviar
+// Utility for generating wa.me links with pre-built messages.
+// Opens WhatsApp Web/app with the message ready to send.
 
 function formatPhone(telefono: string): string {
-  // Remover espacios, guiones, paréntesis
+  // Remove spaces, dashes, parentheses
   let phone = telefono.replace(/[\s\-\(\)]/g, '')
 
-  // Si empieza con 0, quitarlo (Argentina)
+  // If starts with 0, remove it (Argentina format)
   if (phone.startsWith('0')) {
     phone = phone.slice(1)
   }
 
-  // Si no tiene código de país, agregar +54 (Argentina)
+  // If no country code, prepend +54 (Argentina)
   if (!phone.startsWith('+') && !phone.startsWith('54')) {
     phone = '54' + phone
   }
 
-  // Quitar el + si lo tiene
+  // Remove the + prefix if present
   if (phone.startsWith('+')) {
     phone = phone.slice(1)
   }
@@ -29,7 +29,7 @@ export function getWhatsAppLink(telefono: string, mensaje: string): string {
   return `https://wa.me/${phone}?text=${encodedMessage}`
 }
 
-// Mensajes pre-armados para diferentes situaciones
+// Pre-built messages for different situations
 export function getClaseNuevaMessage(
   alumnoNombre: string,
   fecha: string,

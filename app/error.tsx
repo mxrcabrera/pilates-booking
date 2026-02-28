@@ -10,7 +10,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Application error:', error)
+    console.error('Application error:', error, error.digest ? `[digest: ${error.digest}]` : '')
   }, [error])
 
   return (

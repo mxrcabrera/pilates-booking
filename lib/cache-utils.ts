@@ -1,7 +1,7 @@
 import { revalidateTag } from 'next/cache'
 
-// Next.js 16 requiere un segundo argumento (cacheLife profile)
-// 'max' usa stale-while-revalidate para mejor performance
+// Next.js 16 requires a second argument (cacheLife profile)
+// 'max' uses stale-while-revalidate for better performance
 
 export function invalidatePacks() {
   revalidateTag('packs', 'max')

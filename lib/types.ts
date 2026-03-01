@@ -145,7 +145,7 @@ export type ProfesorConfig = {
   hasGoogleAccount: boolean
 }
 
-// ----- PAGINACIÓN -----
+// ----- PAGINATION -----
 export type Pagination = {
   page: number
   limit: number

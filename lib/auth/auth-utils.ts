@@ -79,7 +79,7 @@ export async function getCurrentUser() {
 export async function getCurrentUserWithRole(): Promise<{ userId: string; role: string } | null> {
   const cookieStore = await cookies()
 
-  // 1. Primero intentar con JWT personalizado (credentials login)
+  // 1. First try custom JWT (credentials login)
   const customToken = cookieStore.get('auth-token')?.value
   if (customToken) {
     const payload = await verifyToken(customToken)

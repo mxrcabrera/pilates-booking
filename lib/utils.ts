@@ -15,7 +15,7 @@ export function getErrorMessage(error: unknown): string {
   return 'Error desconocido'
 }
 
-// Utilidades de tiempo/hora
+// Time/hour utilities
 export function getTurno(hora: number, horarioTardeInicio: string = '17:00'): 'mañana' | 'tarde' | 'noche' {
   const tardeComienzo = parseInt(horarioTardeInicio.split(':')[0])
   if (hora < tardeComienzo) return 'mañana'
@@ -41,20 +41,20 @@ export function formatearFechaDia(fecha: Date | string): string {
     return fecha.split('T')[0]
   }
 
-  // Detectar si es fecha de DB (medianoche UTC) o fecha local
+  // Detect if it's a DB date (midnight UTC) or local date
   const esDeDB = fecha.getUTCHours() === 0 &&
                  fecha.getUTCMinutes() === 0 &&
                  fecha.getUTCSeconds() === 0 &&
                  fecha.getUTCMilliseconds() === 0
 
   if (esDeDB) {
-    // Fecha de DB: usar UTC
+    // DB date: use UTC
     const year = fecha.getUTCFullYear()
     const month = String(fecha.getUTCMonth() + 1).padStart(2, '0')
     const day = String(fecha.getUTCDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   } else {
-    // Fecha local: usar local
+    // Local date: use local
     const year = fecha.getFullYear()
     const month = String(fecha.getMonth() + 1).padStart(2, '0')
     const day = String(fecha.getDate()).padStart(2, '0')

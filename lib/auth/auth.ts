@@ -9,7 +9,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Para OAuth, crear o actualizar el usuario
+      // For OAuth, create or update the user
       if (account?.provider === 'google' && profile?.email) {
         const existingUser = await prisma.user.findUnique({
           where: { email: profile.email },

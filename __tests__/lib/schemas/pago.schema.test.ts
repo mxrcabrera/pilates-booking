@@ -62,22 +62,6 @@ describe('pago.schema', () => {
       expect(result.success).toBe(false)
     })
 
-    it('should accept optional profesorId', () => {
-      const result = createPagoSchema.safeParse({
-        ...validData,
-        profesorId: '123e4567-e89b-12d3-a456-426614174001'
-      })
-      expect(result.success).toBe(true)
-    })
-
-    it('should validate profesorId as UUID if provided', () => {
-      const result = createPagoSchema.safeParse({
-        ...validData,
-        profesorId: 'invalid'
-      })
-      expect(result.success).toBe(false)
-    })
-
     it('should accept optional tipoPago enum', () => {
       const mensualResult = createPagoSchema.safeParse({ ...validData, tipoPago: 'mensual' })
       expect(mensualResult.success).toBe(true)

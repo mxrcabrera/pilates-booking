@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, isValidElement, cloneElement, ReactElement } from 'react'
 
 interface FormFieldProps {
   label: string
@@ -23,13 +23,20 @@ export function FormField({
 }: FormFieldProps) {
   const errorId = htmlFor ? `${htmlFor}-error` : undefined
 
+  const enhancedChildren = error && isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        'aria-invalid': true,
+        ...(errorId && { 'aria-describedby': errorId }),
+      })
+    : children
+
   return (
     <div className={`form-group ${error ? 'has-error' : ''} ${className}`}>
       <label htmlFor={htmlFor}>
         {label}
         {required && <span className="form-required">*</span>}
       </label>
-      {children}
+      {enhancedChildren}
       {hint && !error && <p className="form-hint">{hint}</p>}
       {error && <FormError message={error} id={errorId} />}
     </div>

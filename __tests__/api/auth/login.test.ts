@@ -19,6 +19,7 @@ jest.mock('@/lib/auth', () => ({
   hashPassword: jest.fn(),
   verifyPassword: jest.fn(),
   createToken: jest.fn(),
+  setAuthCookie: jest.fn(),
 }))
 
 jest.mock('next/headers', () => ({

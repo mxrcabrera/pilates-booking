@@ -161,7 +161,7 @@ export function EquipoClient() {
           const rolInfo = ROL_INFO[miembro.rol]
           const RolIcon = rolInfo.icon
           const isOwner = miembro.rol === 'OWNER'
-          const canEdit = canManage && !isOwner && data.miRol === 'OWNER' || (data.miRol === 'ADMIN' && miembro.rol !== 'ADMIN')
+          const canEdit = canManage && !isOwner && (data.miRol === 'OWNER' || (data.miRol === 'ADMIN' && miembro.rol !== 'ADMIN'))
 
           return (
             <div key={miembro.id} className="equipo-card">

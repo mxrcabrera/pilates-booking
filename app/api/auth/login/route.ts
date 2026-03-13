@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, verifyPassword, createToken } from '@/lib/auth'
-import { cookies } from 'next/headers'
+import { hashPassword, verifyPassword, createToken, setAuthCookie } from '@/lib/auth'
 import { rateLimit, getClientIP, rateLimitExceeded } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
@@ -96,18 +95,9 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Crear token con rol y guardar en cookie
       const token = await createToken(user.id, userRole)
-      const cookieStore = await cookies()
-      cookieStore.set('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24,
-        path: '/',
-      })
+      await setAuthCookie(token)
 
-      // Redirigir según rol
       const redirectTo = userRole === 'ALUMNO' ? '/alumno' : '/dashboard'
       return NextResponse.json({ success: true, redirectTo })
     } else {
@@ -131,18 +121,9 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Crear token con rol y guardar en cookie
       const token = await createToken(user.id, user.role)
-      const cookieStore = await cookies()
-      cookieStore.set('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24,
-        path: '/',
-      })
+      await setAuthCookie(token)
 
-      // Redirigir según rol
       const redirectTo = user.role === 'ALUMNO' ? '/alumno' : '/dashboard'
       return NextResponse.json({ success: true, redirectTo })
     }

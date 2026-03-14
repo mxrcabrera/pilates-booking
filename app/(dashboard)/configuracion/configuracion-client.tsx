@@ -169,7 +169,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
 
   return (
     <>
-    <form onSubmit={handleSubmit}>
+    <form id="config-form" onSubmit={handleSubmit}>
       {/* Sección 1: Horarios Disponibles */}
       <div className="settings-section">
         <HorariosDisponibles
@@ -369,17 +369,6 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         </div>
       </div>
 
-      {/* Boton de guardar */}
-      <div className="settings-actions">
-        {message && (
-          <div className={`form-message ${message.type}`} role="alert">
-            {message.text}
-          </div>
-        )}
-        <button type="submit" className="btn-primary btn-lg" disabled={isLoading}>
-          {isLoading ? 'Guardando...' : 'Guardar Configuración'}
-        </button>
-      </div>
     </form>
 
     {/* Sección 3: Paquetes - fuera del form (tiene su propia lógica de guardado) */}
@@ -401,6 +390,18 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
           )}
         />
       </div>
+    </div>
+
+    {/* Boton de guardar - al final de la pagina */}
+    <div className="settings-actions">
+      {message && (
+        <div className={`form-message ${message.type}`} role="alert">
+          {message.text}
+        </div>
+      )}
+      <button type="submit" form="config-form" className="btn-primary btn-lg" disabled={isLoading}>
+        {isLoading ? 'Guardando...' : 'Guardar Configuración'}
+      </button>
     </div>
 
     {/* Dialog de horarios - fuera del form */}

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Calendar, LayoutDashboard, LogOut, Menu, X, User, Search } from 'lucide-react'
-import { logout } from '@/app/(auth)/login/actions'
+import { useSession } from '@/lib/use-session'
 
 type UserData = {
   id: string
@@ -21,6 +21,7 @@ const navItems = [
 export function AlumnoNav({ user }: { user: UserData }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { logout: clientLogout } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -75,12 +76,13 @@ export function AlumnoNav({ user }: { user: UserData }) {
                     <User size={16} />
                     <span>Mi Perfil</span>
                   </Link>
-                  <form action={logout}>
-                    <button type="submit" className="user-dropdown-item logout">
-                      <LogOut size={16} />
-                      <span>Cerrar sesión</span>
-                    </button>
-                  </form>
+                  <button 
+                    onClick={() => clientLogout()}
+                    className="user-dropdown-item logout"
+                  >
+                    <LogOut size={16} />
+                    <span>Cerrar sesión</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -147,12 +149,13 @@ export function AlumnoNav({ user }: { user: UserData }) {
             </div>
 
             <div className="mobile-menu-footer">
-              <form action={logout}>
-                <button type="submit" className="mobile-logout-btn">
-                  <LogOut size={20} />
-                  <span>Cerrar sesión</span>
-                </button>
-              </form>
+              <button 
+                onClick={() => clientLogout()}
+                className="mobile-logout-btn"
+              >
+                <LogOut size={20} />
+                <span>Cerrar sesión</span>
+              </button>
             </div>
           </div>
         </>

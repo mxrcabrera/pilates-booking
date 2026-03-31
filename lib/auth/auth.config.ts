@@ -32,9 +32,18 @@ export const authConfig: NextAuthConfig = {
         // Dynamic import to avoid Edge Runtime issues
         const { prisma } = await import('../prisma')
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        })
+        let user
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          })
+        } catch (dbError) {
+          // DB connection failed (e.g. Supabase waking up from pause).
+          // Re-throw so NextAuth surfaces a server error instead of
+          // silently returning null which looks like "wrong password".
+          console.error('[auth] DB connection error during login:', dbError)
+          throw new Error('Error de conexión con la base de datos. Intentá de nuevo en unos segundos.')
+        }
 
         if (!user || !user.password) {
           return null

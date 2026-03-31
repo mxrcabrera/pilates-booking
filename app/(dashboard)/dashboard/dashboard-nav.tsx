@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, DollarSign, Crown, User, UsersRound, BarChart3 } from 'lucide-react'
-import { logout } from '@/app/(auth)/login/actions'
+import { useSession } from '@/lib/use-session'
 import type { Profesor } from '@/lib/types'
 
 interface NavItem {
@@ -32,6 +32,7 @@ interface Features {
 export function DashboardNav({ profesor, features }: { profesor: Profesor; features?: Features }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { logout: clientLogout } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -112,12 +113,13 @@ export function DashboardNav({ profesor, features }: { profesor: Profesor; featu
                     <User size={16} />
                     <span>Mi Perfil</span>
                   </Link>
-                  <form action={logout}>
-                    <button type="submit" className="user-dropdown-item logout">
-                      <LogOut size={16} />
-                      <span>Cerrar sesión</span>
-                    </button>
-                  </form>
+                  <button 
+                    onClick={() => clientLogout()}
+                    className="user-dropdown-item logout"
+                  >
+                    <LogOut size={16} />
+                    <span>Cerrar sesión</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -200,12 +202,13 @@ export function DashboardNav({ profesor, features }: { profesor: Profesor; featu
             </div>
 
             <div className="mobile-menu-footer">
-              <form action={logout}>
-                <button type="submit" className="mobile-logout-btn">
-                  <LogOut size={20} />
-                  <span>Cerrar sesión</span>
-                </button>
-              </form>
+              <button 
+                onClick={() => clientLogout()}
+                className="mobile-logout-btn"
+              >
+                <LogOut size={20} />
+                <span>Cerrar sesión</span>
+              </button>
             </div>
           </div>
         </>

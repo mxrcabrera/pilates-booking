@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginWithGoogle } from './actions'
 import { getErrorMessage } from '@/lib/utils'
+import { clearSessionCache } from '@/lib/use-session'
 
 type Rol = 'profesor' | 'alumno' | null
 
@@ -71,6 +72,7 @@ export function LoginForm() {
       }
 
       if (data.redirectTo) {
+        clearSessionCache()
         router.push(data.redirectTo)
         router.refresh()
       }

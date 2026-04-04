@@ -8,6 +8,9 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { SetupWizard } from '@/components/setup-wizard'
 import { Calendar } from 'lucide-react'
 import { usePageData } from '@/lib/use-page-data'
+import { useBuddyState } from '@/lib/use-buddy-state'
+import { BuddyGreeting } from '@/components/buddy-greeting'
+import { useSession } from '@/lib/use-session'
 import type { DashboardData } from '@/lib/types'
 
 const CACHE_KEY = 'dashboard-data'
@@ -17,6 +20,9 @@ export default function DashboardPage() {
     cacheKey: CACHE_KEY,
     apiUrl: '/api/v1/dashboard'
   })
+  
+  const buddyStatus = useBuddyState(data)
+  const { user } = useSession()
 
   if (error) {
     return (
@@ -101,6 +107,17 @@ export default function DashboardPage() {
             description="No tenés clases programadas para hoy. Disfrutá tu día libre"
           />
         </div>
+      )}
+
+      {!isLoading && !needsSetup && user && (
+        <BuddyGreeting 
+          status={buddyStatus} 
+          urls={{
+            greeting: user.buddyGreetingUrl || null,
+            celebrate: user.buddyCelebrateUrl || null,
+            zen: user.buddyZenUrl || null
+          }} 
+        />
       )}
     </div>
   )

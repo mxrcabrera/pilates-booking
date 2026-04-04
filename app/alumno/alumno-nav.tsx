@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { Calendar, LayoutDashboard, LogOut, Menu, X, User, Search } from 'lucide-react'
 import { useSession } from '@/lib/use-session'
@@ -10,6 +11,7 @@ type UserData = {
   id: string
   nombre: string
   email: string
+  avatarUrl?: string | null
 }
 
 const navItems = [
@@ -61,8 +63,12 @@ export function AlumnoNav({ user }: { user: UserData }) {
 
           <div className="nav-user">
             <div className="user-menu-container desktop-only" ref={userMenuRef}>
-              <button className="user-avatar-btn" onClick={() => setUserMenuOpen(!userMenuOpen)}>
-                {user?.nombre?.charAt(0).toUpperCase() || 'A'}
+              <button className="user-avatar-btn p-0 overflow-hidden relative" onClick={() => setUserMenuOpen(!userMenuOpen)}>
+                {user?.avatarUrl ? (
+                  <Image src={user.avatarUrl} alt="Avatar" fill className="object-cover" />
+                ) : (
+                  user?.nombre?.charAt(0).toUpperCase() || 'A'
+                )}
               </button>
 
               {userMenuOpen && (
@@ -88,8 +94,12 @@ export function AlumnoNav({ user }: { user: UserData }) {
             </div>
 
             <div className="mobile-only" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div className="user-avatar" style={{ cursor: 'pointer' }} onClick={() => router.push('/alumno/configuracion')}>
-                <span className="avatar-letter">{user?.nombre?.charAt(0).toUpperCase() || 'A'}</span>
+              <div className="user-avatar relative overflow-hidden" style={{ cursor: 'pointer' }} onClick={() => router.push('/alumno/configuracion')}>
+                {user?.avatarUrl ? (
+                  <Image src={user.avatarUrl} alt="Avatar" fill className="object-cover" />
+                ) : (
+                  <span className="avatar-letter">{user?.nombre?.charAt(0).toUpperCase() || 'A'}</span>
+                )}
               </div>
             </div>
 
@@ -120,8 +130,12 @@ export function AlumnoNav({ user }: { user: UserData }) {
                   setMobileMenuOpen(false)
                 }}
               >
-                <div className="user-avatar">
-                  <span className="avatar-letter">{user?.nombre?.charAt(0).toUpperCase() || 'A'}</span>
+                <div className="user-avatar relative overflow-hidden">
+                  {user?.avatarUrl ? (
+                    <Image src={user.avatarUrl} alt="Avatar" fill className="object-cover" />
+                  ) : (
+                    <span className="avatar-letter">{user?.nombre?.charAt(0).toUpperCase() || 'A'}</span>
+                  )}
                 </div>
                 <div className="user-details">
                   <p className="user-name">{user?.nombre}</p>

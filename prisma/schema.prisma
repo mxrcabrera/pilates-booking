@@ -17,6 +17,10 @@ model User {
   password                String?
   emailVerified           DateTime?           @map("email_verified")
   image                   String?
+  avatarUrl               String?             @map("avatar_url")
+  buddyGreetingUrl        String?             @map("buddy_greeting_url")
+  buddyCelebrateUrl       String?             @map("buddy_celebrate_url")
+  buddyZenUrl             String?             @map("buddy_zen_url")
   role                    UserRole            @default(PROFESOR)
   plan                    PlanType            @default(FREE) @map("plan")
   trialEndsAt             DateTime?           @map("trial_ends_at")

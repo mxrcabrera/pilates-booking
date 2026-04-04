@@ -17,7 +17,11 @@ export default async function PerfilPage() {
       id: true,
       nombre: true,
       email: true,
-      telefono: true
+      telefono: true,
+      avatarUrl: true,
+      buddyGreetingUrl: true,
+      buddyCelebrateUrl: true,
+      buddyZenUrl: true
     }
   })
 

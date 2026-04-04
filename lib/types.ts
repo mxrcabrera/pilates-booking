@@ -10,6 +10,7 @@ export type Alumno = {
   email: string
   telefono: string
   genero: string
+  avatarUrl?: string | null
   cumpleanos: string | null
   patologias: string | null
   packType: string
@@ -124,6 +125,10 @@ export type Profesor = {
   id: string
   nombre: string
   email: string
+  avatarUrl?: string | null
+  buddyGreetingUrl?: string | null
+  buddyCelebrateUrl?: string | null
+  buddyZenUrl?: string | null
   plan?: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
   planName?: string
   inTrial?: boolean

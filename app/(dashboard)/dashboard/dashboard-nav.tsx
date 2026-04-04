@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { Calendar, Users, Settings, LayoutDashboard, LogOut, Menu, X, DollarSign, Crown, User, UsersRound, BarChart3 } from 'lucide-react'
 import { useSession } from '@/lib/use-session'
@@ -82,8 +83,12 @@ export function DashboardNav({ profesor, features }: { profesor: Profesor; featu
 
           <div className="nav-user">
             <div className="user-menu-container desktop-only" ref={userMenuRef}>
-              <button className="user-avatar-btn" onClick={handleAvatarClick}>
-                {profesor?.nombre?.charAt(0).toUpperCase() || 'P'}
+              <button className="user-avatar-btn p-0 overflow-hidden relative" onClick={handleAvatarClick}>
+                {profesor?.avatarUrl ? (
+                  <Image src={profesor.avatarUrl} alt="Avatar" fill className="object-cover" />
+                ) : (
+                  profesor?.nombre?.charAt(0).toUpperCase() || 'P'
+                )}
               </button>
 
               {userMenuOpen && (
@@ -126,8 +131,12 @@ export function DashboardNav({ profesor, features }: { profesor: Profesor; featu
 
             {/* Mobile: solo avatar sin dropdown */}
             <div className="mobile-only" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div className="user-avatar" style={{ cursor: 'pointer' }} onClick={() => router.push('/perfil')}>
-                <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
+              <div className="user-avatar relative overflow-hidden" style={{ cursor: 'pointer' }} onClick={() => router.push('/perfil')}>
+                {profesor?.avatarUrl ? (
+                  <Image src={profesor.avatarUrl} alt="Avatar" fill className="object-cover" />
+                ) : (
+                  <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
+                )}
               </div>
             </div>
 
@@ -160,8 +169,12 @@ export function DashboardNav({ profesor, features }: { profesor: Profesor; featu
                   setMobileMenuOpen(false)
                 }}
               >
-                <div className="user-avatar">
-                  <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
+                <div className="user-avatar relative overflow-hidden">
+                  {profesor?.avatarUrl ? (
+                    <Image src={profesor.avatarUrl} alt="Avatar" fill className="object-cover" />
+                  ) : (
+                    <span className="avatar-letter">{profesor?.nombre?.charAt(0).toUpperCase() || 'P'}</span>
+                  )}
                 </div>
                 <div className="user-details">
                   <p className="user-name">{profesor?.nombre}</p>

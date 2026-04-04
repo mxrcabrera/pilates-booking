@@ -22,6 +22,10 @@ export async function GET() {
         plan: true,
         trialEndsAt: true,
         role: true,
+        avatarUrl: true,
+        buddyGreetingUrl: true,
+        buddyCelebrateUrl: true,
+        buddyZenUrl: true,
       }
     })
 
@@ -41,6 +45,10 @@ export async function GET() {
         nombre: user.nombre,
         email: user.email,
         role: user.role,
+        avatarUrl: user.avatarUrl,
+        buddyGreetingUrl: user.buddyGreetingUrl,
+        buddyCelebrateUrl: user.buddyCelebrateUrl,
+        buddyZenUrl: user.buddyZenUrl,
         plan: user.plan,
         planName: planConfig.name,
         inTrial,

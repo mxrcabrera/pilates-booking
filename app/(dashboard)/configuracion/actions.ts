@@ -108,3 +108,38 @@ export async function updatePreferencias(formData: FormData) {
   revalidatePath('/alumnos')
   return { success: true }
 }
+
+export async function updateAvatar(avatarUrl: string | null) {
+  const userId = await getCurrentUser()
+  if (!userId) throw new Error('No autorizado')
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { avatarUrl }
+  })
+
+  revalidatePath('/perfil')
+  revalidatePath('/dashboard')
+  revalidatePath('/alumno')
+  return { success: true }
+}
+
+interface BuddyUrlsUpdate {
+  buddyGreetingUrl?: string | null
+  buddyCelebrateUrl?: string | null
+  buddyZenUrl?: string | null
+}
+
+export async function updateBuddyUrls(urls: BuddyUrlsUpdate) {
+  const userId = await getCurrentUser()
+  if (!userId) throw new Error('No autorizado')
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: urls
+  })
+
+  revalidatePath('/perfil')
+  revalidatePath('/dashboard')
+  return { success: true }
+}

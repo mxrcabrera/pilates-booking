@@ -8,6 +8,10 @@ export type UserSession = {
   nombre: string
   email: string
   role: string
+  avatarUrl?: string | null
+  buddyGreetingUrl?: string | null
+  buddyCelebrateUrl?: string | null
+  buddyZenUrl?: string | null
   plan?: 'FREE' | 'STARTER' | 'PRO' | 'ESTUDIO'
   planName?: string
   inTrial?: boolean

@@ -38,20 +38,18 @@ export default function DashboardPage() {
     return <PageLoading />
   }
 
-  // Verificar si el usuario necesita completar el setup
   const needsSetup = data.setupStatus && (
     !data.setupStatus.hasHorarios ||
     !data.setupStatus.hasPacks ||
     !data.setupStatus.hasAlumnos
   )
 
-  // Usuario nuevo sin completar setup
   if (needsSetup) {
     return (
       <div className="dashboard-container">
-        <div className="dashboard-header">
+        <div className="dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1>Dashboard</h1>
+            <h1>Hoy</h1>
             <p className="date-text">
               {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
             </p>
@@ -81,13 +79,24 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-container" data-testid="dashboard-page">
-      <div className="dashboard-header">
+      <div className="dashboard-header" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
         <div>
           <h1>Hoy</h1>
           <p className="date-text">
             {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
           </p>
         </div>
+
+        {user && (
+          <BuddyGreeting 
+            status={buddyStatus} 
+            urls={{
+              greeting: user.buddyGreetingUrl || null,
+              celebrate: user.buddyCelebrateUrl || null,
+              zen: user.buddyZenUrl || null
+            }} 
+          />
+        )}
       </div>
 
       {data.clasesHoy.length > 0 ? (
@@ -107,17 +116,6 @@ export default function DashboardPage() {
             description="No tenés clases programadas para hoy. Disfrutá tu día libre"
           />
         </div>
-      )}
-
-      {!isLoading && !needsSetup && user && (
-        <BuddyGreeting 
-          status={buddyStatus} 
-          urls={{
-            greeting: user.buddyGreetingUrl || null,
-            celebrate: user.buddyCelebrateUrl || null,
-            zen: user.buddyZenUrl || null
-          }} 
-        />
       )}
     </div>
   )

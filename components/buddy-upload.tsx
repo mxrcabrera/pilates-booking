@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Camera, Trash2, Loader2 } from 'lucide-react'
 import { updateBuddyUrls } from '@/app/(dashboard)/configuracion/actions'
-import { getErrorMessage } from '@/lib/utils'
 import { useSession } from '@/lib/use-session'
 
 interface BuddyUploadProps {

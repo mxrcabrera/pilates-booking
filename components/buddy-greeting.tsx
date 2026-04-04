@@ -73,11 +73,11 @@ export function BuddyGreeting({ status, urls }: BuddyGreetingProps) {
       `}} />
       <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] flex items-center gap-4 md:gap-5 pointer-events-none buddy-pop">
         {/* Burbuja de diálogo Refinada (Tailwind) */}
-        <div className="relative bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl px-6 py-4 shadow-2xl max-w-[190px] md:max-w-[280px] min-h-[60px] flex items-center justify-center animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="relative bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl min-h-[60px] flex items-center justify-center animate-in fade-in slide-in-from-right-4 duration-500">
           {/* Flecha (Rotated Square for precision) */}
           <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-background/95 border-r border-t border-border/50 rotate-45" />
           
-          <p className="font-body text-xs md:text-sm font-medium leading-relaxed text-white text-center select-none">
+          <p className="font-body text-xs md:text-sm font-medium leading-relaxed text-white text-center select-none px-12 py-4">
             {message}
           </p>
         </div>

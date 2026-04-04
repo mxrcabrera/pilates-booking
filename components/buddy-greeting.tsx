@@ -17,21 +17,17 @@ export function BuddyGreeting({ status, urls }: BuddyGreetingProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [hasShown, setHasShown] = useState(false)
 
-  // Determinar la imagen a usar basada en fallbacks.
-  // Preferimos la imagen específica del status. Si no está, intentamos la de greeting.
-  // Si no, cualquier otra que exista.
+  // Determinar la imagen principal a usar basada en fallbacks.
   let buddyImage = null
   if (status === 'zen' && urls.zen) buddyImage = urls.zen
   else if (status === 'celebrate' && urls.celebrate) buddyImage = urls.celebrate
   else if (status === 'peace' && urls.greeting) buddyImage = urls.greeting
   
-  // Fallbacks si la específica no existe
   if (!buddyImage) {
     buddyImage = urls.greeting || urls.celebrate || urls.zen
   }
 
   useEffect(() => {
-    // Si no hay imagen, nunca lo mostramos.
     if (!buddyImage) return
 
     if (!hasShown) {
@@ -40,13 +36,12 @@ export function BuddyGreeting({ status, urls }: BuddyGreetingProps) {
 
       const timer = setTimeout(() => {
         setIsVisible(false)
-      }, 4000)
+      }, 8000) // Un poco más de tiempo para apreciar la animación
 
       return () => clearTimeout(timer)
     }
   }, [hasShown, buddyImage])
 
-  // Retornar null inmediatamente si no hay imagen de buddy (evita renders rotos)
   if (!buddyImage || !isVisible) return null
 
   let message = '¡Hola! Lista para el día'
@@ -58,37 +53,62 @@ export function BuddyGreeting({ status, urls }: BuddyGreetingProps) {
 
   return (
     <>
-      <style>{`
-        @keyframes slideUpFadeIn {
-          from { opacity: 0; transform: translateY(40px) scale(0.8); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes buddyFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes buddyPopIn { 
+          0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+          70% { transform: scale(1.1) translateY(-5px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
         }
-        @keyframes bounceSlight {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-        .buddy-container {
-          animation: slideUpFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .buddy-image {
-          animation: bounceSlight 2s infinite ease-in-out;
-          animation-delay: 0.6s;
-        }
-      `}</style>
-      <div className="fixed bottom-6 right-6 z-50 pointer-events-none buddy-container">
-        <div className="bg-background/80 backdrop-blur-sm shadow-xl border border-[rgba(147,155,245,0.2)] rounded-2xl p-4 flex flex-col items-center gap-3">
-          <div className="relative w-32 h-32 rounded-full overflow-hidden shadow-md buddy-image">
-            <Image 
-              src={buddyImage} 
-              alt="Brand Mascot"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-          <p className="font-medium text-sm text-[rgba(255,255,255,0.9)] max-w-[150px] text-center">
+        @keyframes poseCycle { 0%, 30%, 100% { opacity: 1; } 33%, 97% { opacity: 0; } }
+        @keyframes poseCycleAlt { 0%, 30%, 66%, 100% { opacity: 0; } 33%, 63% { opacity: 1; } }
+        @keyframes poseCycleAlt2 { 0%, 63%, 97%, 100% { opacity: 0; } 66%, 96% { opacity: 1; } }
+        
+        .buddy-float { animation: buddyFloat 3s infinite ease-in-out; }
+        .buddy-pop { animation: buddyPopIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .buddy-frame { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+        .buddy-frame-1 { animation: poseCycle 9s infinite; }
+        .buddy-frame-2 { animation: poseCycleAlt 9s infinite; opacity: 0; }
+        .buddy-frame-3 { animation: poseCycleAlt2 9s infinite; opacity: 0; }
+      `}} />
+      <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] flex items-center gap-4 md:gap-5 pointer-events-none buddy-pop">
+        {/* Burbuja de diálogo (Tailwind Puro) */}
+        <div className="relative bg-background/80 backdrop-blur-xl border border-border/40 rounded-2xl p-4 shadow-2xl max-w-[170px] md:max-w-[250px] min-h-[50px] flex items-center justify-center animate-in fade-in slide-in-from-right-4 duration-500">
+          {/* Flecha (Rotated Square for precision) */}
+          <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-background/80 border-r border-t border-border/40 rotate-45" />
+          
+          <p className="font-body text-xs md:text-sm leading-relaxed text-foreground/90 text-center select-none">
             {message}
           </p>
+        </div>
+
+        {/* Contenedor del Personaje */}
+        <div className="relative w-20 h-20 md:w-28 md:h-28 flex-shrink-0 group pointer-events-auto">
+          {/* Aura suave */}
+          <div className="absolute inset-[-10px] bg-primary/10 rounded-full blur-2xl animate-pulse" />
+          
+          <div className="buddy-float relative w-full h-full">
+            <div className="absolute inset-0 rounded-full overflow-hidden">
+              {/* Pose 1: Base */}
+              <div className="buddy-frame buddy-frame-1">
+                <Image src={buddyImage} alt="Body Base" fill className="object-contain" priority />
+              </div>
+              
+              {/* Pose 2: Greeting/Peace */}
+              {urls.greeting && urls.greeting !== buddyImage && (
+                <div className="buddy-frame buddy-frame-2">
+                  <Image src={urls.greeting} alt="Peace pose" fill className="object-contain" />
+                </div>
+              )}
+              
+              {/* Pose 3: Celebrate */}
+              {urls.celebrate && urls.celebrate !== buddyImage && (
+                <div className="buddy-frame buddy-frame-3">
+                  <Image src={urls.celebrate} alt="Celebrate pose" fill className="object-contain" />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>

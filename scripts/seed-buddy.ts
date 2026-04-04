@@ -35,30 +35,39 @@ async function seed() {
   }
 
   const basePath = path.join(process.cwd(), 'public', 'welfi')
-  const images = {
-    greeting: 'welfi-peace.jpg',
-    celebrate: 'welfi-celebrate.jpg',
-    zen: 'welfi-zen.jpg'
+  const imageBaseNames = {
+    greeting: 'welfi-peace',
+    celebrate: 'welfi-celebrate',
+    zen: 'welfi-zen'
   }
 
   const uploadedUrls: Record<string, string> = {}
 
-  for (const [key, filename] of Object.entries(images)) {
-    const filePath = path.join(basePath, filename)
+  for (const [key, baseName] of Object.entries(imageBaseNames)) {
+    // Buscar .png o .jpg
+    let filename = `${baseName}.png`
+    let filePath = path.join(basePath, filename)
+    
     if (!fs.existsSync(filePath)) {
-      console.log(`Archivo ${filename} no encontrado, omitiendo.`)
+      filename = `${baseName}.jpg`
+      filePath = path.join(basePath, filename)
+    }
+
+    if (!fs.existsSync(filePath)) {
+      console.log(`Archivo para ${baseName} (.png o .jpg) no encontrado, omitiendo.`)
       continue
     }
 
     const fileBuffer = fs.readFileSync(filePath)
-    const fileExt = path.extname(filename)
+    const fileExt = path.extname(filename).toLowerCase()
+    const contentType = fileExt === '.png' ? 'image/png' : 'image/jpeg'
     const remoteName = `seed_welfi_${user.id}_${key}_${Date.now()}${fileExt}`
 
     console.log(`Subiendo ${filename}...`)
     const { error } = await supabase.storage
       .from('avatars')
       .upload(remoteName, fileBuffer, {
-        contentType: 'image/jpeg',
+        contentType,
         cacheControl: '3600',
         upsert: false
       })
@@ -89,11 +98,13 @@ async function seed() {
 
   // Borrar archivos originales
   console.log('Borrando archivos locales /public/welfi...')
-  for (const filename of Object.values(images)) {
-    const filePath = path.join(basePath, filename)
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath)
-    }
+  for (const baseName of Object.values(imageBaseNames)) {
+    ['.png', '.jpg'].forEach(ext => {
+      const filePath = path.join(basePath, `${baseName}${ext}`)
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+    })
   }
 
   const dirPath = path.dirname(path.join(basePath, 'temp.jpg'))

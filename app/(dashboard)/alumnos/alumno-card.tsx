@@ -1,12 +1,13 @@
 'use client'
 
 import { Edit2, Trash2 } from 'lucide-react'
-import type { Alumno } from '@/lib/types'
+import type { Alumno, Pack } from '@/lib/types'
 import { PACK_LABELS } from '@/lib/constants'
 import { getPaymentStatus, getStatusText, getClasesRestantes } from '@/lib/alumno-utils'
 
 export function AlumnoCard({
   alumno,
+  packs,
   onEdit,
   onView,
   onDelete,
@@ -16,6 +17,7 @@ export function AlumnoCard({
   onToggleSelection
 }: {
   alumno: Alumno
+  packs: Pack[]
   onEdit: () => void
   onView: () => void
   onDelete: () => void
@@ -24,7 +26,11 @@ export function AlumnoCard({
   isSelected?: boolean
   onToggleSelection?: () => void
 }) {
-  const getPackLabel = () => PACK_LABELS[alumno.packType] || alumno.packType
+
+  const getPackLabel = () => {
+    const pack = packs.find(p => p.id === alumno.packType)
+    return pack?.nombre || PACK_LABELS[alumno.packType] || alumno.packType
+  }
 
   const paymentStatus = getPaymentStatus(alumno)
   const statusText = getStatusText(alumno.genero, alumno.estaActivo)
@@ -104,7 +110,6 @@ export function AlumnoCard({
           onClick={(e) => e.stopPropagation()}
         />
       )}
-
       <div className="alumno-card-top">
         <div className="alumno-card-avatar">
           {alumno.nombre.charAt(0).toUpperCase()}
@@ -128,7 +133,6 @@ export function AlumnoCard({
           </div>
         )}
       </div>
-
       <div className="alumno-card-body">
         <span className="alumno-card-nombre">{alumno.nombre}</span>
         <span className="alumno-card-pack">{getPackLabel()}</span>
@@ -136,7 +140,6 @@ export function AlumnoCard({
           <span className="alumno-card-clases">{clasesRestantes}</span>
         )}
       </div>
-
       <div className="alumno-card-footer">
         {paymentStatus ? (
           <span className={`payment-badge ${paymentStatus.clase}`}>

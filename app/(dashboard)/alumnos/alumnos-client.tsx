@@ -240,7 +240,7 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
                 email: a.email,
                 telefono: a.telefono,
                 genero: a.genero === 'F' ? 'Mujer' : 'Hombre',
-                packType: a.packType,
+                packType: packs.find(p => p.id === a.packType)?.nombre || a.packType,
                 precio: a.precio,
                 estaActivo: a.estaActivo ? 'Sí' : 'No',
                 clasesEsteMes: a.clasesEsteMes
@@ -323,6 +323,7 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
             <AlumnoCard
               key={alumno.id}
               alumno={alumno}
+              packs={packs}
               onEdit={() => handleEdit(alumno)}
               onView={() => handleView(alumno)}
               onDelete={() => handleDeleteClick(alumno)}

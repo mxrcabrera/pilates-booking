@@ -6,7 +6,6 @@ import { RECURRING_WEEKS, RATE_LIMIT_WINDOW_MS, MS_PER_HOUR } from '@/lib/consta
 import { argentinaToUTC } from '@/lib/dates'
 import { calcularRangoCiclo } from '@/lib/alumno-utils'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
-import { getPaginationParams, paginatedResponse } from '@/lib/pagination'
 import { getCachedPacks, getCachedAlumnosSimple, type OwnerType } from '@/lib/server-cache'
 import { unauthorized, notFound, tooManyRequests, serverError, forbidden, badRequest } from '@/lib/api-utils'
 import { canUseFeature, PLAN_CONFIGS, getSuggestedUpgrade, getEffectiveFeatures } from '@/lib/plans'
@@ -104,7 +103,7 @@ export const runtime = 'nodejs'
 // Rate limit: 30 requests por minuto para POST
 const POST_LIMIT = 30
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const context = await getUserContext()
     if (!context) {

@@ -113,8 +113,6 @@ export async function GET(request: NextRequest) {
 
     const { userId, estudio } = context
 
-    const { page, limit, skip } = getPaginationParams(request)
-
     const hoy = new Date()
     const inicioRango = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
     const finRango = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0)
@@ -193,11 +191,9 @@ export async function GET(request: NextRequest) {
     // Queries de datos en paralelo (usando cache para packs y alumnos)
     const cacheKey = estudio ? estudio.estudioId : userId
     const cacheType: OwnerType = estudio ? 'estudio' : 'profesor'
-    const [clases, total, alumnos, packs] = await Promise.all([
+    const [clases, alumnos, packs] = await Promise.all([
       prisma.clase.findMany({
         where: clasesWhere,
-        skip,
-        take: limit,
         select: {
           id: true,
           fecha: true,
@@ -258,14 +254,10 @@ export async function GET(request: NextRequest) {
       clasesUsadasEsteMes: clase.alumnoId ? clasesUsadasPorAlumno[clase.alumnoId] || 0 : 0
     }))
 
-    const paginatedData = paginatedResponse(clasesNormalizadas, total, { page, limit, skip })
-
     // Calcular features según plan y trial
     const features = getEffectiveFeatures(configData.plan, configData.trialEndsAt)
 
     return NextResponse.json({
-      // Nuevo formato paginado
-      ...paginatedData,
       // Compatibilidad con formato anterior
       clases: clasesNormalizadas,
       alumnos,

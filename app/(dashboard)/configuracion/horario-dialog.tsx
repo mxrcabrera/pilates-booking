@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { saveHorarioAPI, saveHorariosBatchAPI } from '@/lib/api'
 import { ConfirmDialog } from './confirm-dialog'
 import { useToast } from '@/components/ui/toast'
@@ -46,6 +46,7 @@ type HorarioDialogProps = {
   horarioMananaFin: string
   horarioTardeInicio: string
   horarioTardeFin: string
+  grupoLabel?: string
   onSuccess?: (horario: Horario, isEdit: boolean) => void
   onBatchCreate?: (horarios: Horario[]) => void
 }
@@ -59,6 +60,7 @@ export function HorarioDialog({
   horarioMananaFin,
   horarioTardeInicio,
   horarioTardeFin,
+  grupoLabel,
   onSuccess,
   onBatchCreate
 }: HorarioDialogProps) {
@@ -71,6 +73,7 @@ export function HorarioDialog({
   const [confirmType, setConfirmType] = useState<'sabado-tarde' | 'domingo' | null>(null)
   const [horaInicio, setHoraInicio] = useState('')
   const [horaFin, setHoraFin] = useState('')
+  const [diaUnicoSeleccionado, setDiaUnicoSeleccionado] = useState<number | null>(null)
 
   // Check if Saturday has any tarde shifts configured
   const sabadoTieneTarde = horarios.some(h => h.diaSemana === 6 && !h.esManiana)
@@ -84,6 +87,7 @@ export function HorarioDialog({
       setConfirmType(null)
       setHoraInicio('')
       setHoraFin('')
+      setDiaUnicoSeleccionado(null)
     } else if (horario) {
       // Si estamos editando, setear el turno según el horario
       setTurnoSeleccionado(horario.esManiana ? 'maniana' : 'tarde')
@@ -106,6 +110,40 @@ export function HorarioDialog({
       }
     }
   }, [turnoSeleccionado, isOpen, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin])
+
+  const conflictInfo = useMemo(() => {
+    if (horario) return null
+
+    const esManiana = turnoSeleccionado === 'maniana'
+    let diasACrear: number[] = []
+
+    if (rangoSeleccionado === 'single') {
+      if (diaUnicoSeleccionado === null) return null
+      diasACrear = [diaUnicoSeleccionado]
+    } else {
+      const rango = RANGOS_DIAS.find(r => r.value === rangoSeleccionado)
+      if (!rango) return null
+      diasACrear = rango.dias
+    }
+
+    const conflictos = diasACrear
+      .map(dia => {
+        const existing = horarios.find(
+          h => h.diaSemana === dia && h.esManiana === esManiana
+        )
+        if (!existing) return null
+        return {
+          dia,
+          diaLabel: DIAS_INDIVIDUALES.find(d => d.value === dia)?.label || '',
+          turno: esManiana ? 'Mañana' : 'Tarde',
+          horaInicio: existing.horaInicio,
+          horaFin: existing.horaFin,
+        }
+      })
+      .filter((h): h is NonNullable<typeof h> => Boolean(h))
+
+    return conflictos.length > 0 ? conflictos : null
+  }, [horario, rangoSeleccionado, diaUnicoSeleccionado, turnoSeleccionado, horarios])
 
   function buildHorariosToCreate(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false): Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }> {
     const rango = RANGOS_DIAS.find(r => r.value === rangoSeleccionado)
@@ -290,7 +328,7 @@ export function HorarioDialog({
     <span className="dialog-title-with-badge">
       Editar Horario
       <span className="dialog-title-badge">
-        {DIAS_INDIVIDUALES.find(d => d.value === horario.diaSemana)?.label}
+        {grupoLabel || DIAS_INDIVIDUALES.find(d => d.value === horario.diaSemana)?.label}
       </span>
     </span>
   ) : 'Nuevo Horario'
@@ -311,7 +349,7 @@ export function HorarioDialog({
         className="btn-primary"
         disabled={isLoading}
       >
-        {isLoading ? 'Guardando...' : 'Guardar'}
+        {isLoading ? 'Guardando...' : conflictInfo ? 'Reemplazar' : 'Guardar'}
       </button>
     </>
   )
@@ -333,6 +371,25 @@ export function HorarioDialog({
         {error && (
           <div className="form-message error" role="alert">
             {error}
+          </div>
+        )}
+
+        {conflictInfo && conflictInfo.length > 0 && (
+          <div className="form-message warning" role="alert">
+            <p>
+              <strong>Atención:</strong> {conflictInfo.length} horario
+              {conflictInfo.length > 1 ? 's' : ''} existente
+              {conflictInfo.length > 1 ? 's' : ''} será
+              {conflictInfo.length > 1 ? 'n' : ''} reemplazado
+              {conflictInfo.length > 1 ? 's' : ''}:
+            </p>
+            <ul style={{ margin: '0.25rem 0 0 1rem', fontSize: '0.875rem' }}>
+              {conflictInfo.map(c => (
+                <li key={`${c.dia}-${c.turno}`}>
+                  {c.diaLabel} ({c.turno}): {c.horaInicio} - {c.horaFin}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -366,6 +423,8 @@ export function HorarioDialog({
                           name="diaSemana"
                           value={dia.value}
                           required
+                          checked={diaUnicoSeleccionado === dia.value}
+                          onChange={() => setDiaUnicoSeleccionado(dia.value)}
                         />
                         <span>{dia.label}</span>
                       </label>

@@ -34,7 +34,7 @@ export function HorariosDisponibles({
 
   const formatRangoDias = (dias: string[]) => {
     if (dias.length === 1) return dias[0].charAt(0).toUpperCase() + dias[0].slice(1)
-    if (dias.length === 5 && dias.includes('lunes') && dias.includes('viernes')) {
+    if (dias.length === 5) {
       return 'Lunes a Viernes'
     }
     return dias[0].charAt(0).toUpperCase() + dias[0].slice(1)
@@ -45,9 +45,8 @@ export function HorariosDisponibles({
       {/* Header simple */}
       <div className="horarios-header">
         <div>
-          <h2 className="horarios-header-title">Horarios Disponibles</h2>
-          <p className="horarios-header-subtitle">Configurá tus días y horarios de atención</p>
-        </div>
+          <h3 className="horarios-header-title">Horarios Disponibles</h3>
+        </div>  
         <button
           onClick={() => canConfigureHorarios && onAgregarHorario()}
           className={`btn-primary btn-sm ${!canConfigureHorarios ? 'btn-locked' : ''}`}

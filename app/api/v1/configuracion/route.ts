@@ -265,40 +265,38 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Una sola transacción: borrar existentes + crear nuevos (bulk operations)
-        await prisma.$transaction([
-          // Borrar solo los que vamos a reemplazar
-          prisma.horarioDisponible.deleteMany({
-            where: {
-              ...ownerFilter,
-              OR: horariosData.map(h => ({
-                diaSemana: h.diaSemana,
-                esManiana: h.esManiana
-              }))
-            }
-          }),
-          // Crear todos de una (single INSERT)
-          prisma.horarioDisponible.createMany({
-            data: horariosData.map(h => ({
-              profesorId: userId,
-              ...(estudio && { estudioId: estudio.estudioId }),
-              diaSemana: h.diaSemana,
-              horaInicio: h.horaInicio,
-              horaFin: h.horaFin,
-              esManiana: h.esManiana
-            }))
-          })
-        ])
+        // Upsert each horario individually to avoid deleteMany OR issues
+        const resultados = await prisma.$transaction(async (tx) => {
+          return Promise.all(
+            horariosData.map(async (h) => {
+              const existing = await tx.horarioDisponible.findFirst({
+                where: {
+                  ...ownerFilter,
+                  diaSemana: h.diaSemana,
+                  esManiana: h.esManiana,
+                  deletedAt: null,
+                },
+              })
 
-        // Obtener los horarios creados para devolver
-        const resultados = await prisma.horarioDisponible.findMany({
-          where: {
-            ...ownerFilter,
-            OR: horariosData.map(h => ({
-              diaSemana: h.diaSemana,
-              esManiana: h.esManiana
-            }))
-          }
+              if (existing) {
+                return tx.horarioDisponible.update({
+                  where: { id: existing.id },
+                  data: { horaInicio: h.horaInicio, horaFin: h.horaFin },
+                })
+              }
+
+              return tx.horarioDisponible.create({
+                data: {
+                  profesorId: userId,
+                  ...(estudio && { estudioId: estudio.estudioId }),
+                  diaSemana: h.diaSemana,
+                  horaInicio: h.horaInicio,
+                  horaFin: h.horaFin,
+                  esManiana: h.esManiana,
+                },
+              })
+            })
+          )
         })
 
         invalidateHorarios()

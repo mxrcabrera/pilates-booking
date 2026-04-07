@@ -61,7 +61,7 @@ export function ClaseDialog({
   const [error, setError] = useState<string | null>(null)
   const [tipoClase, setTipoClase] = useState<TipoClase>('recurrente')
   const [alumnosSeleccionados, setAlumnosSeleccionados] = useState<string[]>([])
-  const [localAlumnos, setLocalAlumnos] = useState<AlumnoSimple[]>(alumnos)
+  const [localAlumnos, setLocalAlumnos] = useState<AlumnoSimple[]>(Array.isArray(alumnos) ? alumnos : [])
   const [assigningPackFor, setAssigningPackFor] = useState<string | null>(null)
   const [assignError, setAssignError] = useState<string | null>(null)
   const [packSelections, setPackSelections] = useState<Record<string, string>>({})
@@ -96,7 +96,7 @@ export function ClaseDialog({
 
   useEffect(() => {
     if (isOpen) {
-      setLocalAlumnos(alumnos)
+      setLocalAlumnos(Array.isArray(alumnos) ? alumnos : [])
       setAssignError(null)
       setPackSelections({})
       setDiasPorAlumno({})

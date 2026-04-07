@@ -16,9 +16,11 @@ export default function CalendarioError({ error, reset }: { error: Error & { dig
         <p style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '1.5rem' }}>
           Ocurrió un error inesperado. Por favor, intenta de nuevo.
         </p>
-        <button onClick={reset} className="btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer' }}>
-          Reintentar
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <button onClick={reset} className="btn-primary" style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer' }}>
+            Reintentar
+          </button>
+        </div>
       </div>
     </div>
   )

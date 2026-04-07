@@ -12,6 +12,7 @@ import { SelectInput } from '@/components/select-input'
 import type { Horario, Pack, ProfesorConfig, ConfigFeatures } from '@/lib/types'
 import { getErrorMessage } from '@/lib/utils'
 import { DIAS_SEMANA_COMPLETO } from '@/lib/constants'
+import { saveHorarioAPI } from '@/lib/api'
 
 interface ConfiguracionClientProps {
   profesor: ProfesorConfig
@@ -28,6 +29,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
   const [horarioToEdit, setHorarioToEdit] = useState<Horario | null>(null)
   const [turnoMananaActivo, setTurnoMananaActivo] = useState(profesor.turnoMananaActivo)
   const [turnoTardeActivo, setTurnoTardeActivo] = useState(profesor.turnoTardeActivo)
+  const [grupoEditIds, setGrupoEditIds] = useState<string[] | null>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -48,119 +50,108 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
     }
   }
 
+  console.log('horarios recibidos:', JSON.stringify(horarios, null, 2))
   // Transformar horarios de DB a formato para HorariosDisponibles
   const horariosAgrupados = useMemo(() => {
     const result = []
-
-    // Crear un mapa de día -> horario
-    const horariosPorDia = new Map<number, Horario>()
+    const horariosPorDiaTurno = new Map<string, Horario>()
     horarios.forEach(h => {
-      horariosPorDia.set(h.diaSemana, h)
+      horariosPorDiaTurno.set(`${h.diaSemana}-${h.esManiana}`, h)
     })
 
-    // Grupo de lunes a viernes (1-5)
-    const diasSemana = [1, 2, 3, 4, 5] // lunes a viernes
-    const horariosLV = diasSemana.map(d => horariosPorDia.get(d)).filter(Boolean) as Horario[]
+    const turnos = [
+      { esManiana: true, label: 'Mañana' },
+      { esManiana: false, label: 'Tarde' }
+    ]
 
-    if (horariosLV.length > 0) {
-      // Verificar si todos tienen el mismo horario
-      const primerHorario = horariosLV[0]
-      const todosMismoHorario = horariosLV.every(h =>
-        h.horaInicio === primerHorario.horaInicio &&
-        h.horaFin === primerHorario.horaFin &&
-        h.esManiana === primerHorario.esManiana
-      )
+    // Lunes a Viernes
+    for (const turno of turnos) {
+      const diasLV = [1, 2, 3, 4, 5]
+      const horariosLV = diasLV
+        .map(d => horariosPorDiaTurno.get(`${d}-${turno.esManiana}`))
+        .filter(Boolean) as Horario[]
 
-      if (todosMismoHorario && horariosLV.length === 5) {
-        // Agrupar todos
-        result.push({
-          id: horariosLV.map(h => h.id).join('-'),
-          dias: diasSemana.map(d => DIAS_SEMANA_COMPLETO[d]),
-          inicio: primerHorario.horaInicio,
-          fin: primerHorario.horaFin,
-          turno: primerHorario.esManiana ? 'Mañana' : 'Tarde',
-          disponible: primerHorario.estaActivo
-        })
-      } else {
-        // Agregar individualmente
-        diasSemana.forEach(dia => {
-          const h = horariosPorDia.get(dia)
-          if (h) {
-            result.push({
+      if (horariosLV.length === 5) {
+        const primero = horariosLV[0]
+        const mismoHorario = horariosLV.every(h =>
+          h.horaInicio === primero.horaInicio && h.horaFin === primero.horaFin
+        )
+        if (mismoHorario) {
+          // Agrupados como "Lunes a Viernes"
+          result.push({
+            id: horariosLV.map(h => h.id).join('|'),
+            dias: diasLV.map(d => DIAS_SEMANA_COMPLETO[d]),
+            inicio: primero.horaInicio,
+            fin: primero.horaFin,
+            turno: turno.label,
+            disponible: primero.estaActivo
+          })
+        } else {
+          // Mismo horario diferente → filas individuales
+          diasLV.forEach(dia => {
+            const h = horariosPorDiaTurno.get(`${dia}-${turno.esManiana}`)
+            if (h) result.push({
               id: h.id,
               dias: [DIAS_SEMANA_COMPLETO[dia]],
               inicio: h.horaInicio,
               fin: h.horaFin,
-              turno: h.esManiana ? 'Mañana' : 'Tarde',
+              turno: turno.label,
               disponible: h.estaActivo
             })
-          } else {
-            result.push({
-              id: `no-disponible-${dia}`,
-              dias: [DIAS_SEMANA_COMPLETO[dia]],
-              inicio: '',
-              fin: '',
-              turno: '',
-              disponible: false
-            })
-          }
+          })
+        }
+      } else if (horariosLV.length > 0) {
+        // No están los 5 → filas individuales
+        diasLV.forEach(dia => {
+          const h = horariosPorDiaTurno.get(`${dia}-${turno.esManiana}`)
+          if (h) result.push({
+            id: h.id,
+            dias: [DIAS_SEMANA_COMPLETO[dia]],
+            inicio: h.horaInicio,
+            fin: h.horaFin,
+            turno: turno.label,
+            disponible: h.estaActivo
+          })
         })
       }
-    } else {
-      // Agregar días individuales sin horario
-      diasSemana.forEach(dia => {
+    }
+
+    // Sábado
+    for (const turno of turnos) {
+      const sabado = horariosPorDiaTurno.get(`6-${turno.esManiana}`)
+      if (sabado) {
         result.push({
-          id: `no-disponible-${dia}`,
-          dias: [DIAS_SEMANA_COMPLETO[dia]],
-          inicio: '',
-          fin: '',
-          turno: '',
-          disponible: false
+          id: sabado.id,
+          dias: ['sábado'],
+          inicio: sabado.horaInicio,
+          fin: sabado.horaFin,
+          turno: turno.label,
+          disponible: sabado.estaActivo
         })
-      })
+      }
     }
 
-    // Sábado (6)
-    const sabado = horariosPorDia.get(6)
-    if (sabado) {
+    // Domingo
+    const domManiana = horariosPorDiaTurno.get('0-true')
+    const domTarde = horariosPorDiaTurno.get('0-false')
+    if (domManiana) {
       result.push({
-        id: sabado.id,
-        dias: ['sábado'],
-        inicio: sabado.horaInicio,
-        fin: sabado.horaFin,
-        turno: sabado.esManiana ? 'Mañana' : 'Tarde',
-        disponible: sabado.estaActivo
-      })
-    } else {
-      result.push({
-        id: 'no-disponible-6',
-        dias: ['sábado'],
-        inicio: '',
-        fin: '',
-        turno: '',
-        disponible: false
+        id: domManiana.id, dias: ['domingo'],
+        inicio: domManiana.horaInicio, fin: domManiana.horaFin,
+        turno: 'Mañana', disponible: domManiana.estaActivo
       })
     }
-
-    // Domingo (0)
-    const domingo = horariosPorDia.get(0)
-    if (domingo) {
+    if (domTarde) {
       result.push({
-        id: domingo.id,
-        dias: ['domingo'],
-        inicio: domingo.horaInicio,
-        fin: domingo.horaFin,
-        turno: domingo.esManiana ? 'Mañana' : 'Tarde',
-        disponible: domingo.estaActivo
+        id: domTarde.id, dias: ['domingo'],
+        inicio: domTarde.horaInicio, fin: domTarde.horaFin,
+        turno: 'Tarde', disponible: domTarde.estaActivo
       })
-    } else {
+    }
+    if (!domManiana && !domTarde) {
       result.push({
-        id: 'no-disponible-0',
-        dias: ['domingo'],
-        inicio: '',
-        fin: '',
-        turno: '',
-        disponible: false
+        id: 'no-disponible-0', dias: ['Domingo'],
+        inicio: '', fin: '', turno: '', disponible: false
       })
     }
 
@@ -172,46 +163,86 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
     <form id="config-form" onSubmit={handleSubmit}>
       {/* Sección 1: Horarios Disponibles */}
       <div className="settings-section">
-        <HorariosDisponibles
-          horarios={horariosAgrupados}
-          onAgregarHorario={() => {
-            setHorarioToEdit(null)
-            setHorarioDialogOpen(true)
-          }}
-          onEditar={(id) => {
-            // El ID puede ser un UUID simple o varios UUIDs unidos con '-'
-            // Los UUIDs tienen formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-            // Si hay más de 5 guiones, es un ID compuesto
-            const guiones = (id.match(/-/g) || []).length
-            let horarioId: string
+        {/* Turnos arriba, antes de la lista */}
+        <div className="section-content">
+          <div className="turnos-section">
+            <h2 className="horarios-header-title" style={{ marginBottom: '0.875rem' }}>Turnos en los que das clases</h2>
+            <div className="turnos-grid">
+              {/* Turno Mañana */}
+              <div className={`turno-card ${turnoMananaActivo ? 'active' : ''}`}>
+                <div className="turno-header">
+                  <span className="turno-name">Mañana</span>
+                  <label className="toggle-switch">
+                    <input type="checkbox" name="turnoMananaActivo" checked={turnoMananaActivo}
+                      onChange={(e) => setTurnoMananaActivo(e.target.checked)} disabled={isLoading} />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {turnoMananaActivo && (
+                  <div className="turno-horarios">
+                    <TimeInput name="horarioMananaInicio" defaultValue={profesor.horarioMananaInicio} disabled={isLoading} />
+                    <span className="horario-separator">a</span>
+                    <TimeInput name="horarioMananaFin" defaultValue={profesor.horarioMananaFin} disabled={isLoading} />
+                  </div>
+                )}
+              </div>
+              {/* Turno Tarde */}
+              <div className={`turno-card ${turnoTardeActivo ? 'active' : ''}`}>
+                <div className="turno-header">
+                  <span className="turno-name">Tarde</span>
+                  <label className="toggle-switch">
+                    <input type="checkbox" name="turnoTardeActivo" checked={turnoTardeActivo}
+                      onChange={(e) => setTurnoTardeActivo(e.target.checked)} disabled={isLoading} />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                {turnoTardeActivo && (
+                  <div className="turno-horarios">
+                    <TimeInput name="horarioTardeInicio" defaultValue={profesor.horarioTardeInicio} disabled={isLoading} />
+                    <span className="horario-separator">a</span>
+                    <TimeInput name="horarioTardeFin" defaultValue={profesor.horarioTardeFin} disabled={isLoading} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-            if (guiones > 4) {
-              // ID compuesto - tomar el primer UUID (36 caracteres)
-              horarioId = id.substring(0, 36)
-            } else {
-              horarioId = id
-            }
-
-            const horario = horarios.find(h => h.id === horarioId)
-            if (horario) {
-              setHorarioToEdit(horario)
-              setHorarioDialogOpen(true)
-            }
-          }}
-          onEliminar={() => { /* Handled in HorariosSection */ }}
-          onAgregarDisponibilidad={() => {
-            setHorarioToEdit(null)
-            setHorarioDialogOpen(true)
-          }}
-          canConfigureHorarios={features.configuracionHorarios}
-        />
+        {/* Lista de horarios disponibles — separada visualmente */}
+        <div className="section-content" style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <HorariosDisponibles
+            horarios={horariosAgrupados}
+            onAgregarHorario={() => { setHorarioToEdit(null); setHorarioDialogOpen(true) }}
+            onEditar={(id) => {
+              if (id.includes('|')) {
+                const ids = id.split('|')
+                setGrupoEditIds(ids)
+                const horario = horarios.find(h => h.id === ids[0])
+                if (horario) {
+                  setHorarioToEdit(horario)
+                  setHorarioDialogOpen(true)
+                }
+              } else {
+                setGrupoEditIds(null)
+                const horario = horarios.find(h => h.id === id)
+                if (horario) {
+                  setHorarioToEdit(horario)
+                  setHorarioDialogOpen(true)
+                }
+              }
+            }}
+            onEliminar={() => {}}
+            onAgregarDisponibilidad={() => { setHorarioToEdit(null); setHorarioDialogOpen(true) }}
+            canConfigureHorarios={features.configuracionHorarios}
+          />
+        </div>
       </div>
 
       {/* Sección 2: Configuración de Clases */}
       <div className="settings-section">
         <div className="section-content">
-          <div className="section-header">
-            <h2>Configuración de Clases</h2>
+          <div className="horarios-header" style={{ marginBottom: '1.25rem' }}>
+            <h2 className="horarios-header-title">Configuración de Clases</h2>
           </div>
 
           <div className="config-grid-2">
@@ -270,125 +301,53 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
               </p>
             </div>
           )}
-
-          {/* Turnos disponibles */}
-          <div className="turnos-section">
-            <h3 className="turnos-title">Turnos en los que das clases</h3>
-
-            <div className="turnos-grid">
-              {/* Turno Mañana */}
-              <div className={`turno-card ${turnoMananaActivo ? 'active' : ''}`}>
-                <div className="turno-header">
-                  <span className="turno-name">Mañana</span>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      name="turnoMananaActivo"
-                      checked={turnoMananaActivo}
-                      onChange={(e) => setTurnoMananaActivo(e.target.checked)}
-                      disabled={isLoading}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-                {turnoMananaActivo && (
-                  <div className="turno-horarios">
-                    <TimeInput
-                      name="horarioMananaInicio"
-                      defaultValue={profesor.horarioMananaInicio}
-                      disabled={isLoading}
-                    />
-                    <span className="horario-separator">a</span>
-                    <TimeInput
-                      name="horarioMananaFin"
-                      defaultValue={profesor.horarioMananaFin}
-                      disabled={isLoading}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Turno Tarde */}
-              <div className={`turno-card ${turnoTardeActivo ? 'active' : ''}`}>
-                <div className="turno-header">
-                  <span className="turno-name">Tarde</span>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      name="turnoTardeActivo"
-                      checked={turnoTardeActivo}
-                      onChange={(e) => setTurnoTardeActivo(e.target.checked)}
-                      disabled={isLoading}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-                {turnoTardeActivo && (
-                  <div className="turno-horarios">
-                    <TimeInput
-                      name="horarioTardeInicio"
-                      defaultValue={profesor.horarioTardeInicio}
-                      disabled={isLoading}
-                    />
-                    <span className="horario-separator">a</span>
-                    <TimeInput
-                      name="horarioTardeFin"
-                      defaultValue={profesor.horarioTardeFin}
-                      disabled={isLoading}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Clase suelta */}
-      <div className="settings-section" style={{ marginTop: '2rem' }}>
-        <div className="section-content">
-          <div className="clase-suelta-section">
-            <div className="form-group">
-              <label htmlFor="config-precio-por-clase">Clase suelta</label>
-              <div className="price-input-wrapper">
-                <span className="price-symbol">$</span>
-                <input
-                  id="config-precio-por-clase"
-                  type="number"
-                  name="precioPorClase"
-                  defaultValue={profesor.precioPorClase}
-                  min="0"
-                  step="0.01"
-                  disabled={isLoading}
-                  className="price-input"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
     </form>
 
-    {/* Sección 3: Paquetes - fuera del form (tiene su propia lógica de guardado) */}
-    <div className="settings-section" style={{ marginTop: '2rem' }}>
+    {/* Sección 3: Precios — Clase suelta + Paquetes en un mismo container */}
+    <div className="settings-section">
       <div className="section-content">
-        <PacksSection
-          packs={packs}
-          renderButton={(onClick) => (
-            <div className="horarios-header">
-              <div>
-                <h2 className="horarios-header-title">Paquetes</h2>
-                <p className="horarios-header-subtitle">Configurá los packs de clases disponibles</p>
-              </div>
-              <button type="button" onClick={onClick} className="btn-primary btn-sm">
-                <Plus size={16} />
-                <span>Nuevo</span>
-              </button>
+        {/* Clase suelta */}
+        <div className="horarios-header" style={{ marginBottom: '1rem' }}>
+          <h2 className="horarios-header-title">Precios</h2>
+        </div>
+
+          <div className="form-group" style={{ marginBottom: '0' }}>
+            <label htmlFor="config-precio-por-clase">Clase suelta</label>
+            <div className="price-input-wrapper">
+              <span className="price-symbol">$</span>
+              <input
+                id="config-precio-por-clase"
+                type="number"
+                name="precioPorClase"
+                form="config-form"
+                defaultValue={profesor.precioPorClase}
+                min="0"
+                step="0.01"
+                disabled={isLoading}
+                className="price-input"
+                placeholder="0"
+              />
             </div>
-          )}
-        />
+          </div>
+
+        {/* Divisor interno */}
+        <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <PacksSection
+            packs={packs}
+            renderButton={(onClick) => (
+              <div className="horarios-header" style={{ marginBottom: '0.75rem' }}>
+                <h3 className="horarios-header-title">Paquetes</h3>
+                <button type="button" onClick={onClick} className="btn-primary btn-sm">
+                  <Plus size={16} />
+                  <span>Nuevo</span>
+                </button>
+              </div>
+            )}
+          />
+        </div>
       </div>
     </div>
 
@@ -410,6 +369,7 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
       onClose={() => {
         setHorarioDialogOpen(false)
         setHorarioToEdit(null)
+        setGrupoEditIds(null)
       }}
       horario={horarioToEdit}
       horarios={horarios}
@@ -417,8 +377,31 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
       horarioMananaFin={profesor.horarioMananaFin}
       horarioTardeInicio={profesor.horarioTardeInicio}
       horarioTardeFin={profesor.horarioTardeFin}
+      grupoLabel={grupoEditIds ? 'Lunes a Viernes' : undefined}
       onSuccess={(horario, isEdit) => {
-        if (isEdit) {
+        if (isEdit && grupoEditIds) {
+          // Edición de grupo: actualizar todos los horarios del grupo
+          setHorarios(prev => prev.map(h =>
+            grupoEditIds.includes(h.id)
+              ? { ...h, horaInicio: horario.horaInicio, horaFin: horario.horaFin }
+              : h
+          ))
+          // Batch API call para guardar todos
+          Promise.all(
+            grupoEditIds.map(id =>
+              saveHorarioAPI({
+                id,
+                diaSemana: horario.diaSemana,
+                horaInicio: horario.horaInicio,
+                horaFin: horario.horaFin,
+                esManiana: horario.esManiana,
+              })
+            )
+          ).catch(err => {
+            setMessage({ type: 'error', text: getErrorMessage(err) || 'Error al guardar horarios' })
+          })
+          setGrupoEditIds(null)
+        } else if (isEdit) {
           setHorarios(prev => prev.map(h => h.id === horario.id ? horario : h))
         } else {
           setHorarios(prev => [...prev, horario])
@@ -426,9 +409,13 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
       }}
       onBatchCreate={(nuevosHorarios) => {
         setHorarios(prev => {
-          // Filtrar temporales y agregar los nuevos
-          const sinTemporales = prev.filter(h => !h.id.startsWith('temp-'))
-          return [...sinTemporales, ...nuevosHorarios]
+          const nuevosKeys = new Set(
+            nuevosHorarios.map(h => `${h.diaSemana}-${h.esManiana}`)
+          )
+          const sinDuplicados = prev.filter(
+            h => !nuevosKeys.has(`${h.diaSemana}-${h.esManiana}`)
+          )
+          return [...sinDuplicados, ...nuevosHorarios]
         })
       }}
     />

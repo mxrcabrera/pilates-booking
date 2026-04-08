@@ -70,11 +70,16 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
   }
 
   return (
-    <>
+    <div className="accordion-form">
       {message && <FormMessage type={message.type} message={message.text} />}
 
-      <form onSubmit={handleSubmit} className="accordion-form">
-        <FormField label="Nombre" required error={errors.nombre}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <FormField 
+          label="Nombre y Apellido" 
+          required 
+          error={errors.nombre}
+          hint="Este es el nombre que verán tus alumnos al reservar."
+        >
           <input
             type="text"
             name="nombre"
@@ -88,7 +93,10 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
           />
         </FormField>
 
-        <FormField label="Email" hint="El email no se puede modificar">
+        <FormField 
+          label="Correo Electrónico" 
+          hint={<span className="opacity-50">El email está vinculado a tu cuenta de Supabase y no puede ser modificado.</span>}
+        >
           <input
             type="email"
             defaultValue={profesor.email}
@@ -96,7 +104,11 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
           />
         </FormField>
 
-        <FormField label="Teléfono" error={errors.telefono}>
+        <FormField 
+          label="Teléfono de Contacto" 
+          error={errors.telefono}
+          hint="Utilizado para coordinaciones internas y alertas."
+        >
           <input
             type="tel"
             name="telefono"
@@ -111,12 +123,12 @@ export function ProfileForm({ profesor }: { profesor: Profesor }) {
           />
         </FormField>
 
-        <div className="accordion-form-actions">
+        <div className="accordion-form-actions !mt-4">
           <button type="submit" className="btn-primary" disabled={isLoading}>
             {isLoading ? 'Guardando...' : 'Guardar Cambios'}
           </button>
         </div>
       </form>
-    </>
+    </div>
   )
 }

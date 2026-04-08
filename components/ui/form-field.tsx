@@ -1,11 +1,11 @@
 'use client'
 
-import { ReactNode, isValidElement, cloneElement, ReactElement } from 'react'
+import React, { ReactNode, isValidElement, cloneElement, ReactElement } from 'react'
 
 interface FormFieldProps {
   label: string
   error?: string
-  hint?: string
+  hint?: ReactNode
   required?: boolean
   children: ReactNode
   className?: string
@@ -37,7 +37,7 @@ export function FormField({
         {required && <span className="form-required">*</span>}
       </label>
       {enhancedChildren}
-      {hint && !error && <p className="form-hint">{hint}</p>}
+      {hint && !error && <div className="form-hint">{hint}</div>}
       {error && <FormError message={error} id={errorId} />}
     </div>
   )

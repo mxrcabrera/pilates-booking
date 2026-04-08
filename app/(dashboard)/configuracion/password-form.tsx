@@ -28,10 +28,10 @@ export function PasswordForm() {
   }
 
   return (
-    <>
+    <div className="accordion-form">
       {message && <FormMessage type={message.type} message={message.text} />}
 
-      <form onSubmit={handleSubmit} className="accordion-form">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <FormField label="Contraseña Actual" required>
           <input
             type="password"
@@ -43,7 +43,11 @@ export function PasswordForm() {
           />
         </FormField>
 
-        <FormField label="Nueva Contraseña" required>
+        <FormField 
+          label="Nueva Contraseña" 
+          required
+          hint={<span className="opacity-50 text-[11px]">Mínimo 6 caracteres alfanuméricos.</span>}
+        >
           <input
             type="password"
             name="newPassword"
@@ -65,12 +69,12 @@ export function PasswordForm() {
           />
         </FormField>
 
-        <div className="accordion-form-actions">
+        <div className="accordion-form-actions !mt-4">
           <button type="submit" className="btn-primary" disabled={isLoading}>
             {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
           </button>
         </div>
       </form>
-    </>
+    </div>
   )
 }

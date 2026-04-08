@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Camera, Trash2, Loader2 } from 'lucide-react'
 import { updateBuddyUrls } from '@/app/(dashboard)/configuracion/actions'
 import { useSession } from '@/lib/use-session'
+import { FormField } from '@/components/ui/form-field'
 
 interface BuddyUploadProps {
   currentGreeting: string | null
@@ -24,7 +25,7 @@ export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: B
     celebrate: currentCelebrate,
     zen: currentZen
   })
-  
+
   const [isUploading, setIsUploading] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const { refresh } = useSession()
@@ -94,36 +95,61 @@ export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: B
   }
 
   return (
-    <div className="flex flex-col gap-6 py-4">
-      <div>
-        <h3 className="font-semibold text-lg flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.9)' }}>
-          Personaje / Mascota de Marca
-        </h3>
-        <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          Configura un personaje animado que saludará a tus clientes. 
-          Si subes la imagen de &quot;Saludo&quot;, se usará como base para todo.
-        </p>
-      </div>
+    <div className="accordion-form">
+      <FormField label="Mascota / Personaje">
+        {/* Grid de Mascotas - Refinado */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+          {UPLOAD_STATES.map((state) => {
+            const currentUrl = urls[state.id as keyof typeof urls]
+            const isCurrentlyUploading = isUploading === state.id
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {UPLOAD_STATES.map((state) => {
-          const currentUrl = urls[state.id as keyof typeof urls]
-          const isCurrentlyUploading = isUploading === state.id
-          
-          return (
-            <div key={state.id} className="flex flex-col items-center gap-3 p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>{state.label}</div>
-              
-              <div className="relative group w-24 h-24">
-                <div className="w-full h-full rounded-full bg-[rgba(147,155,245,0.1)] flex items-center justify-center overflow-hidden ring-2 ring-background relative">
-                  {currentUrl ? (
-                    <Image src={currentUrl} alt={state.label} fill className="object-cover" />
-                  ) : (
-                    <span className="text-xs text-center px-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Recomendado</span>
+            return (
+              <div 
+                key={state.id} 
+                className="dash-turno-card group flex flex-col h-full"
+              >
+                {/* Header con Badge-like label */}
+                <div className="dash-turno-header w-full border-b border-white/[0.03] pb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/30 group-hover:text-indigo-400 transition-colors">
+                    {state.label.split(' ')[0]}
+                  </span>
+                  {currentUrl && (
+                    <button
+                      type="button"
+                      className="text-white/10 hover:text-red-400 transition-colors p-1"
+                      onClick={() => handleDelete(state.id as 'greeting' | 'celebrate' | 'zen')}
+                      disabled={isCurrentlyUploading}
+                    >
+                      <Trash2 size={13} strokeWidth={2.5} />
+                    </button>
                   )}
-                  
-                  <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                    {isCurrentlyUploading ? <Loader2 className="animate-spin text-white" /> : <Camera className="text-white" />}
+                </div>
+
+                {/* Preview Arena - High Fidelity Shadow */}
+                <div className="relative aspect-square w-full mt-4 rounded-xl border border-white/5 bg-black/10 overflow-hidden transition-all duration-300 group-hover:border-white/10 group-hover:bg-black/20">
+                  {currentUrl ? (
+                    <Image 
+                      src={currentUrl} 
+                      alt={state.label} 
+                      fill 
+                      className="object-contain p-4 transition-transform duration-700 group-hover:scale-110" 
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                      <Camera size={40} strokeWidth={1} />
+                    </div>
+                  )}
+
+                  {/* Acceso Directo al subir */}
+                  <label className="absolute inset-0 bg-indigo-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500 backdrop-blur-[2px] cursor-pointer">
+                    {isCurrentlyUploading ? (
+                      <Loader2 className="animate-spin text-white/80" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                        <Camera className="text-white w-6 h-6 drop-shadow-md" />
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-white/70">Cambiar</span>
+                      </div>
+                    )}
                     <input
                       type="file"
                       className="hidden"
@@ -133,28 +159,43 @@ export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: B
                     />
                   </label>
                 </div>
+
+                <div className="mt-auto pt-4 flex justify-start">
+                  <div className="accordion-form-actions !mt-0 !pt-0 !border-t-0 bg-transparent">
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={(e) => {
+                         const input = e.currentTarget.closest('.dash-turno-card')?.querySelector('input[type="file"]') as HTMLInputElement
+                         input?.click()
+                      }}
+                      disabled={isCurrentlyUploading}
+                    >
+                      {isCurrentlyUploading ? 'Subiendo...' : currentUrl ? 'Reemplazar' : 'Subir Imagen'}
+                    </button>
+                  </div>
+                </div>
               </div>
+            )
+          })}
+        </div>
+      </FormField>
 
-              {currentUrl && (
-                <button 
-                  type="button"
-                  className="text-xs flex items-center gap-1 mt-2 hover:underline"
-                  style={{ color: 'rgba(255, 100, 100, 0.9)' }}
-                  onClick={() => handleDelete(state.id as 'greeting' | 'celebrate' | 'zen')}
-                  disabled={isCurrentlyUploading}
-                >
-                  <Trash2 size={12} /> Quitar
-                </button>
-              )}
-            </div>
-          )
-        })}
+      <div className="mt-14 pt-8 border-t border-white/[0.04] text-center">
+          <p className="form-hint leading-relaxed max-w-3xl mx-auto">
+            Personalizá cómo Welfi interactúa con tus alumnos. <br />
+            El estado de <strong className="text-white/60">&quot;Saludo&quot;</strong> es la base maestra; si no subís los otros estados, <br className="hidden md:block" />
+            usaremos esa imagen por defecto en el Dashboard y notificaciones.
+          </p>
       </div>
-
       {message && (
-        <p className="text-sm font-medium mt-2" style={{ color: message.type === 'success' ? 'rgba(74, 222, 128, 0.9)' : 'rgba(255, 100, 100, 0.9)' }}>
+        <div className={`mt-6 text-sm font-medium p-3 rounded-lg border w-fit ${
+          message.type === 'success' 
+            ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400' 
+            : 'bg-red-500/5 border-red-500/20 text-red-400'
+        }`}>
           {message.text}
-        </p>
+        </div>
       )}
     </div>
   )

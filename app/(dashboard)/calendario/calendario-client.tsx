@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
 import { SerieEditDialog } from './serie-edit-dialog'
-import { deleteClaseAPI, changeClaseStatusAPI, bulkDeleteClasesAPI } from '@/lib/api'
+import { deleteClaseAPI, changeClaseStatusAPI, bulkDeleteClasesAPI, changeAsistenciaAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import type { Clase, AlumnoSimple, Pack, CalendarioFeatures } from '@/lib/types'
@@ -290,6 +290,30 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
       if (estadoAnterior) {
         setClases(prev => prev.map(c => c.id === id ? { ...c, estado: estadoAnterior } : c))
       }
+      showError(getErrorMessage(err))
+      throw err
+    }
+  }
+
+  // Handler para cambiar asistencia de una clase
+  const handleAsistenciaChange = async (id: string, asistencia: string) => {
+    // Guardar estado anterior para revertir si hay error
+    const claseAnterior = clases.find(c => c.id === id)
+    if (!claseAnterior) return
+
+    const asistenciaAnterior = claseAnterior.asistencia
+    const estadoAnterior = claseAnterior.estado
+    const nuevoEstado = asistencia === 'pendiente' ? 'reservada' : 'completada'
+
+    // Actualización optimista
+    setClases(prev => prev.map(c => c.id === id ? { ...c, asistencia, estado: nuevoEstado } : c))
+    
+    try {
+      await changeAsistenciaAPI(id, asistencia)
+      showSuccess(asistencia === 'presente' ? 'Asistencia marcada' : asistencia === 'ausente' ? 'Ausencia marcada' : 'Asistencia desmarcada')
+    } catch (err) {
+      // Revertir
+      setClases(prev => prev.map(c => c.id === id ? { ...c, asistencia: asistenciaAnterior, estado: estadoAnterior } : c))
       showError(getErrorMessage(err))
       throw err
     }
@@ -743,6 +767,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
           onEditSeries={handleEditSeries}
           onDelete={handleDeleteClase}
           onStatusChange={handleStatusChange}
+          onAsistenciaChange={handleAsistenciaChange}
           horasAnticipacionMinima={horasAnticipacionMinima}
         />
       )}

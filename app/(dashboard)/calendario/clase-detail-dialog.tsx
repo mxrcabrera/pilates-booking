@@ -25,6 +25,7 @@ export function ClaseDetailDialog({
   onEditSeries,
   onDelete,
   onStatusChange,
+  onAsistenciaChange,
   horasAnticipacionMinima = 1
 }: {
   isOpen: boolean
@@ -34,6 +35,7 @@ export function ClaseDetailDialog({
   onEditSeries?: () => void
   onDelete?: (id: string) => Promise<void>
   onStatusChange?: (id: string, estado: string) => Promise<void>
+  onAsistenciaChange?: (id: string, asistencia: string) => Promise<void>
   horasAnticipacionMinima?: number
 }) {
   const { showSuccess, showError } = useToast()
@@ -116,7 +118,11 @@ export function ClaseDetailDialog({
       // También actualizar estado visual
       setCurrentEstado(nuevaAsistencia === 'pendiente' ? 'reservada' : 'completada')
 
-      await changeAsistenciaAPI(clase.id, nuevaAsistencia)
+      if (onAsistenciaChange) {
+        await onAsistenciaChange(clase.id, nuevaAsistencia)
+      } else {
+        await changeAsistenciaAPI(clase.id, nuevaAsistencia)
+      }
       const mensajes: Record<string, string> = {
         presente: 'Marcado presente',
         ausente: 'Marcado ausente',

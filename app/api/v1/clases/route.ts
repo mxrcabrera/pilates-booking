@@ -253,6 +253,39 @@ export async function GET() {
       clasesUsadasEsteMes: clase.alumnoId ? clasesUsadasPorAlumno[clase.alumnoId] || 0 : 0
     }))
 
+    // ---- AUTO-ABSENTE LOGIC (Item 6) ----
+    // Ejecutar en background: marcar como ausente clases pasadas que quedaron "reservada"
+    const ahoraUTC = new Date()
+    const clasesAPasarAAusente = clases.filter(clase => {
+      if (clase.estado !== 'reservada' || !clase.alumnoId) return false
+      
+      const [horas, minutos] = clase.horaInicio.split(':').map(Number)
+      const fechaClase = new Date(clase.fecha)
+      fechaClase.setUTCHours(horas, minutos, 0, 0)
+      
+      // Margen de 1 hora después del inicio para dar tiempo a marcar presente
+      const limite = new Date(fechaClase.getTime() + MS_PER_HOUR)
+      return ahoraUTC > limite
+    })
+
+    if (clasesAPasarAAusente.length > 0) {
+      // Usar background update para no demorar el GET
+      prisma.clase.updateMany({
+        where: { id: { in: clasesAPasarAAusente.map(c => c.id) } },
+        data: { asistencia: 'ausente', estado: 'completada' }
+      }).catch(err => logger.error('Auto-absence update failed', err))
+      
+      // Actualizar los datos que devolvemos para que el usuario vea el cambio ya aplicado
+      clasesAPasarAAusente.forEach(c => {
+         const norm = clasesNormalizadas.find(n => n.id === c.id)
+         if (norm) {
+           norm.asistencia = 'ausente'
+           norm.estado = 'completada'
+         }
+      })
+    }
+    // -------------------------------------
+
     // Calcular features según plan y trial
     const features = getEffectiveFeatures(configData.plan, configData.trialEndsAt)
 
@@ -550,13 +583,19 @@ export async function POST(request: NextRequest) {
 
               for (const diaSeleccionado of alumnoDias) {
                 let diasHastaProximoDia = diaSeleccionado - diaInicialSeleccionado
-                if (diasHastaProximoDia <= 0) diasHastaProximoDia += 7
+                // Si el día es hoy, diasHastaProximoDia = 0.
+                // Si ya creamos la clase de hoy arriba, queremos empezar por la PRÓXIMA ocurrencia (dentro de 7 días).
+                // Pero si diaSeleccionado es diferente hoy, queremos que sea lo antes posible.
+                if (diasHastaProximoDia < 0) diasHastaProximoDia += 7
+                if (diasHastaProximoDia === 0) diasHastaProximoDia = 7 // Ya creamos la de hoy
 
                 const primeraOcurrencia = new Date(fecha)
                 primeraOcurrencia.setUTCDate(fecha.getUTCDate() + diasHastaProximoDia)
 
                 for (let i = 0; i < RECURRING_WEEKS; i++) {
                   const fechaClase = addWeeks(primeraOcurrencia, i)
+                  // Asegurar fecha limpia (00:00:00)
+                  fechaClase.setUTCHours(0, 0, 0, 0)
 
                   clasesACrear.push({
                     profesorId: userId,
@@ -579,7 +618,14 @@ export async function POST(request: NextRequest) {
                 // H4: Validate capacity + create in Serializable transaction to prevent race conditions
                 await prisma.$transaction(async (tx) => {
                   const maxCap = configData.maxAlumnosPorClase
-                  const futureDates = clasesACrear.map(c => c.fecha as Date)
+                  
+                  // Normalizar fechas para comparación sólida
+                  const futureDates = clasesACrear.map(c => {
+                    const d = new Date(c.fecha as Date)
+                    d.setUTCHours(0, 0, 0, 0)
+                    return d
+                  })
+
                   const existingCounts = await tx.clase.groupBy({
                     by: ['fecha'],
                     where: {
@@ -591,9 +637,17 @@ export async function POST(request: NextRequest) {
                     },
                     _count: true
                   })
-                  const countMap = new Map(existingCounts.map(e => [e.fecha.toISOString(), e._count]))
+
+                  const countMap = new Map(existingCounts.map(e => {
+                    const d = new Date(e.fecha)
+                    d.setUTCHours(0, 0, 0, 0)
+                    return [d.toISOString(), e._count]
+                  }))
+
                   const filtered = clasesACrear.filter(c => {
-                    const count = countMap.get((c.fecha as Date).toISOString()) || 0
+                    const d = new Date(c.fecha as Date)
+                    d.setUTCHours(0, 0, 0, 0)
+                    const count = countMap.get(d.toISOString()) || 0
                     return count < maxCap
                   })
 

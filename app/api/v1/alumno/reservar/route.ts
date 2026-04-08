@@ -6,6 +6,7 @@ import { argentinaToUTC } from '@/lib/dates'
 import { Prisma } from '@prisma/client'
 import { unauthorized, badRequest, forbidden, tooManyRequests, serverError } from '@/lib/api-utils'
 import { RATE_LIMIT_WINDOW_MS, MS_PER_HOUR } from '@/lib/constants'
+import { puedeReservarClase } from '@/lib/pack-utils'
 
 const WRITE_LIMIT = 5
 
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const alumno = await prisma.alumno.findFirst({
       where: { userId, deletedAt: null },
-      select: { id: true, packType: true, estudioId: true, profesorId: true }
+      select: { id: true, packType: true, estudioId: true, profesorId: true, clasesPorMes: true }
     })
 
     if (!alumno) {
@@ -68,12 +69,27 @@ export async function POST(request: NextRequest) {
     }
     if (alumno.estudioId && !alumno.profesorId) {
       const isStudioProfesor = await prisma.estudioMiembro.findFirst({
-        where: { estudioId: alumno.estudioId, userId: profesorId, deletedAt: null },
+        where: {
+          estudioId: alumno.estudioId as string,
+          userId: profesorId,
+          deletedAt: null
+        },
         select: { id: true }
       })
       if (!isStudioProfesor) {
         return forbidden('Profesor no pertenece a tu estudio')
       }
+    }
+
+    // Validar que el alumno tenga pack configurado antes de verificar clases restantes
+    if (!alumno.clasesPorMes) {
+      return badRequest('No tienes un pack configurado. Contacta a tu profesor.')
+    }
+
+    // Validar que el alumno pueda reservar (control de packs)
+    const packCheck = await puedeReservarClase(alumno.id, profesorId)
+    if (!packCheck.puede) {
+      return badRequest(packCheck.razon || 'No puedes reservar más clases')
     }
 
     let clasesPorSemana: number | null = null
@@ -127,7 +143,7 @@ export async function POST(request: NextRequest) {
       select: { profesorId: true, horaInicio: true, horaFin: true }
     })
 
-    const matchingHorario = horariosDelDia.find(h => {
+    const matchingHorario = horariosDelDia.find((h: { profesorId: string; horaInicio: string; horaFin: string }) => {
       const start = parseInt(h.horaInicio.split(':')[0])
       const end = parseInt(h.horaFin.split(':')[0])
       return horaNum >= start && horaNum < end && h.profesorId === profesorId
@@ -138,7 +154,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Serializable transaction for concurrency safety
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const occupied = await tx.clase.count({
         where: {
           ...ownerFilter,
@@ -206,8 +222,6 @@ export async function POST(request: NextRequest) {
         },
         select: { id: true, fecha: true, horaInicio: true }
       })
-    }, {
-      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
     })
 
     return NextResponse.json({

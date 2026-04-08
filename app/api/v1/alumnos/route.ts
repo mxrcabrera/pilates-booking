@@ -355,7 +355,7 @@ export async function POST(request: NextRequest) {
         invalidateAlumnos()
 
         // Detect active series when pack frequency changes
-        let seriesInfo: { activeSeries: Array<{ serieId: string; horaInicio: string }>; newClasesPorSemana: number } | null = null
+        let seriesInfo: { activeSeries: Array<{ serieId: string | null; horaInicio: string }>; newClasesPorSemana: number } | null = null
 
         if (packCambio && packType) {
           const [oldPack, newPack] = await Promise.all([
@@ -378,7 +378,7 @@ export async function POST(request: NextRequest) {
 
             const uniqueSeries = series
               .filter((s: { serieId: string | null }): s is typeof s & { serieId: string } => s.serieId !== null)
-              .map((s: { serieId: string; horaInicio: string }) => ({ serieId: s.serieId, horaInicio: s.horaInicio }))
+              .map((s: { serieId: string | null; horaInicio: string }) => ({ serieId: s.serieId, horaInicio: s.horaInicio }))
 
             if (uniqueSeries.length > 0) {
               seriesInfo = { activeSeries: uniqueSeries, newClasesPorSemana: newPack.clasesPorSemana }

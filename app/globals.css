@@ -3712,6 +3712,12 @@ input[type="checkbox"]:disabled {
   gap: 0.2rem;
 }
 
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Layout compacto para configuración */
 .compact-form {
   display: flex;

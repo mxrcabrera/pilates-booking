@@ -149,7 +149,7 @@ export async function GET(_request: NextRequest) {
       const dayOfWeek = currentDate.getUTCDay()
 
       if (!blockedSet.has(fechaStr)) {
-        for (const profesorId of profesorIds) {
+        for (const profesorId of profesorIds as string[]) {
           const key = `${dayOfWeek}|${profesorId}`
           const daySlots = slotsByDayAndProfesor.get(key)
 
@@ -166,7 +166,7 @@ export async function GET(_request: NextRequest) {
               const clases = classIndex.get(classKey) || []
               const occupied = clases.filter((c: { alumnoId: string | null }) => c.alumnoId !== null).length
               const available = maxCapacity - occupied
-              const isBooked = clases.some((c: { alumnoId: string }) => c.alumnoId === alumno.id)
+              const isBooked = clases.some((c: { alumnoId: string | null }) => c.alumnoId === alumno.id)
 
               if (available > 0 || isBooked) {
                 slots.push({

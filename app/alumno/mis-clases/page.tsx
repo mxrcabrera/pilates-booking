@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, User, X, Check, AlertCircle } from 'lucide-react'
+import { Calendar, Clock, User, X, Check, AlertCircle, RefreshCw } from 'lucide-react'
 import { PageLoading } from '@/components/ui/loading'
 import { EmptyState } from '@/components/ui/empty-state'
+import { DialogBase } from '@/components/ui/dialog-base'
 import { logger } from '@/lib/logger'
 
 type Clase = {
@@ -18,7 +19,10 @@ export default function MisClasesPage() {
   const [loading, setLoading] = useState(true)
   const [clases, setClases] = useState<Clase[]>([])
   const [cancelando, setCancelando] = useState<string | null>(null)
+  const [reagendando, _setReagendando] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [reagendarDialogOpen, setReagendarDialogOpen] = useState(false)
+  const [claseSeleccionada, setClaseSeleccionada] = useState<Clase | null>(null)
 
   const loadClases = async () => {
     try {
@@ -59,6 +63,16 @@ export default function MisClasesPage() {
     } finally {
       setCancelando(null)
     }
+  }
+
+  const abrirReagendar = (clase: Clase) => {
+    setClaseSeleccionada(clase)
+    setReagendarDialogOpen(true)
+  }
+
+  const cerrarReagendar = () => {
+    setReagendarDialogOpen(false)
+    setClaseSeleccionada(null)
   }
 
   if (loading) return <PageLoading />
@@ -120,14 +134,24 @@ export default function MisClasesPage() {
                 </div>
 
                 <div className="clase-card-footer">
-                  <button
-                    className="btn-cancel"
-                    onClick={() => cancelarClase(clase.id)}
-                    disabled={cancelando === clase.id}
-                  >
-                    {cancelando === clase.id ? 'Cancelando...' : 'Cancelar reserva'}
-                    <X size={16} />
-                  </button>
+                  <div className="clase-card-actions">
+                    <button
+                      className="btn-reagendar"
+                      onClick={() => abrirReagendar(clase)}
+                      disabled={reagendando === clase.id}
+                    >
+                      {reagendando === clase.id ? 'Reagendando...' : 'Reagendar'}
+                      <RefreshCw size={16} />
+                    </button>
+                    <button
+                      className="btn-cancel"
+                      onClick={() => cancelarClase(clase.id)}
+                      disabled={cancelando === clase.id}
+                    >
+                      {cancelando === clase.id ? 'Cancelando...' : 'Cancelar'}
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -154,6 +178,64 @@ export default function MisClasesPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Modal de Reagendar */}
+      {reagendarDialogOpen && claseSeleccionada && (
+        <DialogBase
+          isOpen={reagendarDialogOpen}
+          onClose={cerrarReagendar}
+          title="Reagendar Clase"
+          footer={
+            <>
+              <button onClick={cerrarReagendar} className="btn-ghost">
+                Cancelar
+              </button>
+              <button
+                onClick={() => window.location.href = '/alumno/reservar'}
+                className="btn-primary"
+              >
+                Elegir Nueva Fecha
+              </button>
+            </>
+          }
+        >
+          <div className="reagendar-content">
+            <div className="reagendar-info">
+              <h4>Clase actual:</h4>
+              <div className="reagendar-clase-info">
+                <Calendar size={16} />
+                <span>
+                  {new Date(claseSeleccionada.fecha + 'T00:00:00').toLocaleDateString('es-AR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long'
+                  })}
+                </span>
+              </div>
+              <div className="reagendar-clase-info">
+                <Clock size={16} />
+                <span>{claseSeleccionada.hora}</span>
+              </div>
+              <div className="reagendar-clase-info">
+                <User size={16} />
+                <span>{claseSeleccionada.profesorNombre}</span>
+              </div>
+            </div>
+            
+            <div className="reagendar-instructions">
+              <p>
+                Al hacer clic en &quot;Elegir Nueva Fecha&quot;, serás redirigido al portal de reservas 
+                para seleccionar un nuevo horario. Tu clase actual será cancelada automáticamente 
+                cuando reserves la nueva.
+              </p>
+              <p className="reagendar-note">
+                <strong>Nota:</strong> Podrás reagendar siempre y cuando falte al menos 2 horas 
+                antes de la clase original.
+              </p>
+            </div>
+          </div>
+        </DialogBase>
       )}
     </div>
   )

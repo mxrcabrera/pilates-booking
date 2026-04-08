@@ -8648,6 +8648,89 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   cursor: not-allowed;
 }
 
+.clase-card-actions {
+  display: flex;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.btn-reagendar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(99, 102, 241, 0.1);
+  color: rgba(147, 155, 245, 0.9);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.btn-reagendar:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-reagendar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reagendar-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.reagendar-info h4 {
+  margin: 0 0 var(--space-md) 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.reagendar-clase-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-bottom: var(--space-xs);
+}
+
+.reagendar-clase-info svg {
+  color: rgba(147, 155, 245, 0.7);
+}
+
+.reagendar-instructions {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.reagendar-instructions p {
+  margin: 0 0 var(--space-md) 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.reagendar-instructions p:last-child {
+  margin-bottom: 0;
+}
+
+.reagendar-note {
+  color: rgba(147, 155, 245, 0.9) !important;
+  font-size: 0.8rem !important;
+}
+
 .content-section {
   margin-bottom: var(--space-2xl);
 }

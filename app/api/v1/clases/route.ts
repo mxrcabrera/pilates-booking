@@ -190,7 +190,7 @@ export async function GET() {
     // Queries de datos en paralelo (usando cache para packs y alumnos)
     const cacheKey = estudio ? estudio.estudioId : userId
     const cacheType: OwnerType = estudio ? 'estudio' : 'profesor'
-    const [clases, alumnos, packs] = await Promise.all([
+    const [clases, _totalClases, alumnos, packs, feriados] = await Promise.all([
       prisma.clase.findMany({
         where: clasesWhere,
         select: {
@@ -221,7 +221,19 @@ export async function GET() {
       }),
       prisma.clase.count({ where: clasesWhere }),
       getCachedAlumnosSimple(cacheKey, cacheType),
-      getCachedPacks(cacheKey, cacheType)
+      getCachedPacks(cacheKey, cacheType),
+      prisma.fechaBloqueada.findMany({
+        where: {
+          ...ownerFilter,
+          fecha: { gte: inicioRango, lte: finRango },
+          tipo: 'feriado'
+        },
+        select: {
+          id: true,
+          fecha: true,
+          motivo: true
+        }
+      })
     ])
 
     // Calcular clases usadas por alumno usando su ciclo de facturación personalizado
@@ -294,6 +306,11 @@ export async function GET() {
       clases: clasesNormalizadas,
       alumnos,
       packs,
+      feriados: feriados.map((f: { id: string; fecha: Date; motivo: string | null }) => ({
+        id: f.id,
+        fecha: f.fecha.toISOString().split('T')[0],
+        motivo: f.motivo
+      })),
       horarioMananaInicio: configData.horarioMananaInicio || '08:00',
       horarioMananaFin: configData.horarioMananaFin || '14:00',
       horarioTardeInicio: configData.horarioTardeInicio || '17:00',

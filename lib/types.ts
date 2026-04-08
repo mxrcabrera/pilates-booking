@@ -209,6 +209,7 @@ export type CalendarioData = {
   clases: Clase[]
   alumnos: AlumnoSimple[]
   packs: Pack[]
+  feriados: Array<{ id: string; fecha: string; motivo: string | null }>
   currentUserId: string
   horarioMananaInicio: string
   horarioMananaFin: string

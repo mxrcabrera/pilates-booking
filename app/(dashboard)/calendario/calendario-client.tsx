@@ -18,6 +18,7 @@ interface CalendarioClientProps {
   clasesIniciales: Clase[]
   alumnos: AlumnoSimple[]
   packs: Pack[]
+  feriados: Array<{ id: string; fecha: string; motivo: string | null }>
   horarioMananaInicio: string
   horarioTardeInicio: string
   maxAlumnosPorClase: number
@@ -27,7 +28,7 @@ interface CalendarioClientProps {
 
 const HORAS_DIA = Array.from({ length: 16 }, (_, i) => i + 7) // 7:00 a 22:00
 
-export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioMananaInicio, horarioTardeInicio, maxAlumnosPorClase, horasAnticipacionMinima, features }: CalendarioClientProps) {
+export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, horarioMananaInicio, horarioTardeInicio, maxAlumnosPorClase, horasAnticipacionMinima, features }: CalendarioClientProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { showSuccess, showError } = useToast()
@@ -133,6 +134,16 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
 
   const irHoy = () => {
     setFechaActual(new Date())
+  }
+
+  // Verificar si una fecha es feriado
+  const esFeriado = (fecha: Date): { esFeriado: boolean; motivo: string | null } => {
+    const fechaStr = formatearFechaDia(fecha)
+    const feriado = feriados.find(f => f.fecha === fechaStr)
+    return {
+      esFeriado: !!feriado,
+      motivo: feriado?.motivo || null
+    }
   }
 
   // Obtener clases del día seleccionado
@@ -702,10 +713,12 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
                   <div className="calendar-week-time-header"></div>
                   {clasesDeLaSemana.map((dia, idx) => {
                     const esHoy = formatearFechaDia(dia.fecha) === formatearFechaDia(new Date())
+                    const { esFeriado: esFeriadoFlag, motivo: motivoFeriado } = esFeriado(dia.fecha)
                     return (
                       <div
                         key={idx}
-                        className={`calendar-week-day-header ${esHoy ? 'today' : ''}`}
+                        className={`calendar-week-day-header ${esHoy ? 'today' : ''} ${esFeriadoFlag ? 'feriado' : ''}`}
+                        title={esFeriadoFlag ? `Feriado: ${motivoFeriado}` : ''}
                       >
                         <div className="calendar-day-name">
                           {DIAS_SEMANA[dia.fecha.getDay()]}
@@ -713,6 +726,11 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
                         <div className={`calendar-day-number ${esHoy ? 'today' : ''}`}>
                           {dia.fecha.getDate()}
                         </div>
+                        {esFeriadoFlag && (
+                          <div className="feriado-badge" title={motivoFeriado || 'Feriado'}>
+                            🎉
+                          </div>
+                        )}
                       </div>
                     )
                   })}

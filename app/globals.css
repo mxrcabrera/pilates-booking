@@ -5522,6 +5522,7 @@ input[type="checkbox"]:disabled {
 .input-with-icon-wrapper {
   position: relative;
   width: 100%;
+  min-width: 0;
 }
 
 .input-with-icon {

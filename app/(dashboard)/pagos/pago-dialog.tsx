@@ -31,8 +31,8 @@ export function PagoDialog({
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
 
-  // Generar array de días del 1 al 28
-  const diasDelMes = Array.from({ length: 28 }, (_, i) => i + 1)
+  // Generar array de días del 1 al 31
+  const diasDelMes = Array.from({ length: 31 }, (_, i) => i + 1)
 
   useEffect(() => {
     if (!isOpen) {

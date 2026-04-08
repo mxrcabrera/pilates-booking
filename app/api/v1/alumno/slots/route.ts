@@ -96,7 +96,7 @@ export async function GET(_request: NextRequest) {
         select: { profesorId: true, diaSemana: true, horaInicio: true, horaFin: true }
       }),
       prisma.fechaBloqueada.findMany({
-        where: { ...ownerFilter, fecha: { gte: today, lte: endDate } },
+        where: { ...ownerFilter, fecha: { gte: today, lte: endDate }, tipo: 'bloqueo' },
         select: { fecha: true }
       }),
       prisma.clase.findMany({
@@ -112,15 +112,15 @@ export async function GET(_request: NextRequest) {
     ])
 
     const blockedSet = new Set(
-      fechasBloqueadas.map(f => f.fecha.toISOString().split('T')[0])
+      fechasBloqueadas.map((f: { fecha: Date }) => f.fecha.toISOString().split('T')[0])
     )
 
-    const profesorIds = [...new Set(horarios.map(h => h.profesorId))]
+    const profesorIds = [...new Set(horarios.map((h: { profesorId: string }) => h.profesorId))]
     const profesores = await prisma.user.findMany({
       where: { id: { in: profesorIds } },
       select: { id: true, nombre: true }
     })
-    const profesorMap = new Map(profesores.map(p => [p.id, p.nombre]))
+    const profesorMap = new Map<string, string>(profesores.map((p: { id: string; nombre: string }) => [p.id, p.nombre]))
 
     const slotsByDayAndProfesor = new Map<string, Set<string>>()
     for (const horario of horarios) {
@@ -164,16 +164,16 @@ export async function GET(_request: NextRequest) {
 
               const classKey = `${fechaStr}|${hora}|${profesorId}`
               const clases = classIndex.get(classKey) || []
-              const occupied = clases.filter(c => c.alumnoId !== null).length
+              const occupied = clases.filter((c: { alumnoId: string | null }) => c.alumnoId !== null).length
               const available = maxCapacity - occupied
-              const isBooked = clases.some(c => c.alumnoId === alumno.id)
+              const isBooked = clases.some((c: { alumnoId: string }) => c.alumnoId === alumno.id)
 
               if (available > 0 || isBooked) {
                 slots.push({
                   fecha: fechaStr,
                   horaInicio: hora,
                   profesorId,
-                  profesorNombre: profesorMap.get(profesorId) || 'Desconocido',
+                  profesorNombre: (profesorMap.get(profesorId) as string) || 'Desconocido',
                   available,
                   total: maxCapacity,
                   isBooked
@@ -191,7 +191,7 @@ export async function GET(_request: NextRequest) {
       alumno: { id: alumno.id, nombre: alumno.nombre, clasesPorSemana },
       slots,
       blockedDates: [...blockedSet],
-      horarios: horarios.map(h => ({
+      horarios: horarios.map((h: { diaSemana: number; horaInicio: string; horaFin: string }) => ({
         diaSemana: h.diaSemana,
         horaInicio: h.horaInicio,
         horaFin: h.horaFin

@@ -341,15 +341,21 @@ model ListaEspera {
   @@map("lista_espera")
 }
 
+enum TipoFechaBloqueada {
+  bloqueo
+  feriado
+}
+
 model FechaBloqueada {
-  id         String   @id @default(uuid())
-  profesorId String   @map("profesor_id")
-  estudioId  String?  @map("estudio_id")
-  fecha      DateTime @db.Date
+  id         String              @id @default(uuid())
+  profesorId String              @map("profesor_id")
+  estudioId  String?             @map("estudio_id")
+  fecha      DateTime            @db.Date
   motivo     String?
-  createdAt  DateTime @default(now()) @map("created_at")
-  profesor   User     @relation(fields: [profesorId], references: [id], onDelete: Cascade)
-  estudio    Estudio? @relation(fields: [estudioId], references: [id])
+  tipo       TipoFechaBloqueada  @default(bloqueo)
+  createdAt  DateTime            @default(now()) @map("created_at")
+  profesor   User                @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  estudio    Estudio?            @relation(fields: [estudioId], references: [id])
 
   @@unique([profesorId, fecha])
   @@map("fechas_bloqueadas")

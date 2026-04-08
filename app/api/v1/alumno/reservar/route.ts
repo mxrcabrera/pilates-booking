@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isBlocked = await prisma.fechaBloqueada.findFirst({
-      where: { ...ownerFilter, fecha }
+      where: { ...ownerFilter, fecha, tipo: 'bloqueo' }
     })
     if (isBlocked) {
       return badRequest('Esta fecha esta bloqueada')

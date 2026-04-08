@@ -3707,15 +3707,15 @@ input[type="checkbox"]:disabled {
 }
 
 .form-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
 }
 
-@media (max-width: 640px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
+.form-row > * {
+  flex: 1;
+  min-width: 130px;
 }
 
 /* Layout compacto para configuración */

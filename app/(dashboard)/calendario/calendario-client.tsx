@@ -2,11 +2,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, Trash2, Sun, Moon, Sunset, Pencil, X, CheckSquare } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, Trash2, Sun, Moon, Sunset, Pencil, X, CheckSquare, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
 import { SerieEditDialog } from './serie-edit-dialog'
+import { ListaEsperaDialog } from './lista-espera-dialog'
 import { deleteClaseAPI, changeClaseStatusAPI, bulkDeleteClasesAPI, changeAsistenciaAPI } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
@@ -44,6 +45,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
   const [turnosExpandidos, setTurnosExpandidos] = useState<Set<string>>(new Set())
+  const [listaEsperaOpen, setListaEsperaOpen] = useState(false)
 
   // Persistencia de estado: cargar desde URL/localStorage al montar
   useEffect(() => {
@@ -688,12 +690,24 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
                 <h2 className="calendar-week-title">
                   {formatearFecha(clasesDeLaSemana[0].fecha)} - {formatearFecha(clasesDeLaSemana[6].fecha)}
                 </h2>
-                <button
-                  onClick={irHoy}
-                  className="calendar-week-today-btn"
-                >
-                  Hoy
-                </button>
+                <div className="calendar-week-actions">
+                  {features.listaEspera && (
+                    <button
+                      onClick={() => setListaEsperaOpen(true)}
+                      className="calendar-week-today-btn"
+                      style={{ marginRight: '0.5rem' }}
+                    >
+                      <Clock className="w-4 h-4" />
+                      Lista Espera
+                    </button>
+                  )}
+                  <button
+                    onClick={irHoy}
+                    className="calendar-week-today-btn"
+                  >
+                    Hoy
+                  </button>
+                </div>
               </div>
 
               <button
@@ -906,6 +920,11 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
           </div>
         </div>
       )}
+      <ListaEsperaDialog
+        isOpen={listaEsperaOpen}
+        onClose={() => setListaEsperaOpen(false)}
+        fecha={fechaActual}
+      />
     </>
   )
 }

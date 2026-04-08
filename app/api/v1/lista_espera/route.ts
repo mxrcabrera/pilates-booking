@@ -107,3 +107,40 @@ export async function POST(request: NextRequest) {
     return serverError(error)
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const context = await getUserContext()
+    if (!context) {
+      return unauthorized()
+    }
+
+    const { userId: _userId, estudio: _estudio } = context
+    const ownerFilter = getOwnerFilter(context)
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID es requerido' }, { status: 400 })
+    }
+
+    // Verificar que la entrada existe y pertenece al usuario
+    const entrada = await prisma.listaEspera.findFirst({
+      where: { id, ...ownerFilter }
+    })
+
+    if (!entrada) {
+      return NextResponse.json({ error: 'Entrada no encontrada' }, { status: 404 })
+    }
+
+    // Eliminar entrada
+    await prisma.listaEspera.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return serverError(error)
+  }
+}

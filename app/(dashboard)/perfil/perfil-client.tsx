@@ -7,7 +7,18 @@ import { PasswordForm } from '../configuracion/password-form'
 import { AvatarUpload } from '@/components/avatar-upload'
 import { BuddyUpload } from '@/components/buddy-upload'
 
-export function PerfilClient({ profesor }: { profesor: any }) {
+interface ProfesorProp {
+  id: string
+  nombre: string
+  email: string
+  telefono: string | null
+  avatarUrl: string | null
+  buddyGreetingUrl: string | null
+  buddyCelebrateUrl: string | null
+  buddyZenUrl: string | null
+}
+
+export function PerfilClient({ profesor }: { profesor: ProfesorProp }) {
   return (
     <div className="flex flex-col gap-10 pb-24">
       <AccordionGroup defaultOpenId="datos-personales">

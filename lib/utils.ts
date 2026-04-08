@@ -15,12 +15,16 @@ export function getErrorMessage(error: unknown): string {
   return 'Error desconocido'
 }
 
-// Time/hour utilities
 export function getTurno(hora: number, horarioTardeInicio: string = '17:00'): 'mañana' | 'tarde' | 'noche' {
   const tardeComienzo = parseInt(horarioTardeInicio.split(':')[0])
   if (hora < tardeComienzo) return 'mañana'
   if (hora < 22) return 'tarde'
   return 'noche'
+}
+
+export function isTimeOutsideRange(time: string, start: string, end: string): boolean {
+  if (!time || !start || !end) return false
+  return time < start || time > end
 }
 
 export function formatearHora(hora: string): string {

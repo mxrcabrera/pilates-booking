@@ -1,6 +1,6 @@
 'use client'
 
-import { HorariosDisponibles } from './horarios-disponibles'
+import { HorariosDisponibles, type HorarioGrupo } from './horarios-disponibles'
 import { HorarioDialog } from './horario-dialog'
 import { PacksSection } from './packs-section'
 import { updatePreferencias } from './actions'
@@ -53,109 +53,50 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
   console.log('horarios recibidos:', JSON.stringify(horarios, null, 2))
   // Transformar horarios de DB a formato para HorariosDisponibles
   const horariosAgrupados = useMemo(() => {
-    const result = []
-    const horariosPorDiaTurno = new Map<string, Horario>()
+    const groups = new Map<string, Horario[]>()
+    
+    // 1. Agrupar por horario y turno (excluyendo los inactivos/bloqueados)
     horarios.forEach(h => {
-      horariosPorDiaTurno.set(`${h.diaSemana}-${h.esManiana}`, h)
+      // Usamos una clave única para el grupo de horario/turno
+      const key = `${h.horaInicio}-${h.horaFin}-${h.esManiana}-${h.estaActivo}`
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(h)
     })
 
-    const turnos = [
-      { esManiana: true, label: 'Mañana' },
-      { esManiana: false, label: 'Tarde' }
-    ]
+    const result: HorarioGrupo[] = []
 
-    // Lunes a Viernes
-    for (const turno of turnos) {
-      const diasLV = [1, 2, 3, 4, 5]
-      const horariosLV = diasLV
-        .map(d => horariosPorDiaTurno.get(`${d}-${turno.esManiana}`))
-        .filter(Boolean) as Horario[]
+    // 2. Procesar grupos y formatear
+    groups.forEach((grupoHorarios) => {
+      // Ordenar días del grupo (1-6, 0)
+      const sorted = [...grupoHorarios].sort((a, b) => {
+        const d_a = a.diaSemana === 0 ? 7 : a.diaSemana
+        const d_b = b.diaSemana === 0 ? 7 : b.diaSemana
+        return d_a - d_b
+      })
 
-      if (horariosLV.length === 5) {
-        const primero = horariosLV[0]
-        const mismoHorario = horariosLV.every(h =>
-          h.horaInicio === primero.horaInicio && h.horaFin === primero.horaFin
-        )
-        if (mismoHorario) {
-          // Agrupados como "Lunes a Viernes"
-          result.push({
-            id: horariosLV.map(h => h.id).join('|'),
-            dias: diasLV.map(d => DIAS_SEMANA_COMPLETO[d]),
-            inicio: primero.horaInicio,
-            fin: primero.horaFin,
-            turno: turno.label,
-            disponible: primero.estaActivo
-          })
-        } else {
-          // Mismo horario diferente → filas individuales
-          diasLV.forEach(dia => {
-            const h = horariosPorDiaTurno.get(`${dia}-${turno.esManiana}`)
-            if (h) result.push({
-              id: h.id,
-              dias: [DIAS_SEMANA_COMPLETO[dia]],
-              inicio: h.horaInicio,
-              fin: h.horaFin,
-              turno: turno.label,
-              disponible: h.estaActivo
-            })
-          })
-        }
-      } else if (horariosLV.length > 0) {
-        // No están los 5 → filas individuales
-        diasLV.forEach(dia => {
-          const h = horariosPorDiaTurno.get(`${dia}-${turno.esManiana}`)
-          if (h) result.push({
-            id: h.id,
-            dias: [DIAS_SEMANA_COMPLETO[dia]],
-            inicio: h.horaInicio,
-            fin: h.horaFin,
-            turno: turno.label,
-            disponible: h.estaActivo
-          })
-        })
+      const primero = sorted[0]
+      result.push({
+        id: sorted.map(h => h.id).join('|'),
+        dias: sorted.map(h => DIAS_SEMANA_COMPLETO[h.diaSemana]),
+        diasDetalle: sorted.map(h => ({ id: h.id, diaSemana: h.diaSemana })),
+        inicio: primero.horaInicio,
+        fin: primero.horaFin,
+        turno: primero.esManiana ? 'Mañana' : 'Tarde',
+        disponible: primero.estaActivo
+      })
+    })
+
+    // 3. Ordenar los resultados finales por el primer día de cada grupo
+    return result.sort((a, b) => {
+      const first_a = a.diasDetalle[0].diaSemana === 0 ? 7 : a.diasDetalle[0].diaSemana
+      const first_b = b.diasDetalle[0].diaSemana === 0 ? 7 : b.diasDetalle[0].diaSemana
+      
+      // Si el primer día es igual, ordenar por turno (Mañana antes que Tarde)
+      if (first_a === first_b) {
+        return a.turno === 'Mañana' ? -1 : 1
       }
-    }
-
-    // Sábado
-    for (const turno of turnos) {
-      const sabado = horariosPorDiaTurno.get(`6-${turno.esManiana}`)
-      if (sabado) {
-        result.push({
-          id: sabado.id,
-          dias: ['sábado'],
-          inicio: sabado.horaInicio,
-          fin: sabado.horaFin,
-          turno: turno.label,
-          disponible: sabado.estaActivo
-        })
-      }
-    }
-
-    // Domingo
-    const domManiana = horariosPorDiaTurno.get('0-true')
-    const domTarde = horariosPorDiaTurno.get('0-false')
-    if (domManiana) {
-      result.push({
-        id: domManiana.id, dias: ['domingo'],
-        inicio: domManiana.horaInicio, fin: domManiana.horaFin,
-        turno: 'Mañana', disponible: domManiana.estaActivo
-      })
-    }
-    if (domTarde) {
-      result.push({
-        id: domTarde.id, dias: ['domingo'],
-        inicio: domTarde.horaInicio, fin: domTarde.horaFin,
-        turno: 'Tarde', disponible: domTarde.estaActivo
-      })
-    }
-    if (!domManiana && !domTarde) {
-      result.push({
-        id: 'no-disponible-0', dias: ['Domingo'],
-        inicio: '', fin: '', turno: '', disponible: false
-      })
-    }
-
-    return result
+      return first_a - first_b
+    })
   }, [horarios])
 
   return (

@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { saveHorarioAPI, saveHorariosBatchAPI } from '@/lib/api'
 import { ConfirmDialog } from './confirm-dialog'
 import { useToast } from '@/components/ui/toast'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, AlertTriangle } from 'lucide-react'
 import { TimeInput } from '@/components/time-input'
 import { DialogBase } from '@/components/ui/dialog-base'
 import type { Horario } from '@/lib/types'
-import { getErrorMessage } from '@/lib/utils'
+import { getErrorMessage, isTimeOutsideRange } from '@/lib/utils'
 
 const RANGOS_DIAS = [
   { value: 'single', label: 'Un solo día', dias: [] },
@@ -144,6 +144,15 @@ export function HorarioDialog({
 
     return conflictos.length > 0 ? conflictos : null
   }, [horario, rangoSeleccionado, diaUnicoSeleccionado, turnoSeleccionado, horarios])
+
+  const isOutsideBoundary = useMemo(() => {
+    if (turnoSeleccionado === 'ambos') return false // Skip complex case for now
+    
+    const start = turnoSeleccionado === 'maniana' ? horarioMananaInicio : horarioTardeInicio
+    const end = turnoSeleccionado === 'maniana' ? horarioMananaFin : horarioTardeFin
+    
+    return isTimeOutsideRange(horaInicio, start, end) || isTimeOutsideRange(horaFin, start, end)
+  }, [horaInicio, horaFin, turnoSeleccionado, horarioMananaInicio, horarioMananaFin, horarioTardeInicio, horarioTardeFin])
 
   function buildHorariosToCreate(formData: FormData, excluirSabadoTarde: boolean = false, excluirDomingo: boolean = false): Array<{ diaSemana: number; horaInicio: string; horaFin: string; esManiana: boolean }> {
     const rango = RANGOS_DIAS.find(r => r.value === rangoSeleccionado)
@@ -349,7 +358,7 @@ export function HorarioDialog({
         className="btn-primary"
         disabled={isLoading}
       >
-        {isLoading ? 'Guardando...' : conflictInfo ? 'Reemplazar' : 'Guardar'}
+        {isLoading ? 'Guardando...' : conflictInfo ? 'Reemplazar' : isOutsideBoundary ? 'Guardar de todos modos' : 'Guardar'}
       </button>
     </>
   )
@@ -375,21 +384,25 @@ export function HorarioDialog({
         )}
 
         {conflictInfo && conflictInfo.length > 0 && (
-          <div className="form-message warning" role="alert">
-            <p>
-              <strong>Atención:</strong> {conflictInfo.length} horario
-              {conflictInfo.length > 1 ? 's' : ''} existente
-              {conflictInfo.length > 1 ? 's' : ''} será
-              {conflictInfo.length > 1 ? 'n' : ''} reemplazado
-              {conflictInfo.length > 1 ? 's' : ''}:
-            </p>
-            <ul style={{ margin: '0.25rem 0 0 1rem', fontSize: '0.875rem' }}>
-              {conflictInfo.map(c => (
-                <li key={`${c.dia}-${c.turno}`}>
-                  {c.diaLabel} ({c.turno}): {c.horaInicio} - {c.horaFin}
-                </li>
-              ))}
-            </ul>
+          <div className="plan-limit-banner warning" role="alert" style={{ marginBottom: '1.25rem' }}>
+            <AlertTriangle size={16} />
+            <div className="flex flex-col gap-1">
+              <span>Se reemplazarán {conflictInfo.length} horarios existentes:</span>
+              <ul style={{ margin: '0 0 0 1rem', fontSize: '0.8rem', opacity: 0.8 }}>
+                {conflictInfo.map(c => (
+                  <li key={`${c.dia}-${c.turno}`}>
+                    {c.diaLabel} ({c.turno}): {c.horaInicio} - {c.horaFin}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {isOutsideBoundary && (
+          <div className="plan-limit-banner warning" role="alert" style={{ marginBottom: '1.25rem' }}>
+            <AlertTriangle size={16} />
+            <span>Atención: Este horario está fuera de tu {turnoSeleccionado === 'maniana' ? 'Turno Mañana' : 'Turno Tarde'} ({turnoSeleccionado === 'maniana' ? `${horarioMananaInicio} - ${horarioMananaFin}` : `${horarioTardeInicio} - ${horarioTardeFin}`}).</span>
           </div>
         )}
 

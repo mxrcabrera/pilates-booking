@@ -11,7 +11,7 @@ import { hashPassword } from '@/lib/auth'
 import { unauthorized, badRequest, notFound, tooManyRequests, serverError, forbidden } from '@/lib/api-utils'
 import { RATE_LIMIT_WINDOW_MS } from '@/lib/constants'
 import { getEffectiveMaxAlumnos, getSuggestedUpgrade, PLAN_CONFIGS, getEffectiveFeatures } from '@/lib/plans'
-import type { PlanType } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 export const runtime = 'nodejs'
 
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
           })
     ])
 
-    const alumnosSerializados = alumnos.map(alumno => ({
+    const alumnosSerializados = alumnos.map((alumno: { userId: string | null; precio: Decimal; saldoAFavor: Decimal; cumpleanos: Date | null; pagos: Array<{ fechaVencimiento?: Date }>; clases: Array<unknown> }) => ({
       ...alumno,
       userId: alumno.userId ?? null,
       precio: alumno.precio.toString(),
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
       pagos: undefined
     }))
 
-    const packsSerializados = configData?.packs.map(pack => ({
+    const packsSerializados = configData?.packs.map((pack: { id: string; nombre: string; clasesPorSemana: number; precio: Decimal }) => ({
       id: pack.id,
       nombre: pack.nombre,
       clasesPorSemana: pack.clasesPorSemana,
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
     const paginatedData = paginatedResponse(alumnosSerializados, total, { page, limit, skip })
 
     // Calcular info del plan y features
-    const plan = (configData?.plan || 'FREE') as PlanType
+    const plan = configData?.plan || 'FREE'
     const trialEndsAt = configData?.trialEndsAt || null
     const maxAlumnos = getEffectiveMaxAlumnos(plan, trialEndsAt)
     const features = getEffectiveFeatures(plan, trialEndsAt)
@@ -277,8 +277,9 @@ export async function POST(request: NextRequest) {
                           alumnoExistente.packType !== 'por_clase' && packType !== 'por_clase'
 
         let nuevoSaldoAFavor = alumnoExistente.saldoAFavor
+        let nuevasClasesPorMes = alumnoExistente.clasesPorMes
 
-        const alumno = await prisma.$transaction(async (tx) => {
+        const alumno = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           if (packCambio) {
             const packAnterior = await tx.pack.findUnique({
               where: { id: alumnoExistente.packType }
@@ -317,6 +318,14 @@ export async function POST(request: NextRequest) {
               const saldoCalculado = montoPagado - valorConsumido
               nuevoSaldoAFavor = new Decimal(Number(alumnoExistente.saldoAFavor) + saldoCalculado)
             }
+
+            // Obtener clases por semana del nuevo pack y calcular clases por mes
+            const packNuevo = await tx.pack.findUnique({
+              where: { id: packType }
+            })
+            if (packNuevo) {
+              nuevasClasesPorMes = packNuevo.clasesPorSemana * 4
+            }
           }
 
           return tx.alumno.update({
@@ -334,7 +343,8 @@ export async function POST(request: NextRequest) {
               ...(precio !== undefined && { precio: new Decimal(precio) }),
               ...(consentimientoTutor !== undefined && { consentimientoTutor }),
               diaInicioCiclo: diaCiclo,
-              saldoAFavor: nuevoSaldoAFavor
+              saldoAFavor: nuevoSaldoAFavor,
+              ...(packCambio && nuevasClasesPorMes && { clasesPorMes: nuevasClasesPorMes })
             },
             include: {
               _count: { select: { clases: true, pagos: true } }
@@ -367,8 +377,8 @@ export async function POST(request: NextRequest) {
             })
 
             const uniqueSeries = series
-              .filter((s): s is typeof s & { serieId: string } => s.serieId !== null)
-              .map(s => ({ serieId: s.serieId, horaInicio: s.horaInicio }))
+              .filter((s: { serieId: string | null }): s is typeof s & { serieId: string } => s.serieId !== null)
+              .map((s: { serieId: string; horaInicio: string }) => ({ serieId: s.serieId, horaInicio: s.horaInicio }))
 
             if (uniqueSeries.length > 0) {
               seriesInfo = { activeSeries: uniqueSeries, newClasesPorSemana: newPack.clasesPorSemana }
@@ -457,7 +467,7 @@ export async function POST(request: NextRequest) {
           where: { id: { in: ids }, ...ownerFilter, deletedAt: null },
           select: { id: true }
         })
-        const validIds = validAlumnos.map(a => a.id)
+        const validIds = validAlumnos.map((a: { id: string }) => a.id)
 
         if (validIds.length > 0) {
           await prisma.$transaction([

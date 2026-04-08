@@ -242,8 +242,44 @@ export async function GET(request: Request) {
       _count: true
     })
 
+    // Obtener nombres de packs para mapeo
+    const packIds = [...new Set(alumnosConPack.map(p => p.packType).filter(Boolean))]
+    const packsData = await prisma.pack.findMany({
+      where: { id: { in: packIds }, deletedAt: null },
+      select: { id: true, nombre: true }
+    })
+    const packMap = new Map(packsData.map(p => [p.id, p.nombre]))
+
     const distribucionPacks = alumnosConPack.map(p => ({
-      pack: p.packType || 'Sin pack',
+      pack: (() => {
+        if (!p.packType) return 'Sin pack'
+        
+        // Primero buscar en packs dinámicos
+        const packName = packMap.get(p.packType)
+        if (packName) return packName
+        
+        // Luego buscar en labels predefinidos
+        const predefinedLabel = {
+          'mensual': 'Mensual',
+          'por_clase': 'Por Clase',
+          'pack_4': 'Pack 4 Clases',
+          'pack_8': 'Pack 8 Clases',
+          'pack_12': 'Pack 12 Clases',
+          '1x': '1 clase/semana',
+          '2x': '2 clases/semana',
+          '3x': '3 clases/semana',
+          'clase': 'Clase suelta'
+        }[p.packType]
+        
+        if (predefinedLabel) return predefinedLabel
+        
+        // Si es UUID/hash, mostrar formato genérico
+        if (p.packType.length > 10) {
+          return 'Pack Personalizado'
+        }
+        
+        return p.packType
+      })(),
       cantidad: p._count
     }))
 

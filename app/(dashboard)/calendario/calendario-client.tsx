@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, Trash2, Sun, Moon, Sunset, Pencil, X, CheckSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
@@ -27,6 +28,8 @@ interface CalendarioClientProps {
 const HORAS_DIA = Array.from({ length: 16 }, (_, i) => i + 7) // 7:00 a 22:00
 
 export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioMananaInicio, horarioTardeInicio, maxAlumnosPorClase, horasAnticipacionMinima, features }: CalendarioClientProps) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState<Clase[]>(clasesIniciales)
   const [fechaActual, setFechaActual] = useState(new Date())
@@ -40,6 +43,63 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, horarioManan
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
   const [turnosExpandidos, setTurnosExpandidos] = useState<Set<string>>(new Set())
+
+  // Persistencia de estado: cargar desde URL/localStorage al montar
+  useEffect(() => {
+    // Cargar fecha desde URL params o localStorage
+    const fechaParam = searchParams.get('fecha')
+    let fechaInicial = new Date()
+    
+    if (fechaParam) {
+      const parsed = new Date(fechaParam)
+      if (!isNaN(parsed.getTime())) {
+        fechaInicial = parsed
+      }
+    } else {
+      // Intentar cargar desde localStorage
+      const savedFecha = localStorage.getItem('calendario-fecha')
+      if (savedFecha) {
+        const parsed = new Date(savedFecha)
+        if (!isNaN(parsed.getTime())) {
+          fechaInicial = parsed
+        }
+      }
+    }
+    
+    setFechaActual(fechaInicial)
+
+    // Cargar turnos expandidos desde localStorage
+    const savedTurnos = localStorage.getItem('calendario-turnos')
+    if (savedTurnos) {
+      try {
+        const turnos = JSON.parse(savedTurnos)
+        setTurnosExpandidos(new Set(turnos))
+      } catch (error) {
+        console.error('Error parsing turnos:', error)
+      }
+    }
+  }, [searchParams])
+
+  // Persistencia: guardar estado cuando cambia
+  useEffect(() => {
+    // Guardar fecha en URL y localStorage
+    const fechaStr = fechaActual.toISOString().split('T')[0]
+    const newParams = new URLSearchParams(searchParams.toString())
+    newParams.set('fecha', fechaStr)
+    
+    // Evitar navegación innecesaria
+    const currentFecha = searchParams.get('fecha')
+    if (currentFecha !== fechaStr) {
+      router.replace(`/calendario?${newParams.toString()}`, { scroll: false })
+    }
+    
+    localStorage.setItem('calendario-fecha', fechaActual.toISOString())
+  }, [fechaActual, searchParams, router])
+
+  useEffect(() => {
+    // Guardar turnos expandidos en localStorage
+    localStorage.setItem('calendario-turnos', JSON.stringify(Array.from(turnosExpandidos)))
+  }, [turnosExpandidos])
 
   // Sincronizar estado local cuando cambian las props (después del refresh)
   useEffect(() => {

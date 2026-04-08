@@ -28,8 +28,25 @@ export function AlumnoCard({
 }) {
 
   const getPackLabel = () => {
+    // Primero buscar en packs dinámicos por ID
     const pack = packs.find(p => p.id === alumno.packType)
-    return pack?.nombre || PACK_LABELS[alumno.packType] || alumno.packType
+    if (pack?.nombre) return pack.nombre
+    
+    // Luego buscar en labels predefinidos
+    const predefinedLabel = PACK_LABELS[alumno.packType]
+    if (predefinedLabel) return predefinedLabel
+    
+    // Si es un UUID o hash, mostrar un formato amigable
+    if (alumno.packType && alumno.packType.length > 10) {
+      // Es probablemente un UUID/hash, mostrar formato genérico
+      if (alumno.clasesPorMes) {
+        return `Pack ${alumno.clasesPorMes} clases/mes`
+      }
+      return 'Pack Personalizado'
+    }
+    
+    // Último recurso: mostrar el valor original
+    return alumno.packType || 'Sin pack'
   }
 
   const paymentStatus = getPaymentStatus(alumno)

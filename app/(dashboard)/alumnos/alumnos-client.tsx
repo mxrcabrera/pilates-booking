@@ -12,7 +12,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { EmptyState } from '@/components/ui/empty-state'
 import { exportToCSV, ALUMNOS_COLUMNS } from '@/lib/export'
 import type { Alumno, Pack, PlanInfo, AlumnosFeatures } from '@/lib/types'
-import { PLAN_NAMES } from '@/lib/constants'
+import { PLAN_NAMES, PACK_LABELS } from '@/lib/constants'
 
 type FilterType = 'todos' | 'activos' | 'inactivos'
 
@@ -240,7 +240,20 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
                 email: a.email,
                 telefono: a.telefono,
                 genero: a.genero === 'F' ? 'Mujer' : 'Hombre',
-                packType: packs.find(p => p.id === a.packType)?.nombre || a.packType,
+                packType: (() => {
+      const pack = packs.find(p => p.id === a.packType)
+      if (pack?.nombre) return pack.nombre
+      const predefinedLabel = PACK_LABELS[a.packType]
+      if (predefinedLabel) return predefinedLabel
+      // Si es UUID/hash, mostrar formato amigable
+      if (a.packType && a.packType.length > 10) {
+        if (a.clasesPorMes) {
+          return `Pack ${a.clasesPorMes} clases/mes`
+        }
+        return 'Pack Personalizado'
+      }
+      return a.packType || 'Sin pack'
+    })(),
                 precio: a.precio,
                 estaActivo: a.estaActivo ? 'Sí' : 'No',
                 clasesEsteMes: a.clasesEsteMes

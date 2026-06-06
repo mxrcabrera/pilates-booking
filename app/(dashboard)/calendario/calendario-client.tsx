@@ -157,7 +157,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
   // Obtener clases de la semana
   const clasesDeLaSemana = useMemo(() => {
     const inicioSemana = new Date(fechaActual)
-    inicioSemana.setDate(fechaActual.getDate() - fechaActual.getDay()) // Ir al domingo
+    inicioSemana.setUTCDate(fechaActual.getUTCDate() - fechaActual.getUTCDay()) // Ir al domingo (UTC)
 
     const diasSemana = Array.from({ length: 7 }, (_, i) => {
       const fecha = new Date(inicioSemana)
@@ -393,9 +393,9 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
   }
 
   const formatearFecha = (fecha: Date) => {
-    const dia = DIAS_SEMANA_COMPLETO[fecha.getDay()]
-    const num = fecha.getDate()
-    const mes = MESES[fecha.getMonth()].substring(0, 3)
+    const dia = DIAS_SEMANA_COMPLETO[fecha.getUTCDay()]
+    const num = fecha.getUTCDate()
+    const mes = MESES[fecha.getUTCMonth()].substring(0, 3)
     return `${dia}, ${num} ${mes}`
   }
 
@@ -735,7 +735,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
                         title={esFeriadoFlag ? `Feriado: ${motivoFeriado}` : ''}
                       >
                         <div className="calendar-day-name">
-                          {DIAS_SEMANA[dia.fecha.getDay()]}
+                          {DIAS_SEMANA[dia.fecha.getUTCDay()]}
                         </div>
                         <div className={`calendar-day-number ${esHoy ? 'today' : ''}`}>
                           {dia.fecha.getDate()}

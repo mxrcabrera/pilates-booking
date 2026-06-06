@@ -88,8 +88,8 @@ export function ClaseDialog({
 
   const hasPackError = alumnosSinPack.length > 0
 
-  // Get the weekday of the clicked date for pre-selection
-  const clickedDayOfWeek = fecha ? fecha.getDay() : null
+  // Get the weekday of the clicked date for pre-selection (use UTC to match API)
+  const clickedDayOfWeek = fecha ? fecha.getUTCDay() : null
 
   // Edit mode: derive frequency from the class data
   const editFrecuencia = clase?.frecuenciaSemanal ?? (clase?.diasSemana?.length || null)

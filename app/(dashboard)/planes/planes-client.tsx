@@ -307,6 +307,22 @@ export function PlanesClient({ userPlan, inTrial, trialDaysLeft }: Props) {
             <h4>¿Qué métodos de pago aceptan?</h4>
             <p>Aceptamos tarjetas de crédito/débito y transferencia bancaria.</p>
           </div>
+          <div className="faq-item">
+            <h4>¿Cómo funcionan los horarios?</h4>
+            <p>Cada profesor configura sus propios horarios de mañana y tarde. Podés definir turnos de mañana (ej: 8:00-14:00) y tarde (ej: 17:00-22:00) según tu disponibilidad.</p>
+          </div>
+          <div className="faq-item">
+            <h4>¿Cómo funcionan los precios?</h4>
+            <p>Cada profesor define sus propios precios por clase. Podés configurar el precio por clase individualmente para cada alumno o usar un precio base.</p>
+          </div>
+          <div className="faq-item">
+            <h4>¿Cuál es la política de cancelación?</h4>
+            <p>Los alumnos pueden cancelar clases hasta 1 hora antes del horario programado. Las cancelaciones tardías se consideran como ausencia.</p>
+          </div>
+          <div className="faq-item">
+            <h4>¿Cómo funciona la lista de espera?</h4>
+            <p>Cuando una clase está llena, los alumnos pueden agregarse a la lista de espera automáticamente. Si se libera un lugar, el sistema avisa al primer alumno en la lista.</p>
+          </div>
         </div>
 
         <div className="faq-cta">

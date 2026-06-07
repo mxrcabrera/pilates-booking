@@ -2,6 +2,7 @@
 
 import { useSession } from '@/lib/use-session'
 import { AlumnoNav } from './alumno-nav'
+import { Chatbot } from '@/components/Chatbot'
 
 export default function AlumnoLayout({
   children,
@@ -24,6 +25,7 @@ export default function AlumnoLayout({
     <div className="min-h-screen bg-background">
       <AlumnoNav user={user} />
       <main style={{ paddingTop: '5rem' }}>{children}</main>
+      <Chatbot />
     </div>
   )
 }

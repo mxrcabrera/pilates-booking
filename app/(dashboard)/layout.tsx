@@ -3,6 +3,7 @@
 import { useRequireRole } from '@/lib/use-session'
 import { usePathname } from 'next/navigation'
 import { DashboardNav } from './dashboard/dashboard-nav'
+import { Chatbot } from '@/components/Chatbot'
 
 export default function DashboardLayout({
   children,
@@ -28,6 +29,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-background">
       <DashboardNav profesor={user} features={features} />
       <main key={pathname} style={{ paddingTop: '5rem' }}>{children}</main>
+      <Chatbot />
     </div>
   )
 }

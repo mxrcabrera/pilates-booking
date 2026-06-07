@@ -9752,3 +9752,11 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   border-color: rgba(110, 125, 245, 0.4);
   background: rgba(110, 125, 245, 0.08);
 }
+
+.dash-excel-import {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(20, 24, 36, 0.8);
+  border: 1px solid rgba(110, 125, 245, 0.2);
+  border-radius: var(--radius-lg);
+}

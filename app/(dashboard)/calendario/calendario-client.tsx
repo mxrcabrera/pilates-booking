@@ -452,7 +452,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
                 </h2>
                 <button
                   onClick={irHoy}
-                  className="btn-ghost btn-sm"
+                  className="calendar-today-btn"
                 >
                   Ir a hoy
                 </button>
@@ -694,7 +694,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
                   {features.listaEspera && (
                     <button
                       onClick={() => setListaEsperaOpen(true)}
-                      className="btn-ghost btn-sm"
+                      className="calendar-week-today-btn"
                       style={{ marginRight: '0.5rem' }}
                     >
                       <Clock className="w-4 h-4" />
@@ -703,7 +703,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
                   )}
                   <button
                     onClick={irHoy}
-                    className="btn-ghost btn-sm"
+                    className="calendar-week-today-btn"
                   >
                     Hoy
                   </button>

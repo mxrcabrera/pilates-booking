@@ -79,28 +79,29 @@ export function ListaEsperaDialog({ isOpen, onClose, claseId: _claseId, fecha, h
         <Clock className="w-5 h-5" />
         Lista de Espera
       </div>
-      <div className="p-4 overflow-y-auto max-h-[60vh]">
+      <div className="dialog-body">
         {loading ? (
-          <p className="text-center text-muted">Cargando...</p>
+          <p className="text-center" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Cargando...</p>
         ) : listaEspera.length === 0 ? (
-          <p className="text-center text-muted">No hay alumnos en lista de espera</p>
+          <p className="text-center" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>No hay alumnos en lista de espera</p>
         ) : (
           <div className="space-y-2">
             {listaEspera.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between p-3 bg-surface rounded-lg"
+                className="flex items-center justify-between p-3"
+                style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: 'var(--radius-lg)' }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-primary/20 text-primary rounded-full font-semibold">
+                  <div className="flex items-center justify-center w-8 h-8" style={{ background: 'rgba(90, 130, 220, 0.2)', color: 'rgba(180, 200, 255, 0.9)', borderRadius: '50%', fontWeight: 600 }}>
                     {entry.posicion}
                   </div>
                   <div>
-                    <p className="font-medium flex items-center gap-2">
+                    <p className="font-medium flex items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                       <User className="w-4 h-4" />
                       {entry.alumno.nombre}
                     </p>
-                    <p className="text-sm text-muted">
+                    <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
                       {entry.horaInicio} - {entry.estado}
                     </p>
                   </div>
@@ -118,8 +119,8 @@ export function ListaEsperaDialog({ isOpen, onClose, claseId: _claseId, fecha, h
         )}
       </div>
 
-      <div className="p-4 border-t bg-surface">
-        <p className="text-sm text-muted">
+      <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(80, 120, 200, 0.08)', background: 'rgba(255, 255, 255, 0.02)' }}>
+        <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
           Los alumnos en lista de espera serán notificados cuando haya disponibilidad.
         </p>
       </div>

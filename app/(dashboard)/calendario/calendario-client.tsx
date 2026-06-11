@@ -702,6 +702,16 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
                   {formatearFecha(clasesDeLaSemana[0].fecha)} - {formatearFecha(clasesDeLaSemana[6].fecha)}
                 </h2>
                 <div className="calendar-week-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {features.listaEspera && (
+                    <button
+                      onClick={() => setListaEsperaOpen(true)}
+                      className="calendar-week-today-btn"
+                      style={{ marginRight: '0.5rem' }}
+                    >
+                      <Clock className="w-4 h-4" />
+                      Lista Espera
+                    </button>
+                  )}
                   <button
                     onClick={irHoy}
                     className="calendar-week-today-btn"

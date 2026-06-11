@@ -5,7 +5,8 @@ import { AccordionGroup, Accordion } from '@/components/accordion'
 import { ProfileForm } from '../configuracion/profile-form'
 import { PasswordForm } from '../configuracion/password-form'
 import { AvatarUpload } from '@/components/avatar-upload'
-import { BuddyUpload } from '@/components/buddy-upload'
+import { MascotConfig } from '@/components/mascot-config'
+import type { MascotImage, MascotRule } from '@/lib/mascot'
 
 interface ProfesorProp {
   id: string
@@ -14,9 +15,8 @@ interface ProfesorProp {
   telefono: string | null
   avatarUrl: string | null
   buddyName: string | null
-  buddyGreetingUrl: string | null
-  buddyCelebrateUrl: string | null
-  buddyZenUrl: string | null
+  mascotImages: MascotImage[]
+  mascotRules: MascotRule[]
 }
 
 export function PerfilClient({ profesor }: { profesor: ProfesorProp }) {
@@ -24,7 +24,6 @@ export function PerfilClient({ profesor }: { profesor: ProfesorProp }) {
     <div className="flex flex-col gap-10 pb-24">
       <AccordionGroup defaultOpenId="datos-personales">
 
-        {/* Sección: Foto de Perfil */}
         <Accordion
           id="avatar"
           title="Foto de Perfil"
@@ -35,23 +34,20 @@ export function PerfilClient({ profesor }: { profesor: ProfesorProp }) {
           </div>
         </Accordion>
 
-        {/* Sección: Mascota de Marca */}
         <Accordion
           id="mascota"
           title="Identidad de Marca"
           icon={<Ghost size={20} className="text-indigo-400" />}
         >
           <div className="py-6 px-1">
-            <BuddyUpload
-              currentName={profesor.buddyName}
-              currentGreeting={profesor.buddyGreetingUrl}
-              currentCelebrate={profesor.buddyCelebrateUrl}
-              currentZen={profesor.buddyZenUrl}
+            <MascotConfig
+              initialName={profesor.buddyName ?? 'Welfi'}
+              initialImages={profesor.mascotImages}
+              initialRules={profesor.mascotRules}
             />
           </div>
         </Accordion>
 
-        {/* Sección: Datos Personales */}
         <Accordion
           id="datos-personales"
           title="Datos del Profesor"
@@ -62,10 +58,9 @@ export function PerfilClient({ profesor }: { profesor: ProfesorProp }) {
           </div>
         </Accordion>
 
-        {/* Sección: Seguridad */}
         <Accordion
           id="seguridad"
-          title="Seguridad y Acceso"
+          title="Seguridad"
           icon={<Lock size={20} className="text-indigo-400" />}
         >
           <div className="py-6 px-1">

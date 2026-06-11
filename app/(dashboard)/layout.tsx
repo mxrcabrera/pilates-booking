@@ -4,6 +4,8 @@ import { useRequireRole } from '@/lib/use-session'
 import { usePathname } from 'next/navigation'
 import { DashboardNav } from './dashboard/dashboard-nav'
 import { Chatbot } from '@/components/Chatbot'
+import { MascotProvider } from '@/lib/mascot-context'
+import { MascotWidget } from '@/components/mascot-widget'
 
 export default function DashboardLayout({
   children,
@@ -26,10 +28,13 @@ export default function DashboardLayout({
   const features = user.features as { multiUsuarios?: boolean; reportesBasicos?: boolean } | undefined
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNav profesor={user} features={features} />
-      <main key={pathname} style={{ paddingTop: '5rem' }}>{children}</main>
-      <Chatbot />
-    </div>
+    <MascotProvider>
+      <div className="min-h-screen bg-background">
+        <DashboardNav profesor={user} features={features} />
+        <main key={pathname} style={{ paddingTop: '5rem' }}>{children}</main>
+        <MascotWidget />
+        <Chatbot />
+      </div>
+    </MascotProvider>
   )
 }

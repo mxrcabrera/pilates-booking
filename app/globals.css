@@ -3245,6 +3245,28 @@ button span {
   cursor: not-allowed;
 }
 
+/* Clase reutilizable para botones con estilo glassy-dark (como accordion-form-actions .btn-primary) */
+.glassy-dark-button {
+  padding: 0.75rem 2rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.glassy-dark-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.glassy-dark-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .accordion-header {
     padding: 1rem 1.25rem;

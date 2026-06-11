@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { DashboardClient } from './dashboard-client'
@@ -10,11 +10,8 @@ import { SetupWizard } from '@/components/setup-wizard'
 import { ExcelImport } from '@/components/ExcelImport'
 import { Calendar, Upload } from 'lucide-react'
 import { usePageData } from '@/lib/use-page-data'
-import { useBuddyState } from '@/lib/use-buddy-state'
-import { BuddyGreeting } from '@/components/buddy-greeting'
-import { useSession } from '@/lib/use-session'
+import { useMascot } from '@/lib/mascot-context'
 import type { DashboardData } from '@/lib/types'
-
 const CACHE_KEY = 'dashboard-data'
 
 export default function DashboardPage() {
@@ -24,8 +21,11 @@ export default function DashboardPage() {
   })
   
   const [showExcelImport, setShowExcelImport] = useState(false)
-  const buddyStatus = useBuddyState(data)
-  const { user } = useSession()
+  const { setDashboardData } = useMascot()
+
+  useEffect(() => {
+    setDashboardData(data ?? null)
+  }, [data, setDashboardData])
 
   if (error) {
     return (
@@ -90,16 +90,6 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="page-header-actions">
-          {user && (
-            <BuddyGreeting 
-              status={buddyStatus} 
-              urls={{
-                greeting: user.buddyGreetingUrl || null,
-                celebrate: user.buddyCelebrateUrl || null,
-                zen: user.buddyZenUrl || null
-              }} 
-            />
-          )}
           <button
             className="btn-outline"
             onClick={() => setShowExcelImport(!showExcelImport)}

@@ -47,6 +47,7 @@ export async function GET() {
         email: user.email,
         role: user.role,
         avatarUrl: user.avatarUrl,
+        buddyName: user.buddyName,
         buddyGreetingUrl: user.buddyGreetingUrl,
         buddyCelebrateUrl: user.buddyCelebrateUrl,
         buddyZenUrl: user.buddyZenUrl,

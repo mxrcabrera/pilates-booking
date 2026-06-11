@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  let body: { messages?: ChatMessage[] }
+  let body: { messages?: ChatMessage[], buddyName?: string }
   try {
     body = await request.json()
   } catch {
@@ -104,7 +104,10 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { messages } = body
+  const { messages, buddyName = 'Welfi' } = body
+
+  // Use buddyName in personalized system prompt
+  console.log(`Using mascot name: ${buddyName}`)
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response(

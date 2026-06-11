@@ -13,6 +13,7 @@ interface ProfesorProp {
   email: string
   telefono: string | null
   avatarUrl: string | null
+  buddyName: string | null
   buddyGreetingUrl: string | null
   buddyCelebrateUrl: string | null
   buddyZenUrl: string | null
@@ -37,11 +38,12 @@ export function PerfilClient({ profesor }: { profesor: ProfesorProp }) {
         {/* Sección: Mascota de Marca */}
         <Accordion
           id="mascota"
-          title="Identidad de Marca (Welfi)"
+          title="Identidad de Marca"
           icon={<Ghost size={20} className="text-indigo-400" />}
         >
           <div className="py-6 px-1">
             <BuddyUpload
+              currentName={profesor.buddyName}
               currentGreeting={profesor.buddyGreetingUrl}
               currentCelebrate={profesor.buddyCelebrateUrl}
               currentZen={profesor.buddyZenUrl}

@@ -1,12 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { DashboardClient } from './dashboard-client'
 import { PageLoading } from '@/components/ui/loading'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SetupWizard } from '@/components/setup-wizard'
-import { Calendar } from 'lucide-react'
+import { ExcelImport } from '@/components/ExcelImport'
+import { Calendar, Upload } from 'lucide-react'
 import { usePageData } from '@/lib/use-page-data'
 import { useBuddyState } from '@/lib/use-buddy-state'
 import { BuddyGreeting } from '@/components/buddy-greeting'
@@ -21,6 +23,7 @@ export default function DashboardPage() {
     apiUrl: '/api/v1/dashboard'
   })
   
+  const [showExcelImport, setShowExcelImport] = useState(false)
   const buddyStatus = useBuddyState(data)
   const { user } = useSession()
 
@@ -46,11 +49,11 @@ export default function DashboardPage() {
 
   if (needsSetup) {
     return (
-      <div className="dashboard-container">
-        <div className="dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-container">
+        <div className="page-header">
           <div>
             <h1>Hoy</h1>
-            <p className="date-text">
+            <p className="page-subtitle">
               {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
             </p>
           </div>
@@ -78,26 +81,36 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="dashboard-container" data-testid="dashboard-page">
-      <div className="dashboard-header" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+    <div className="page-container" data-testid="dashboard-page">
+      <div className="page-header">
         <div>
           <h1>Hoy</h1>
-          <p className="date-text">
+          <p className="page-subtitle">
             {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
           </p>
         </div>
-
-        {user && (
-          <BuddyGreeting 
-            status={buddyStatus} 
-            urls={{
-              greeting: user.buddyGreetingUrl || null,
-              celebrate: user.buddyCelebrateUrl || null,
-              zen: user.buddyZenUrl || null
-            }} 
-          />
-        )}
+        <div className="page-header-actions">
+          {user && (
+            <BuddyGreeting 
+              status={buddyStatus} 
+              urls={{
+                greeting: user.buddyGreetingUrl || null,
+                celebrate: user.buddyCelebrateUrl || null,
+                zen: user.buddyZenUrl || null
+              }} 
+            />
+          )}
+          <button
+            className="btn-outline"
+            onClick={() => setShowExcelImport(!showExcelImport)}
+          >
+            <Upload size={18} />
+            <span>Importar Excel</span>
+          </button>
+        </div>
       </div>
+
+      <ExcelImport isOpen={showExcelImport} onClose={() => setShowExcelImport(false)} />
 
       {data.clasesHoy.length > 0 ? (
         <DashboardClient

@@ -8,6 +8,7 @@ import { useSession } from '@/lib/use-session'
 import { FormField } from '@/components/ui/form-field'
 
 interface BuddyUploadProps {
+  currentName: string | null
   currentGreeting: string | null
   currentCelebrate: string | null
   currentZen: string | null
@@ -19,7 +20,8 @@ const UPLOAD_STATES = [
   { id: 'zen', label: 'Modo Zen', key: 'buddyZenUrl' }
 ] as const
 
-export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: BuddyUploadProps) {
+export function BuddyUpload({ currentName, currentGreeting, currentCelebrate, currentZen }: BuddyUploadProps) {
+  const [name, setName] = useState(currentName || 'Welfi')
   const [urls, setUrls] = useState({
     greeting: currentGreeting,
     celebrate: currentCelebrate,
@@ -29,6 +31,22 @@ export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: B
   const [isUploading, setIsUploading] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const { refresh } = useSession()
+
+  const handleNameChange = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsUploading('name')
+    setMessage(null)
+
+    try {
+      await updateBuddyUrls({ buddyName: name })
+      setMessage({ type: 'success', text: 'Nombre de mascota actualizado' })
+      await refresh()
+    } catch {
+      setMessage({ type: 'error', text: 'Error al actualizar nombre' })
+    } finally {
+      setIsUploading(null)
+    }
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, stateId: 'greeting' | 'celebrate' | 'zen') => {
     const file = e.target.files?.[0]
@@ -96,9 +114,29 @@ export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: B
 
   return (
     <div className="accordion-form">
-      <FormField label="Mascota / Personaje">
+      <FormField label="Nombre de la Mascota">
+        <form onSubmit={handleNameChange} className="pt-2 flex gap-2">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ej: Welfi"
+            disabled={isUploading === 'name'}
+            className="form-input flex-1"
+          />
+          <button
+            type="submit"
+            disabled={isUploading === 'name'}
+            className="btn-primary btn-sm"
+          >
+            {isUploading === 'name' ? 'Guardando...' : 'Guardar'}
+          </button>
+        </form>
+      </FormField>
+
+      <FormField label="Imágenes de la Mascota">
         {/* Grid de Mascotas - Refinado */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 max-w-4xl mx-auto">
           {UPLOAD_STATES.map((state) => {
             const currentUrl = urls[state.id as keyof typeof urls]
             const isCurrentlyUploading = isUploading === state.id
@@ -145,7 +183,7 @@ export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: B
                     {isCurrentlyUploading ? (
                       <Loader2 className="animate-spin text-white/80" />
                     ) : (
-                      <div className="flex flex-col items-center gap-1.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                      <div className="flex flex-col items-center justify-center gap-1.5">
                         <Camera className="text-white w-6 h-6 drop-shadow-md" />
                         <span className="text-[9px] font-bold uppercase tracking-widest text-white/70">Cambiar</span>
                       </div>
@@ -181,9 +219,9 @@ export function BuddyUpload({ currentGreeting, currentCelebrate, currentZen }: B
         </div>
       </FormField>
 
-      <div className="mt-14 pt-8 border-t border-white/[0.04] text-center">
-          <p className="form-hint leading-relaxed max-w-3xl mx-auto">
-            Personalizá cómo Welfi interactúa con tus alumnos. <br />
+      <div className="mt-14 pt-8 border-t border-white/[0.04]">
+          <p className="form-hint leading-relaxed max-w-3xl mx-auto text-center">
+            Personalizá cómo {name} interactúa con tus alumnos. <br />
             El estado de <strong className="text-white/60">&quot;Saludo&quot;</strong> es la base maestra; si no subís los otros estados, <br className="hidden md:block" />
             usaremos esa imagen por defecto en el Dashboard y notificaciones.
           </p>

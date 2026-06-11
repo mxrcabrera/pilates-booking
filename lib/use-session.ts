@@ -9,6 +9,7 @@ export type UserSession = {
   email: string
   role: string
   avatarUrl?: string | null
+  buddyName?: string | null
   buddyGreetingUrl?: string | null
   buddyCelebrateUrl?: string | null
   buddyZenUrl?: string | null

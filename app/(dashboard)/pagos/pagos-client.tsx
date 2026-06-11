@@ -257,17 +257,19 @@ export function PagosClient({
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Pagos</h1>
+          <h1>Pagos</h1>
           {totalPendiente > 0 && (
             <p className="page-subtitle pagos-total-pendiente">
               {formatMonto(totalPendiente)} pendiente
             </p>
           )}
         </div>
-        <button className="btn-primary" onClick={() => setDialogOpen(true)}>
-          <Plus size={18} />
-          <span>Nuevo Pago</span>
-        </button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => setDialogOpen(true)}>
+            <Plus size={18} />
+            <span>Nuevo Pago</span>
+          </button>
+        </div>
       </div>
 
       {/* Buscador y filtro de mes */}

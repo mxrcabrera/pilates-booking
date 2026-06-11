@@ -125,6 +125,7 @@ export async function updateAvatar(avatarUrl: string | null) {
 }
 
 interface BuddyUrlsUpdate {
+  buddyName?: string | null
   buddyGreetingUrl?: string | null
   buddyCelebrateUrl?: string | null
   buddyZenUrl?: string | null

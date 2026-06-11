@@ -120,31 +120,52 @@ export async function POST(request: NextRequest) {
 
     // Insert data into database
     const results = {
-      alumnos: { created: 0, errors: 0 },
-      clases: { created: 0, errors: 0 },
-      pagos: { created: 0, errors: 0 },
+      alumnos: { created: 0, updated: 0, errors: 0, errorDetails: [] as string[] },
+      clases: { created: 0, errors: 0, errorDetails: [] as string[] },
+      pagos: { created: 0, errors: 0, errorDetails: [] as string[] },
     }
 
     // Insert alumnos
     if (extractedData.alumnos && Array.isArray(extractedData.alumnos)) {
       for (const alumno of extractedData.alumnos) {
         try {
-          await prisma.alumno.create({
-            data: {
-              nombre: alumno.nombre,
-              email: alumno.email,
-              telefono: alumno.telefono,
-              cumpleanos: alumno.cumpleanos ? new Date(alumno.cumpleanos) : null,
-              patologias: alumno.patologias,
-              packType: alumno.pack_type,
-              clasesPorMes: alumno.clases_por_mes,
-              precio: alumno.precio,
-            },
+          const existing = await prisma.alumno.findFirst({
+            where: { nombre: alumno.nombre }
           })
-          results.alumnos.created++
+
+          if (existing) {
+            await prisma.alumno.update({
+              where: { id: existing.id },
+              data: {
+                email: alumno.email,
+                telefono: alumno.telefono,
+                cumpleanos: alumno.cumpleanos ? new Date(alumno.cumpleanos) : null,
+                patologias: alumno.patologias,
+                packType: alumno.pack_type,
+                clasesPorMes: alumno.clases_por_mes,
+                precio: alumno.precio,
+              },
+            })
+            results.alumnos.updated++
+          } else {
+            await prisma.alumno.create({
+              data: {
+                nombre: alumno.nombre,
+                email: alumno.email,
+                telefono: alumno.telefono,
+                cumpleanos: alumno.cumpleanos ? new Date(alumno.cumpleanos) : null,
+                patologias: alumno.patologias,
+                packType: alumno.pack_type,
+                clasesPorMes: alumno.clases_por_mes,
+                precio: alumno.precio,
+              },
+            })
+            results.alumnos.created++
+          }
         } catch (error) {
-          console.error('Error creating alumno:', error)
+          console.error('Error processing alumno:', error)
           results.alumnos.errors++
+          results.alumnos.errorDetails.push(`${alumno.nombre}: ${error instanceof Error ? error.message : 'Error desconocido'}`)
         }
       }
     }
@@ -160,6 +181,7 @@ export async function POST(request: NextRequest) {
 
           if (!alumno) {
             results.clases.errors++
+            results.clases.errorDetails.push(`Clase de ${clase.alumno_nombre}: Alumno no encontrado`)
             continue
           }
 
@@ -176,6 +198,7 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.error('Error creating clase:', error)
           results.clases.errors++
+          results.clases.errorDetails.push(`Clase de ${clase.alumno_nombre}: ${error instanceof Error ? error.message : 'Error desconocido'}`)
         }
       }
     }
@@ -191,6 +214,7 @@ export async function POST(request: NextRequest) {
 
           if (!alumno) {
             results.pagos.errors++
+            results.pagos.errorDetails.push(`Pago de ${pago.alumno_nombre}: Alumno no encontrado`)
             continue
           }
 
@@ -209,6 +233,7 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.error('Error creating pago:', error)
           results.pagos.errors++
+          results.pagos.errorDetails.push(`Pago de ${pago.alumno_nombre}: ${error instanceof Error ? error.message : 'Error desconocido'}`)
         }
       }
     }

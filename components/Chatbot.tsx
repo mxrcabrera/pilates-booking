@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Send, MessageCircle } from 'lucide-react'
+import { useSession } from '@/lib/use-session'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -18,9 +19,13 @@ const SUGGESTED_PROMPTS = [
 ]
 
 export function Chatbot() {
+  const { user } = useSession()
+  const buddyName = user?.buddyName || 'Welfi'
+  const chatTitle = `${buddyName}chatia`
+  
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hola! Soy el asistente de Pilates Booking. ¿En qué puedo ayudarte?' },
+    { role: 'assistant', content: `Hola! Soy ${buddyName}, tu asistente de Pilates Booking. ¿En qué puedo ayudarte?` },
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -48,7 +53,7 @@ export function Chatbot() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ messages: updatedMessages, buddyName }),
       })
 
       const data = await res.json()
@@ -80,20 +85,20 @@ export function Chatbot() {
 
   return (
     <>
-      {/* Mascota tipo Clippy (Desktop) / Botón flotante (Mobile) */}
+      {/* Botón flotante */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-violet-600 rounded-full shadow-lg flex items-center justify-center hover:bg-violet-700 transition-colors"
+        className="chatbot-float-button"
         aria-label={isOpen ? 'Cerrar chat' : 'Abrir chat'}
       >
         {isOpen ? (
-          <X size={24} className="text-white" />
+          <X size={24} />
         ) : (
-          <MessageCircle size={24} className="text-white" />
+          <MessageCircle size={24} />
         )}
       </motion.button>
 
@@ -105,71 +110,63 @@ export function Chatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="chatbot-window"
           >
             {/* Header */}
-            <div className="bg-violet-600 px-4 py-3 flex items-center justify-between">
-              <h3 className="text-white font-semibold">Asistente Pilates Booking</h3>
+            <div className="chatbot-header">
+              <h3 className="chatbot-title">{chatTitle}</h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:text-violet-200 transition-colors"
+                className="chatbot-close"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="h-80 overflow-y-auto p-4 space-y-3 bg-gray-50">
+            <div ref={scrollRef} className="chatbot-messages">
               {messages.map((msg, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`chatbot-message ${msg.role === 'user' ? 'user' : 'assistant'}`}
                 >
-                  <div
-                    className={`max-w-[80%] px-3 py-2 rounded-lg text-sm leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'bg-violet-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-800'
-                    }`}
-                  >
+                  <div className="chatbot-message-content">
                     {msg.content}
                   </div>
                 </motion.div>
               ))}
 
               {isLoading && (
-                <div className="flex justify-start">
-                  <div className="px-3 py-2 rounded-lg bg-white border border-gray-200">
-                    <div className="flex gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="chatbot-message assistant">
+                  <div className="chatbot-message-content chatbot-loading">
+                    <div className="chatbot-dots">
+                      <span className="chatbot-dot" style={{ animationDelay: '0ms' }} />
+                      <span className="chatbot-dot" style={{ animationDelay: '150ms' }} />
+                      <span className="chatbot-dot" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 </div>
               )}
 
               {error && (
-                <div className="flex justify-center">
-                  <p className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
-                    {error}
-                  </p>
+                <div className="chatbot-error">
+                  {error}
                 </div>
               )}
             </div>
 
             {/* Suggested prompts */}
             {showSuggestions && (
-              <div className="flex flex-wrap gap-2 px-4 pb-3 bg-gray-50">
+              <div className="chatbot-suggestions">
                 {SUGGESTED_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => sendMessage(prompt)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-violet-50 hover:border-violet-300 hover:text-violet-700 transition-all duration-200"
+                    className="chatbot-suggestion"
                   >
                     {prompt}
                   </button>
@@ -178,8 +175,8 @@ export function Chatbot() {
             )}
 
             {/* Input */}
-            <div className="border-t border-gray-200 p-4 bg-white">
-              <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <div className="chatbot-input">
+              <form onSubmit={handleSubmit} className="chatbot-form">
                 <input
                   ref={inputRef}
                   type="text"
@@ -188,13 +185,13 @@ export function Chatbot() {
                   placeholder="Escribí tu mensaje..."
                   maxLength={500}
                   disabled={isLoading}
-                  className="flex-1 bg-gray-100 border border-gray-200 rounded-full px-4 py-2 text-sm text-gray-800 placeholder:text-gray-500 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all duration-200 disabled:opacity-50"
+                  className="chatbot-input-field"
                   autoFocus
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-30 transition-all duration-200 shrink-0"
+                  className="chatbot-send"
                   aria-label="Enviar"
                 >
                   <Send size={18} />

@@ -126,6 +126,7 @@ export type Profesor = {
   nombre: string
   email: string
   avatarUrl?: string | null
+  buddyName?: string | null
   buddyGreetingUrl?: string | null
   buddyCelebrateUrl?: string | null
   buddyZenUrl?: string | null

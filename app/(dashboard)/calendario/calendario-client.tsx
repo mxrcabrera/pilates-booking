@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, Trash2, Sun, Moon, Sunset, Pencil, X, CheckSquare, Clock } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { ClaseDialog } from './clase-dialog'
 import { ClaseDetailDialog } from './clase-detail-dialog'
 import { SerieEditDialog } from './serie-edit-dialog'
@@ -135,7 +134,10 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
   }
 
   const irHoy = () => {
-    setFechaActual(new Date())
+    const hoy = new Date()
+    // Crear fecha en UTC sin offset de zona horaria
+    const hoyUTC = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate()))
+    setFechaActual(hoyUTC)
   }
 
   // Verificar si una fecha es feriado
@@ -409,27 +411,36 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
             <p className="page-subtitle">Gestiona tus clases y horarios</p>
           </div>
           <div className="page-header-actions desktop-only">
+            {features.listaEspera && (
+              <button
+                className="btn-outline"
+                onClick={() => setListaEsperaOpen(true)}
+              >
+                <Clock size={18} />
+                Lista Espera
+              </button>
+            )}
             {clases.length > 0 && (
-              <Button
+              <button
                 className={`btn-outline ${selectionMode ? 'active' : ''}`}
                 onClick={() => {
                   setSelectionMode(!selectionMode)
                   if (selectionMode) setSelectedClases(new Set())
                 }}
               >
-                <CheckSquare className="w-4 h-4" />
+                <CheckSquare size={18} />
                 {selectionMode ? 'Cancelar' : 'Seleccionar'}
-              </Button>
+              </button>
             )}
-            <Button
+            <button
               className="btn-primary"
               onClick={() => setDialogOpen(true)}
               disabled={alumnos.length === 0}
               title={alumnos.length === 0 ? 'Primero debes agregar alumnos' : ''}
             >
-              <Plus className="w-4 h-4" />
+              <Plus size={18} />
               Nueva Clase
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -690,7 +701,7 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
                 <h2 className="calendar-week-title">
                   {formatearFecha(clasesDeLaSemana[0].fecha)} - {formatearFecha(clasesDeLaSemana[6].fecha)}
                 </h2>
-                <div className="calendar-week-actions">
+                <div className="calendar-week-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   {features.listaEspera && (
                     <button
                       onClick={() => setListaEsperaOpen(true)}

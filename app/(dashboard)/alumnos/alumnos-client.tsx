@@ -189,10 +189,12 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
         <div>
           <h1>Alumnos</h1>
         </div>
-        <button onClick={handleNew} className="btn-primary" disabled={isAtLimit}>
-          <Plus size={20} />
-          <span>Nuevo Alumno</span>
-        </button>
+        <div className="page-header-actions">
+          <button onClick={handleNew} className="btn-primary" disabled={isAtLimit}>
+            <Plus size={18} />
+            <span>Nuevo Alumno</span>
+          </button>
+        </div>
       </div>
 
       {/* Banner de límite de plan */}

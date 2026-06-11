@@ -23,6 +23,7 @@ export async function GET() {
         trialEndsAt: true,
         role: true,
         avatarUrl: true,
+        buddyName: true,
         buddyGreetingUrl: true,
         buddyCelebrateUrl: true,
         buddyZenUrl: true,

@@ -2,14 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { RotateCcw, Users, Calendar, ChevronRight, BarChart3, Lock, Upload } from 'lucide-react'
+import { RotateCcw, Users, Calendar, ChevronRight, BarChart3, Lock } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { changeAsistenciaAPI } from '@/lib/api'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
 import type { ClaseHoy, SiguienteClase, DashboardFeatures } from '@/lib/types'
 import { formatearHora, getErrorMessage } from '@/lib/utils'
 import { PLAN_NAMES } from '@/lib/constants'
-import { ExcelImport } from '@/components/ExcelImport'
 
 interface DashboardClientProps {
   clasesHoy: ClaseHoy[]
@@ -44,7 +43,6 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState(clasesHoy)
   const [loadingId, setLoadingId] = useState<string | null>(null)
-  const [showExcelImport, setShowExcelImport] = useState(false)
 
   // Determinar si una hora es de mañana o tarde
   const horaTardeNum = parseInt(horarioTardeInicio.split(':')[0])
@@ -376,21 +374,7 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
             <ChevronRight size={16} />
           </button>
         )}
-        <button
-          className="dash-quick-link"
-          onClick={() => setShowExcelImport(!showExcelImport)}
-        >
-          <Upload size={18} />
-          <span>Importar Excel</span>
-          <ChevronRight size={16} />
-        </button>
       </div>
-
-      {showExcelImport && (
-        <div className="dash-excel-import">
-          <ExcelImport />
-        </div>
-      )}
     </div>
   )
 }

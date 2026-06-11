@@ -50,8 +50,36 @@ model User {
   listaEspera             ListaEspera[]
   estudios                EstudioMiembro[]
   fechasBloqueadas        FechaBloqueada[]
+  mascotImages            MascotImage[]
+  mascotRules             MascotRule[]
 
   @@map("users")
+}
+
+model MascotImage {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  url       String
+  label     String
+  isDefault Boolean  @default(false) @map("is_default")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mascot_images")
+}
+
+model MascotRule {
+  id       String @id @default(uuid())
+  userId   String @map("user_id")
+  context  String
+  tag      String
+  priority Int    @default(0)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mascot_rules")
 }
 
 model Pack {

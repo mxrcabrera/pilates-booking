@@ -4,6 +4,7 @@ import { HorariosDisponibles, type HorarioGrupo } from './horarios-disponibles'
 import { HorarioDialog } from './horario-dialog'
 import { PacksSection } from './packs-section'
 import { updatePreferencias } from './actions'
+import { MercadoPagoConfig } from '@/components/MercadoPagoConfig'
 import { useState, useMemo } from 'react'
 import { Plus } from 'lucide-react'
 import { invalidateCache, CACHE_KEYS } from '@/lib/client-cache'
@@ -19,9 +20,13 @@ interface ConfiguracionClientProps {
   horarios: Horario[]
   packs: Pack[]
   features: ConfigFeatures
+  estudioInfo?: {
+    estudioId: string
+    rol: string
+  } | null
 }
 
-export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs, features }: ConfiguracionClientProps) {
+export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs, features, estudioInfo }: ConfiguracionClientProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [horarios, setHorarios] = useState<Horario[]>(initialHorarios)
@@ -291,6 +296,12 @@ export function ConfiguracionClient({ profesor, horarios: initialHorarios, packs
         </div>
       </div>
     </div>
+
+    {/* Sección 4: Mercado Pago — Solo para estudios multi-tenant */}
+    <MercadoPagoConfig
+      estudioId={estudioInfo?.estudioId || null}
+      isOwner={estudioInfo?.rol === 'OWNER'}
+    />
 
     {/* Boton de guardar - al final de la pagina */}
     <div className="settings-actions">

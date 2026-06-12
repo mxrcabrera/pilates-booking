@@ -238,6 +238,10 @@ export type ConfigData = {
   horarios: Horario[]
   packs: Pack[]
   features: ConfigFeatures
+  estudioInfo?: {
+    estudioId: string
+    rol: string
+  } | null
 }
 
 export type PagosFeatures = {

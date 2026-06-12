@@ -166,6 +166,7 @@ model Clase {
   esClasePrueba     Boolean   @default(false) @map("es_clase_prueba")
   serieId           String?   @map("serie_id")
   googleEventId     String?   @map("google_event_id")
+  cuposMaximos      Int       @default(4) @map("cupos_maximos")
   createdAt         DateTime  @default(now()) @map("created_at")
   deletedAt         DateTime? @map("deleted_at")
   alumno            Alumno?        @relation(fields: [alumnoId], references: [id])
@@ -193,6 +194,8 @@ model Pago {
   mesCorrespondiente String     @map("mes_correspondiente")
   tipoPago           String    @default("mensual") @map("tipo_pago") // "mensual" (pack) o "clase"
   clasesEsperadas    Int?      @map("clases_esperadas") // Clases que debe hacer en el mes (del pack)
+  mpPreferenceId     String?   @map("mp_preference_id") // Mercado Pago preference ID
+  mpPaymentId        String?   @map("mp_payment_id") // Mercado Pago payment ID
   createdAt          DateTime  @default(now()) @map("created_at")
   deletedAt          DateTime? @map("deleted_at")
   alumno             Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
@@ -202,6 +205,7 @@ model Pago {
   @@index([alumnoId])
   @@index([estado])
   @@index([fechaVencimiento])
+  @@index([mpPreferenceId])
   @@map("pagos")
 }
 
@@ -319,6 +323,10 @@ model Estudio {
   // Google Calendar
   syncGoogleCalendar  Boolean           @default(false) @map("sync_google_calendar")
   googleCalendarId    String?           @map("google_calendar_id")
+
+  // Mercado Pago
+  mpAccessToken       String?           @map("mp_access_token")
+  mpPublicKey         String?           @map("mp_public_key")
 
   createdAt           DateTime          @default(now()) @map("created_at")
 

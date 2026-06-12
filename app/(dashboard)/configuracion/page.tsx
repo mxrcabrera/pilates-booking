@@ -40,6 +40,7 @@ export default function ConfiguracionPage() {
         horarios={data.horarios}
         packs={data.packs}
         features={data.features}
+        estudioInfo={data.estudioInfo}
       />
     </div>
   )

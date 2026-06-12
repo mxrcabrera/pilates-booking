@@ -32,6 +32,10 @@ export function tooManyRequests(retryAfter = 60) {
   )
 }
 
+export function conflict(message: string) {
+  return NextResponse.json({ error: message }, { status: 409 })
+}
+
 export function serverError(error: unknown) {
   // Log full error for debugging (server-side only)
   logger.error('Server error:', error)

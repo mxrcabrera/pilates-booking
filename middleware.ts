@@ -38,6 +38,21 @@ async function getRoleFromNextAuthToken(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // DEPLOYMENT TEST: Return JSON before any logic
+  return new Response(
+    JSON.stringify({
+      middlewareReached: true,
+      pathname: pathname || 'unknown',
+      deploymentCheck: 'MIDDLEWARE_TEST'
+    }),
+    {
+      status: 200,
+      headers: {
+        'content-type': 'application/json'
+      }
+    }
+  )
+
   // Static paths - always allow
   const staticPaths = [
     '/_next',
@@ -62,7 +77,7 @@ export async function middleware(request: NextRequest) {
   let hasValidToken = false
 
   if (authToken) {
-    userRole = await getRoleFromToken(authToken)
+    userRole = await getRoleFromToken(authToken!)
     hasValidToken = userRole !== null
   }
 

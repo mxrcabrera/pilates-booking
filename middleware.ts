@@ -47,6 +47,7 @@ export async function middleware(request: NextRequest) {
   ]
 
   if (staticPaths.some(path => pathname.startsWith(path))) {
+    console.log('[MW]', { pathname, hasSession: false, userRole: null, isPublicPath: true })
     return NextResponse.next()
   }
 
@@ -78,6 +79,9 @@ export async function middleware(request: NextRequest) {
   // PUBLIC ROUTES (no authentication required)
   // ===========================================
   const publicPaths = [
+    '/',
+    '/landing',
+    '/signup',
     '/api/auth/login',
     '/api/auth/logout',
     '/api/auth/callback',
@@ -93,6 +97,8 @@ export async function middleware(request: NextRequest) {
 
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
 
+  console.log('[MW]', { pathname, hasSession, userRole, isPublicPath })
+
   // ===========================================
   // LOGIN PAGE - Redirect if already logged in
   // ===========================================
@@ -100,6 +106,7 @@ export async function middleware(request: NextRequest) {
     if (hasSession && userRole) {
       // Logged-in user trying to access login -> redirect to their dashboard
       const redirectUrl = userRole === 'ALUMNO' ? '/alumno' : '/dashboard'
+      console.log('[MW REDIRECT]', { from: pathname, to: redirectUrl })
       return NextResponse.redirect(new URL(redirectUrl, request.url))
     }
     // Not logged in -> allow access to login
@@ -108,18 +115,13 @@ export async function middleware(request: NextRequest) {
 
   // Allow public routes without further verification
   if (isPublicPath) {
-    return NextResponse.next()
-  }
-
-  // ===========================================
-  // ROOT PAGE - Redirect based on auth state
-  // ===========================================
-  if (pathname === '/') {
-    if (hasSession && userRole) {
+    // Special case for root path: redirect authenticated users
+    if (pathname === '/' && hasSession && userRole) {
       const redirectUrl = userRole === 'ALUMNO' ? '/alumno' : '/dashboard'
+      console.log('[MW REDIRECT]', { from: pathname, to: redirectUrl })
       return NextResponse.redirect(new URL(redirectUrl, request.url))
     }
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.next()
   }
 
   // ===========================================
@@ -135,6 +137,7 @@ export async function middleware(request: NextRequest) {
     if (allowedPrefixes.some(p => pathname.startsWith(p))) {
       loginUrl.searchParams.set('callbackUrl', pathname)
     }
+    console.log('[MW REDIRECT]', { from: pathname, to: '/login' })
     return NextResponse.redirect(loginUrl)
   }
 
@@ -149,6 +152,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Acceso denegado', redirect: '/dashboard' }, { status: 403 })
       }
+      console.log('[MW REDIRECT]', { from: pathname, to: '/dashboard' })
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
@@ -166,6 +170,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Acceso denegado', redirect: '/alumno' }, { status: 403 })
       }
+      console.log('[MW REDIRECT]', { from: pathname, to: '/alumno' })
       return NextResponse.redirect(new URL('/alumno', request.url))
     }
   }

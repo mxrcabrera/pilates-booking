@@ -82,6 +82,7 @@ export async function middleware(request: NextRequest) {
     '/',
     '/landing',
     '/signup',
+    '/login',
     '/api/auth/login',
     '/api/auth/logout',
     '/api/auth/callback',

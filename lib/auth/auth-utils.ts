@@ -81,9 +81,13 @@ export async function getCurrentUserWithRole(): Promise<{ userId: string; role: 
 
   // 1. First try custom JWT (credentials login)
   const customToken = cookieStore.get('auth-token')?.value
+  console.log('[AUTH] customToken found:', !!customToken)
+
   if (customToken) {
     const payload = await verifyToken(customToken)
+    console.log('[AUTH] customToken payload:', payload)
     if (payload) {
+      console.log('[AUTH] Returning userId from customToken:', payload.userId)
       return { userId: payload.userId, role: payload.role || 'PROFESOR' }
     }
   }
@@ -91,16 +95,20 @@ export async function getCurrentUserWithRole(): Promise<{ userId: string; role: 
   // 2. Usar NextAuth auth() para JWT sessions (Google OAuth)
   try {
     const session = await auth()
+    console.log('[AUTH] NextAuth session:', session?.user?.id ? 'VALID' : 'NULL')
     if (session?.user?.id) {
+      console.log('[AUTH] Returning userId from NextAuth:', session.user.id)
       return {
         userId: session.user.id,
         role: (session.user as { role?: string }).role || 'PROFESOR'
       }
     }
-  } catch {
+  } catch (error) {
+    console.log('[AUTH] NextAuth error:', error)
     // Ignore errors
   }
 
+  console.log('[AUTH] No valid session found, returning null')
   return null
 }
 

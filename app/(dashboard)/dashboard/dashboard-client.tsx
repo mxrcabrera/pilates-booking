@@ -17,6 +17,7 @@ interface DashboardClientProps {
   maxAlumnosPorClase: number
   siguienteClase: SiguienteClase | null
   features: DashboardFeatures
+  demoMode?: boolean
 }
 
 function getMinutosHasta(horaClase: string): number {
@@ -39,7 +40,7 @@ function getTimeStatus(minutosHasta: number): { isPast: boolean; isNow: boolean;
   return { isPast: false, isNow: false, isSoon: false }
 }
 
-export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, maxAlumnosPorClase, siguienteClase, features }: DashboardClientProps) {
+export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, maxAlumnosPorClase, siguienteClase, features, demoMode = false }: DashboardClientProps) {
   const { showSuccess, showError } = useToast()
   const [clases, setClases] = useState(clasesHoy)
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -116,6 +117,20 @@ export function DashboardClient({ clasesHoy, totalAlumnos, horarioTardeInicio, m
   }, [horasAgrupadas])
 
   async function handleMarcarAsistencia(claseId: string, nuevaAsistencia: 'presente' | 'ausente' | 'pendiente') {
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      setClases(prev => prev.map(c =>
+        c.id === claseId ? { ...c, asistencia: nuevaAsistencia } : c
+      ))
+      const mensajes = {
+        presente: 'Presente',
+        ausente: 'Ausente',
+        pendiente: 'Desmarcado'
+      }
+      showSuccess(mensajes[nuevaAsistencia] + ' (Demo)')
+      return
+    }
+
     setLoadingId(claseId)
 
     // Guardar asistencia anterior para revert

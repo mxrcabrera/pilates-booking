@@ -13,9 +13,10 @@ interface ImportResults {
 interface ExcelImportProps {
   isOpen: boolean
   onClose: () => void
+  demoMode?: boolean
 }
 
-export function ExcelImport({ isOpen, onClose }: ExcelImportProps) {
+export function ExcelImport({ isOpen, onClose, demoMode = false }: ExcelImportProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [results, setResults] = useState<ImportResults | null>(null)
@@ -70,6 +71,18 @@ export function ExcelImport({ isOpen, onClose }: ExcelImportProps) {
 
     setIsUploading(true)
     setError(null)
+
+    if (demoMode) {
+      // En demo mode, simular proceso de importación
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      setResults({
+        alumnos: { created: 3, updated: 0, errors: 0, errorDetails: [] },
+        clases: { created: 5, errors: 0, errorDetails: [] },
+        pagos: { created: 2, errors: 0, errorDetails: [] }
+      })
+      setIsUploading(false)
+      return
+    }
 
     try {
       const formData = new FormData()

@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { updateUserRole } from './actions'
 import { getErrorMessage } from '@/lib/utils'
+import { Suspense } from 'react'
 
 type User = {
   id?: string
@@ -10,27 +12,35 @@ type User = {
   name?: string | null
 }
 
-export function OnboardingClient({ user }: { user: User }) {
-  const [selectedRole, setSelectedRole] = useState<'PROFESOR' | 'ALUMNO' | null>(null)
+function OnboardingContent({ user }: { user: User }) {
+  const searchParams = useSearchParams()
+  const preselectedRole = searchParams.get('role')?.toUpperCase() as 'PROFESOR' | 'ALUMNO' | null
+  const [selectedRole, setSelectedRole] = useState<'PROFESOR' | 'ALUMNO' | null>(preselectedRole || null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSubmit() {
-    if (!selectedRole) {
-      setError('Por favor seleccioná un rol')
-      return
-    }
-
+  async function handleSubmit(role: 'PROFESOR' | 'ALUMNO') {
     setIsLoading(true)
     setError(null)
 
     try {
-      await updateUserRole(selectedRole)
+      await updateUserRole(role)
       // La redirección se maneja en el server action
     } catch (err) {
       setError(getErrorMessage(err) || 'Error al guardar el rol')
       setIsLoading(false)
     }
+  }
+
+  // Si hay rol pre-seleccionado, enviar automáticamente
+  useEffect(() => {
+    if (preselectedRole) {
+      handleSubmit(preselectedRole)
+    }
+  }, [preselectedRole])
+
+  if (preselectedRole) {
+    return <div className="onboarding-container">Configurando tu cuenta...</div>
   }
 
   return (
@@ -70,7 +80,7 @@ export function OnboardingClient({ user }: { user: User }) {
         </div>
 
         <button
-          onClick={handleSubmit}
+          onClick={() => selectedRole && handleSubmit(selectedRole)}
           className="btn-primary onboarding-submit"
           disabled={!selectedRole || isLoading}
         >
@@ -78,5 +88,13 @@ export function OnboardingClient({ user }: { user: User }) {
         </button>
       </div>
     </div>
+  )
+}
+
+export function OnboardingClient({ user }: { user: User }) {
+  return (
+    <Suspense fallback={<div className="onboarding-container">Cargando...</div>}>
+      <OnboardingContent user={user} />
+    </Suspense>
   )
 }

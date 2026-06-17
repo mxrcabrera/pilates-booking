@@ -19,11 +19,13 @@ type FilterType = 'todos' | 'pendientes' | 'pagados'
 export function PagosClient({
   pagos: initialPagos,
   alumnos,
-  features
+  features,
+  demoMode = false
 }: {
   pagos: Pago[]
   alumnos: AlumnoPago[]
   features: PagosFeatures
+  demoMode?: boolean
 }) {
   const { showSuccess, showError } = useToast()
   const [pagos, setPagos] = useState(initialPagos)
@@ -156,6 +158,16 @@ export function PagosClient({
         : p
     ))
 
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      if (nuevoEstado === 'pagado') {
+        showSuccess('Pago marcado como pagado (Demo)')
+      } else {
+        showSuccess('Pago marcado como pendiente (Demo)')
+      }
+      return
+    }
+
     try {
       if (nuevoEstado === 'pagado') {
         await marcarPagadoAPI(pago.id)
@@ -178,6 +190,13 @@ export function PagosClient({
 
     setPagos(prev => prev.filter(p => p.id !== pago.id))
     setDeleteConfirm({ isOpen: false, pago: null })
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      showSuccess('Pago eliminado (Demo)')
+      setIsDeleting(false)
+      return
+    }
 
     try {
       await deletePagoAPI(pago.id)
@@ -215,6 +234,18 @@ export function PagosClient({
 
   const handleBulkDelete = async () => {
     setIsDeleting(true)
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      const idsToDelete = Array.from(selectedPagos)
+      setPagos(prev => prev.filter(p => !selectedPagos.has(p.id)))
+      showSuccess(`${idsToDelete.length} pago(s) eliminado(s) (Demo)`)
+      setBulkDeleteConfirm(false)
+      setSelectedPagos(new Set())
+      setIsDeleting(false)
+      return
+    }
+
     try {
       const idsToDelete = Array.from(selectedPagos)
       await bulkDeletePagosAPI(idsToDelete)
@@ -236,6 +267,14 @@ export function PagosClient({
     setPagos(prev => prev.map(p =>
       selectedPagos.has(p.id) ? { ...p, estado: 'pagado' as const, fechaPago: new Date().toISOString() } : p
     ))
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      showSuccess(`${idsToMark.length} pago(s) marcado(s) como pagado (Demo)`)
+      setSelectedPagos(new Set())
+      return
+    }
+
     try {
       await Promise.all(idsToMark.map(id => {
         const pago = pagos.find(p => p.id === id)

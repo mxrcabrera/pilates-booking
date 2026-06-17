@@ -16,7 +16,7 @@ import { PLAN_NAMES, PACK_LABELS } from '@/lib/constants'
 
 type FilterType = 'todos' | 'activos' | 'inactivos'
 
-export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, planInfo, features }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string, planInfo: PlanInfo, features: AlumnosFeatures }) {
+export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, planInfo, features, demoMode = false }: { alumnos: Alumno[], packs: Pack[], precioPorClase: string, planInfo: PlanInfo, features: AlumnosFeatures, demoMode?: boolean }) {
   const { showSuccess, showError } = useToast()
   const [alumnos, setAlumnos] = useState(initialAlumnos)
   const [currentPlanInfo, setCurrentPlanInfo] = useState(planInfo)
@@ -92,6 +92,25 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
   const handleDelete = async () => {
     if (!deleteConfirm.alumno) return
     setIsDeleting(true)
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      setAlumnos(prev => prev.filter(a => a.id !== deleteConfirm.alumno?.id))
+      setCurrentPlanInfo(prev => ({
+        ...prev,
+        currentAlumnos: Math.max(0, prev.currentAlumnos - 1),
+        canAddMore: true
+      }))
+      showSuccess('Alumno eliminado (Demo)')
+      setDeleteConfirm({ isOpen: false, alumno: null })
+      if (selectedAlumno?.id === deleteConfirm.alumno.id) {
+        setIsSheetOpen(false)
+        setSelectedAlumno(null)
+      }
+      setIsDeleting(false)
+      return
+    }
+
     try {
       await deleteAlumnoAPI(deleteConfirm.alumno.id)
       setAlumnos(prev => prev.filter(a => a.id !== deleteConfirm.alumno?.id))
@@ -132,6 +151,23 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
 
   const handleBulkDelete = async () => {
     setIsDeleting(true)
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      const idsToDelete = Array.from(selectedAlumnos)
+      setAlumnos(prev => prev.filter(a => !selectedAlumnos.has(a.id)))
+      setCurrentPlanInfo(prev => ({
+        ...prev,
+        currentAlumnos: Math.max(0, prev.currentAlumnos - idsToDelete.length),
+        canAddMore: true
+      }))
+      showSuccess(`${idsToDelete.length} alumno(s) eliminado(s) (Demo)`)
+      setBulkDeleteConfirm(false)
+      setSelectedAlumnos(new Set())
+      setIsDeleting(false)
+      return
+    }
+
     try {
       const idsToDelete = Array.from(selectedAlumnos)
       await bulkDeleteAlumnosAPI(idsToDelete)
@@ -156,6 +192,14 @@ export function AlumnosClient({ alumnos: initialAlumnos, packs, precioPorClase, 
     setAlumnos(prev => prev.map(a =>
       selectedAlumnos.has(a.id) ? { ...a, estaActivo: activate } : a
     ))
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      showSuccess(`${idsToToggle.length} alumno(s) ${activate ? 'activado(s)' : 'desactivado(s)'} (Demo)`)
+      setSelectedAlumnos(new Set())
+      return
+    }
+
     try {
       await Promise.all(idsToToggle.map(id => {
         const alumno = alumnos.find(a => a.id === id)

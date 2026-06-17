@@ -24,11 +24,12 @@ interface CalendarioClientProps {
   maxAlumnosPorClase: number
   horasAnticipacionMinima: number
   features: CalendarioFeatures
+  demoMode?: boolean
 }
 
 const HORAS_DIA = Array.from({ length: 16 }, (_, i) => i + 7) // 7:00 a 22:00
 
-export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, horarioMananaInicio, horarioTardeInicio, maxAlumnosPorClase, horasAnticipacionMinima, features }: CalendarioClientProps) {
+export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, horarioMananaInicio, horarioTardeInicio, maxAlumnosPorClase, horasAnticipacionMinima, features, demoMode = false }: CalendarioClientProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { showSuccess, showError } = useToast()
@@ -325,6 +326,16 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
     if (selectedClases.size === 0) return
     setIsDeleting(true)
 
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      setClases(prev => prev.filter(c => !selectedClases.has(c.id)))
+      setSelectedClases(new Set())
+      setBulkDeleteConfirm(false)
+      showSuccess(`${selectedClases.size} clase(s) eliminada(s) (Demo)`)
+      setIsDeleting(false)
+      return
+    }
+
     try {
       await bulkDeleteClasesAPI(Array.from(selectedClases))
       // Actualización local
@@ -341,6 +352,13 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
 
   // Handler para eliminar una clase individual
   const handleDeleteClase = async (id: string) => {
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      setClases(prev => prev.filter(c => c.id !== id))
+      showSuccess('Clase eliminada (Demo)')
+      return
+    }
+
     try {
       await deleteClaseAPI(id)
       setClases(prev => prev.filter(c => c.id !== id))
@@ -357,6 +375,13 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
     const estadoAnterior = clases.find(c => c.id === id)?.estado
     // Actualización optimista
     setClases(prev => prev.map(c => c.id === id ? { ...c, estado } : c))
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      showSuccess('Estado actualizado (Demo)')
+      return
+    }
+
     try {
       await changeClaseStatusAPI(id, estado)
       showSuccess('Estado actualizado')
@@ -382,7 +407,13 @@ export function CalendarioClient({ clasesIniciales, alumnos, packs, feriados, ho
 
     // Actualización optimista
     setClases(prev => prev.map(c => c.id === id ? { ...c, asistencia, estado: nuevoEstado } : c))
-    
+
+    if (demoMode) {
+      // En demo mode, solo actualizar estado local
+      showSuccess(asistencia === 'presente' ? 'Asistencia marcada (Demo)' : asistencia === 'ausente' ? 'Ausencia marcada (Demo)' : 'Asistencia desmarcada (Demo)')
+      return
+    }
+
     try {
       await changeAsistenciaAPI(id, asistencia)
       showSuccess(asistencia === 'presente' ? 'Asistencia marcada' : asistencia === 'ausente' ? 'Ausencia marcada' : 'Asistencia desmarcada')

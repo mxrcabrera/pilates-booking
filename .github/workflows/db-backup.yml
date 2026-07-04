@@ -22,11 +22,10 @@ jobs:
       
       - name: Database Backup
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          # Ejecutar dump completo de la base de datos
-          supabase db dump -p $SUPABASE_PROJECT_ID > backup.sql
+          # Ejecutar dump completo de la base de datos usando DATABASE_URL
+          supabase db dump --db-url "$DATABASE_URL" -f backup.sql
           
           # Verificar que el dump se creó correctamente
           if [ ! -s backup.sql ]; then

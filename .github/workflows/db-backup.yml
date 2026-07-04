@@ -24,22 +24,25 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          # Ejecutar dump completo de la base de datos usando DATABASE_URL
-          supabase db dump --db-url "$DATABASE_URL" -f backup.sql
+          # Exportar estructura (schema) de la base de datos
+          supabase db dump --db-url "$DATABASE_URL" -f schema.sql
           
-          # Verificar que el dump se creó correctamente
-          if [ ! -s backup.sql ]; then
-            echo "Error: El archivo backup.sql está vacío o no se creó"
+          # Exportar datos reales de la base de datos (usando COPY para velocidad y eficiencia)
+          supabase db dump --db-url "$DATABASE_URL" --data-only --use-copy -f data.sql
+          
+          # Verificar que los archivos se crearon y no están vacíos
+          if [ ! -s schema.sql ] || [ ! -s data.sql ]; then
+            echo "Error: Los archivos de backup no se generaron correctamente o están vacíos"
             exit 1
           fi
           
-          echo "Backup completado exitosamente"
-          ls -lh backup.sql
+          echo "Backup de estructura y datos completado exitosamente"
+          ls -lh schema.sql data.sql
       
       - name: Compress Backup
         run: |
-          # Comprimir el archivo con fecha
-          tar -czvf backup-$(date +%Y-%m-%d).tar.gz backup.sql
+          # Comprimir ambos archivos en un solo tar.gz con fecha
+          tar -czvf backup-$(date +%Y-%m-%d).tar.gz schema.sql data.sql
           
           # Verificar que la compresión se creó correctamente
           if [ ! -s backup-$(date +%Y-%m-%d).tar.gz ]; then

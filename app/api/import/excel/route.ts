@@ -1,52 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import * as xlsx from 'xlsx'
-
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
-
-const SYSTEM_PROMPT = `You are a data extraction assistant for a Pilates Booking system. Your task is to extract structured data from Excel files and convert it to JSON format.
-
-The Excel file may contain the following types of data:
-- Alumnos (students): nombre, email, telefono, cumpleanos, patologias, pack_type, clases_por_mes, precio
-- Clases (classes): fecha, hora_inicio, alumno_nombre, estado
-- Pagos (payments): alumno_nombre, monto, fecha_pago, fecha_vencimiento, estado, mes_correspondiente
-
-Extract the data and return it as a JSON object with the following structure:
-{
-  "alumnos": [
-    {
-      "nombre": "string",
-      "email": "string",
-      "telefono": "string",
-      "cumpleanos": "YYYY-MM-DD",
-      "patologias": "string",
-      "pack_type": "string",
-      "clases_por_mes": number,
-      "precio": number
-    }
-  ],
-  "clases": [
-    {
-      "fecha": "YYYY-MM-DD",
-      "hora_inicio": "HH:mm",
-      "alumno_nombre": "string",
-      "estado": "reservada|completada|cancelada"
-    }
-  ],
-  "pagos": [
-    {
-      "alumno_nombre": "string",
-      "monto": number,
-      "fecha_pago": "YYYY-MM-DD",
-      "fecha_vencimiento": "YYYY-MM-DD",
-      "estado": "pendiente|pagado|vencido",
-      "mes_correspondiente": "string"
-    }
-  ]
-}
-
-Return ONLY the JSON object, no additional text or explanation.`
+import { ImportPlanner } from '@/lib/import/ImportPlanner'
+import { ImportValidator } from '@/lib/import/ImportValidator'
+import { ImportExecutor } from '@/lib/import/ImportExecutor'
+import { ImportReporter } from '@/lib/import/ImportReporter'
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,194 +16,41 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Read Excel file
+    const profesorId = request.headers.get('x-user-id') || ''
+    const estudioId = request.headers.get('x-estudio-id') || null
+
+    if (!profesorId) {
+      return NextResponse.json(
+        { error: 'No authenticated user found' },
+        { status: 401 }
+      )
+    }
+
     const buffer = await file.arrayBuffer()
-    const workbook = xlsx.read(buffer, { type: 'buffer' })
-    
-    // Convert all sheets to JSON
-    const sheets: Record<string, unknown[]> = {}
-    workbook.SheetNames.forEach(sheetName => {
-      const sheet = workbook.Sheets[sheetName]
-      sheets[sheetName] = xlsx.utils.sheet_to_json(sheet)
+
+    // 1. Get mapping plan using AI planner (metadata-only)
+    const plan = await ImportPlanner.getPlan(buffer)
+
+    // 2. Validate mapping plan using Zod
+    const validatedPlan = ImportValidator.validate(plan)
+
+    // 3. Execute local mapping & database import (row-by-row)
+    const results = await ImportExecutor.execute(buffer, validatedPlan, {
+      profesorId,
+      estudioId
     })
 
-    // Use Groq to extract structured data
-    const apiKey = process.env.GROQ_API_KEY
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Groq API key not configured' },
-        { status: 503 }
-      )
-    }
-
-    const groqRes = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: JSON.stringify(sheets) },
-        ],
-        max_tokens: 4000,
-        temperature: 0.3,
-      }),
-    })
-
-    if (!groqRes.ok) {
-      const errorText = await groqRes.text()
-      console.error('Groq API Error:', errorText)
-      return NextResponse.json(
-        { error: `Failed to process Excel with AI: ${groqRes.status} ${groqRes.statusText}` },
-        { status: 503 }
-      )
-    }
-
-    const groqData = await groqRes.json()
-    const extractedDataText = groqData?.choices?.[0]?.message?.content ?? ''
-
-    // Parse JSON response
-    let extractedData
-    try {
-      extractedData = JSON.parse(extractedDataText)
-    } catch {
-      return NextResponse.json(
-        { error: 'Failed to parse AI response' },
-        { status: 500 }
-      )
-    }
-
-    // Insert data into database
-    const results = {
-      alumnos: { created: 0, updated: 0, errors: 0, errorDetails: [] as string[] },
-      clases: { created: 0, errors: 0, errorDetails: [] as string[] },
-      pagos: { created: 0, errors: 0, errorDetails: [] as string[] },
-    }
-
-    // Insert alumnos
-    if (extractedData.alumnos && Array.isArray(extractedData.alumnos)) {
-      for (const alumno of extractedData.alumnos) {
-        try {
-          const existing = await prisma.alumno.findFirst({
-            where: { nombre: alumno.nombre }
-          })
-
-          if (existing) {
-            await prisma.alumno.update({
-              where: { id: existing.id },
-              data: {
-                email: alumno.email,
-                telefono: alumno.telefono,
-                cumpleanos: alumno.cumpleanos ? new Date(alumno.cumpleanos) : null,
-                patologias: alumno.patologias,
-                packType: alumno.pack_type,
-                clasesPorMes: alumno.clases_por_mes,
-                precio: alumno.precio,
-              },
-            })
-            results.alumnos.updated++
-          } else {
-            await prisma.alumno.create({
-              data: {
-                nombre: alumno.nombre,
-                email: alumno.email,
-                telefono: alumno.telefono,
-                cumpleanos: alumno.cumpleanos ? new Date(alumno.cumpleanos) : null,
-                patologias: alumno.patologias,
-                packType: alumno.pack_type,
-                clasesPorMes: alumno.clases_por_mes,
-                precio: alumno.precio,
-              },
-            })
-            results.alumnos.created++
-          }
-        } catch (error) {
-          console.error('Error processing alumno:', error)
-          results.alumnos.errors++
-          results.alumnos.errorDetails.push(`${alumno.nombre}: ${error instanceof Error ? error.message : 'Error desconocido'}`)
-        }
-      }
-    }
-
-    // Insert clases
-    if (extractedData.clases && Array.isArray(extractedData.clases)) {
-      for (const clase of extractedData.clases) {
-        try {
-          // Find alumno by nombre
-          const alumno = await prisma.alumno.findFirst({
-            where: { nombre: clase.alumno_nombre },
-          })
-
-          if (!alumno) {
-            results.clases.errors++
-            results.clases.errorDetails.push(`Clase de ${clase.alumno_nombre}: Alumno no encontrado`)
-            continue
-          }
-
-          await prisma.clase.create({
-            data: {
-              fecha: new Date(clase.fecha),
-              horaInicio: clase.hora_inicio,
-              alumnoId: alumno.id,
-              estado: clase.estado,
-              profesorId: request.headers.get('x-user-id') || '',
-            },
-          })
-          results.clases.created++
-        } catch (error) {
-          console.error('Error creating clase:', error)
-          results.clases.errors++
-          results.clases.errorDetails.push(`Clase de ${clase.alumno_nombre}: ${error instanceof Error ? error.message : 'Error desconocido'}`)
-        }
-      }
-    }
-
-    // Insert pagos
-    if (extractedData.pagos && Array.isArray(extractedData.pagos)) {
-      for (const pago of extractedData.pagos) {
-        try {
-          // Find alumno by nombre
-          const alumno = await prisma.alumno.findFirst({
-            where: { nombre: pago.alumno_nombre },
-          })
-
-          if (!alumno) {
-            results.pagos.errors++
-            results.pagos.errorDetails.push(`Pago de ${pago.alumno_nombre}: Alumno no encontrado`)
-            continue
-          }
-
-          await prisma.pago.create({
-            data: {
-              alumnoId: alumno.id,
-              monto: pago.monto,
-              fechaPago: pago.fecha_pago ? new Date(pago.fecha_pago) : null,
-              fechaVencimiento: new Date(pago.fecha_vencimiento),
-              estado: pago.estado,
-              mesCorrespondiente: pago.mes_correspondiente,
-              profesorId: request.headers.get('x-user-id') || '',
-            },
-          })
-          results.pagos.created++
-        } catch (error) {
-          console.error('Error creating pago:', error)
-          results.pagos.errors++
-          results.pagos.errorDetails.push(`Pago de ${pago.alumno_nombre}: ${error instanceof Error ? error.message : 'Error desconocido'}`)
-        }
-      }
-    }
+    // 4. Format and return detailed report
+    const report = ImportReporter.generateReport(results)
 
     return NextResponse.json({
-      success: true,
-      results,
+      success: report.success,
+      report
     })
   } catch (error) {
     console.error('Error importing Excel:', error)
     return NextResponse.json(
-      { error: 'Failed to import Excel' },
+      { error: error instanceof Error ? error.message : 'Failed to import Excel' },
       { status: 500 }
     )
   }

@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getUserContext } from '@/lib/auth'
+import { unauthorized } from '@/lib/api-utils'
 import { ImportPlanner } from '@/lib/import/ImportPlanner'
 import { ImportValidator } from '@/lib/import/ImportValidator'
 import { ImportExecutor } from '@/lib/import/ImportExecutor'
 import { ImportReporter } from '@/lib/import/ImportReporter'
 
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
+    const context = await getUserContext()
+    if (!context) {
+      return unauthorized()
+    }
+
+    const profesorId = context.userId
+    const estudioId = context.estudio?.estudioId ?? null
+
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -13,16 +25,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
-      )
-    }
-
-    const profesorId = request.headers.get('x-user-id') || ''
-    const estudioId = request.headers.get('x-estudio-id') || null
-
-    if (!profesorId) {
-      return NextResponse.json(
-        { error: 'No authenticated user found' },
-        { status: 401 }
       )
     }
 

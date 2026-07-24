@@ -45,14 +45,33 @@ export async function POST(request: NextRequest) {
     // 4. Format and return detailed report
     const report = ImportReporter.generateReport(results)
 
+    // Ensure all entities exist in response for backward compatibility
+    const completeResults = {
+      alumnos: report.details.alumnos || { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
+      clases: report.details.clases || { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
+      pagos: report.details.pagos || { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] }
+    }
+
     return NextResponse.json({
       success: report.success,
-      results: report.details
+      report: completeResults
     })
   } catch (error) {
     console.error('Error importing Excel:', error)
+    
+    // Return complete report structure even on error for backward compatibility
+    const errorReport = {
+      alumnos: { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
+      clases: { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
+      pagos: { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] }
+    }
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to import Excel' },
+      { 
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to import Excel',
+        report: errorReport
+      },
       { status: 500 }
     )
   }

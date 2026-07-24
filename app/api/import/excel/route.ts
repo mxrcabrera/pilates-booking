@@ -45,11 +45,24 @@ export async function POST(request: NextRequest) {
     // 4. Format and return detailed report
     const report = ImportReporter.generateReport(results)
 
-    // Ensure all entities exist in response for backward compatibility
+    // Map to frontend expected format for backward compatibility
     const completeResults = {
-      alumnos: report.details.alumnos || { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
-      clases: report.details.clases || { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
-      pagos: report.details.pagos || { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] }
+      alumnos: {
+        created: report.details.alumnos?.created || 0,
+        updated: report.details.alumnos?.updated || 0,
+        errors: report.details.alumnos?.failed || 0,
+        errorDetails: report.details.alumnos?.errors || []
+      },
+      clases: {
+        created: report.details.clases?.created || 0,
+        errors: report.details.clases?.failed || 0,
+        errorDetails: report.details.clases?.errors || []
+      },
+      pagos: {
+        created: report.details.pagos?.created || 0,
+        errors: report.details.pagos?.failed || 0,
+        errorDetails: report.details.pagos?.errors || []
+      }
     }
 
     return NextResponse.json({
@@ -61,9 +74,22 @@ export async function POST(request: NextRequest) {
     
     // Return complete report structure even on error for backward compatibility
     const errorReport = {
-      alumnos: { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
-      clases: { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] },
-      pagos: { created: 0, updated: 0, skipped: 0, failed: 0, errors: [] }
+      alumnos: {
+        created: 0,
+        updated: 0,
+        errors: 0,
+        errorDetails: [error instanceof Error ? error.message : 'Failed to import Excel']
+      },
+      clases: {
+        created: 0,
+        errors: 0,
+        errorDetails: []
+      },
+      pagos: {
+        created: 0,
+        errors: 0,
+        errorDetails: []
+      }
     }
     
     return NextResponse.json(

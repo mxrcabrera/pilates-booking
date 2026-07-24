@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: report.success,
-      report
+      results: report.details
     })
   } catch (error) {
     console.error('Error importing Excel:', error)

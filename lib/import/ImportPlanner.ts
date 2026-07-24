@@ -5,6 +5,7 @@ export interface SheetMetadata {
   headers: string[];
   rowCount: number;
   sampleRow?: Record<string, unknown>;
+  sampleRows?: Record<string, unknown>[];
 }
 
 export interface ImportPlan {
@@ -31,6 +32,30 @@ export class ImportPlanner {
 
     const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
+    // First attempt: metadata-only (sheet names, headers, row counts)
+    const firstAttempt = await this.attemptPlan(metadata, apiKey, model, false)
+    
+    // Check if any entity reached sufficient confidence threshold
+    const hasHighConfidence = firstAttempt.entities.some(e => e.entity !== 'unknown' && e.confidence >= 0.7)
+    
+    if (hasHighConfidence) {
+      return firstAttempt
+    }
+
+    // Fallback: include sample rows for richer context
+    console.log('First attempt had low confidence, retrying with sample rows...')
+    const enrichedMetadata = this.extractMetadata(workbook, true)
+    const secondAttempt = await this.attemptPlan(enrichedMetadata, apiKey, model, true)
+
+    return secondAttempt
+  }
+
+  private static async attemptPlan(
+    metadata: SheetMetadata[],
+    apiKey: string,
+    model: string,
+    includeSampleRows: boolean
+  ): Promise<ImportPlan> {
     const systemPrompt = `You are a data mapping assistant for a Pilates Booking system.
 Your job is to analyze the metadata of an uploaded Excel workbook and generate an Import Plan to map its columns to our database schema.
 
@@ -61,6 +86,8 @@ You must map the columns from the Excel sheets to these entity fields.
 For each sheet in the workbook, decide which entity it represents ("Alumno", "Clase", "Pago", or "unknown" if it does not fit).
 Include a confidence score (number between 0 and 1) for the overall mapping of that sheet.
 Map the Excel headers to our entity keys in the "columnMap" object.
+
+${includeSampleRows ? 'Sample rows from each sheet are provided to help with inference. Use them to understand the data patterns and context.' : 'Only sheet names, headers, and row counts are provided.'}
 
 Return ONLY a JSON object matching the following structure:
 {
@@ -117,7 +144,7 @@ Do not include any markdown format tags (like \`\`\`json) or extra text. Just th
     }
   }
 
-  private static extractMetadata(workbook: xlsx.WorkBook): SheetMetadata[] {
+  private static extractMetadata(workbook: xlsx.WorkBook, includeSampleRows: boolean = false): SheetMetadata[] {
     const list: SheetMetadata[] = []
 
     workbook.SheetNames.forEach(sheetName => {
@@ -152,6 +179,8 @@ Do not include any markdown format tags (like \`\`\`json) or extra text. Just th
       })
 
       let sampleRow: Record<string, unknown> | undefined = undefined
+      let sampleRows: Record<string, unknown>[] | undefined = undefined
+      
       if (hasGenericHeaders && rows.length > 0) {
         // Find the first row that actually has data (i.e. not all nulls)
         const nonNullRow = rows.find(r => {
@@ -168,11 +197,36 @@ Do not include any markdown format tags (like \`\`\`json) or extra text. Just th
         }
       }
 
+      // Include up to 10 sample rows if requested
+      if (includeSampleRows && rows.length > 0) {
+        sampleRows = []
+        const dataRows = rawRows.slice(1) // Skip header row
+        
+        for (const row of dataRows) {
+          if (sampleRows.length >= 10) break
+          
+          if (Array.isArray(row) && row.length > 0) {
+            // Check if row has actual data (not all nulls/empty)
+            const hasData = row.some(v => v !== null && v !== undefined && String(v).trim() !== '')
+            if (hasData) {
+              const rowObj: Record<string, unknown> = {}
+              row.forEach((val, index) => {
+                if (index < headers.length) {
+                  rowObj[headers[index]] = val
+                }
+              })
+              sampleRows.push(rowObj)
+            }
+          }
+        }
+      }
+
       list.push({
         sheetName,
         headers,
         rowCount,
-        sampleRow
+        sampleRow,
+        sampleRows
       })
     })
 

@@ -19,19 +19,10 @@ export class ImportValidator {
   public static validate(plan: unknown): ImportPlan {
     const parsed = importPlanSchema.parse(plan)
 
-    // Check confidence score
-    for (const item of parsed.entities) {
-      if (item.entity !== 'unknown' && item.confidence < 0.70) {
-        throw new Error(
-          `Low confidence mapping on sheet "${item.sheet}" (${(item.confidence * 100).toFixed(0)}%). Required: 70%+. Please fix your Excel headers.`
-        )
-      }
-    }
-
     // Ensure we have at least one valid entity to import
     const hasValidEntity = parsed.entities.some(item => item.entity !== 'unknown')
     if (!hasValidEntity) {
-      throw new Error('No sheets could be recognized as a valid Pilates entity (Alumno, Clase, Pago) with sufficient confidence.')
+      throw new Error('No sheets could be recognized as a valid Pilates entity (Alumno, Clase, Pago).')
     }
 
     return parsed as ImportPlan

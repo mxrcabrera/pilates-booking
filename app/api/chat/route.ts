@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = 'llama-3.1-8b-instant'
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
 const SYSTEM_PROMPT = `You are a helpful assistant for the Pilates Booking system. You help both professors and students with questions about the platform.
 
@@ -166,8 +166,10 @@ export async function POST(request: NextRequest) {
     })
 
     if (!groqRes.ok) {
+      const errorText = await groqRes.text()
+      console.error('Groq API Error:', errorText)
       return new Response(
-        JSON.stringify({ error: 'AI service temporarily unavailable.' }),
+        JSON.stringify({ error: `AI service temporarily unavailable: ${groqRes.statusText}` }),
         { status: 503, headers: { 'Content-Type': 'application/json' } },
       )
     }

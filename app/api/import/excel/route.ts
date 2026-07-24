@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import * as xlsx from 'xlsx'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = 'llama-3.1-8b-instant'
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
 const SYSTEM_PROMPT = `You are a data extraction assistant for a Pilates Booking system. Your task is to extract structured data from Excel files and convert it to JSON format.
 
@@ -98,8 +98,10 @@ export async function POST(request: NextRequest) {
     })
 
     if (!groqRes.ok) {
+      const errorText = await groqRes.text()
+      console.error('Groq API Error:', errorText)
       return NextResponse.json(
-        { error: 'Failed to process Excel with AI' },
+        { error: `Failed to process Excel with AI: ${groqRes.status} ${groqRes.statusText}` },
         { status: 503 }
       )
     }

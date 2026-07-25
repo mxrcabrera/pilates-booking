@@ -40,11 +40,15 @@ export async function POST(request: NextRequest) {
     console.log('[API Route] Planner started')
     const plan = await ImportPlanner.getPlan(buffer)
     console.log('[API Route] Planner finished')
+    console.log('=== ImportPlanner Output ===')
+    console.dir(plan, { depth: null })
 
     // 2. Validate mapping plan using Zod
     console.log('[API Route] Validator started')
     const validatedPlan = ImportValidator.validate(plan)
     console.log('[API Route] Validator finished')
+    console.log('=== ImportValidator Output ===')
+    console.dir(validatedPlan, { depth: null })
 
     // 3. Execute local mapping & database import (row-by-row)
     console.log('[API Route] Executor started')
@@ -53,6 +57,8 @@ export async function POST(request: NextRequest) {
       estudioId
     })
     console.log('[API Route] Executor finished')
+    console.log('=== ImportExecutor Output ===')
+    console.dir(results, { depth: null })
 
     // 4. Format and return detailed report
     console.log('[API Route] Reporter started')
@@ -80,10 +86,13 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[API Route] Response returned')
-    return NextResponse.json({
+    const response = {
       success: report.success,
       report: completeResults
-    })
+    }
+    console.log('=== Final API Response ===')
+    console.dir(response, { depth: null })
+    return NextResponse.json(response)
   } catch (error) {
     console.error('[API Route] Error:', error)
     

@@ -67,8 +67,10 @@ export function ExcelImport({ isOpen, onClose, demoMode = false }: ExcelImportPr
   }
 
   const handleUpload = async () => {
+    console.log('[ExcelImport] Import button clicked')
     if (!file) return
 
+    console.log('[ExcelImport] File selected:', file.name)
     setIsUploading(true)
     setError(null)
 
@@ -85,23 +87,30 @@ export function ExcelImport({ isOpen, onClose, demoMode = false }: ExcelImportPr
     }
 
     try {
+      console.log('[ExcelImport] FormData created')
       const formData = new FormData()
       formData.append('file', file)
 
+      console.log('[ExcelImport] Fetch started')
       const response = await fetch('/api/import/excel', {
         method: 'POST',
         body: formData,
       })
 
+      console.log('[ExcelImport] HTTP status received:', response.status)
       const data = await response.json()
+      console.log('[ExcelImport] Response body received:', data)
 
       if (!response.ok) {
+        console.log('[ExcelImport] Error path:', data.error)
         setError(data.error || 'Error al importar Excel')
         return
       }
 
-      setResults(data.results)
-    } catch {
+      console.log('[ExcelImport] Success path, setting results')
+      setResults(data.report)
+    } catch (err) {
+      console.log('[ExcelImport] Error path:', err)
       setError('Error al subir el archivo')
     } finally {
       setIsUploading(false)

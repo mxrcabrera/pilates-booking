@@ -22,8 +22,12 @@ export class ImportPlanner {
   private static GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
   public static async getPlan(fileBuffer: ArrayBuffer): Promise<ImportPlan> {
+    console.log('[ImportPlanner] Workbook loaded')
     const workbook = xlsx.read(fileBuffer, { type: 'buffer' })
+    console.log('[ImportPlanner] Number of sheets:', workbook.SheetNames.length)
+    console.log('[ImportPlanner] Sheet names:', workbook.SheetNames)
     const metadata = this.extractMetadata(workbook)
+    console.log('[ImportPlanner] Metadata extracted')
 
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) {
@@ -33,19 +37,25 @@ export class ImportPlanner {
     const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
     // First attempt: metadata-only (sheet names, headers, row counts)
+    console.log('[ImportPlanner] First LLM request started')
     const firstAttempt = await this.attemptPlan(metadata, apiKey, model, false)
-    
+    console.log('[ImportPlanner] First LLM request finished')
+
     // Check if any entity reached sufficient confidence threshold
     const hasHighConfidence = firstAttempt.entities.some(e => e.entity !== 'unknown' && e.confidence >= 0.7)
-    
+
     if (hasHighConfidence) {
+      console.log('[ImportPlanner] High confidence found, using first attempt')
+      console.log('[ImportPlanner] Final plan:', JSON.stringify(firstAttempt))
       return firstAttempt
     }
 
     // Fallback: include sample rows for richer context
-    console.log('First attempt had low confidence, retrying with sample rows...')
+    console.log('[ImportPlanner] Fallback request started (low confidence)')
     const enrichedMetadata = this.extractMetadata(workbook, true)
     const secondAttempt = await this.attemptPlan(enrichedMetadata, apiKey, model, true)
+    console.log('[ImportPlanner] Fallback request finished')
+    console.log('[ImportPlanner] Final plan:', JSON.stringify(secondAttempt))
 
     return secondAttempt
   }

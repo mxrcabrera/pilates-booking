@@ -20,10 +20,12 @@ export class ImportExecutor {
     plan: ImportPlan,
     context: { profesorId: string; estudioId?: string | null }
   ): Promise<ImportExecutorResults> {
+    console.log('[ImportExecutor] Execute called')
+    console.log('[ImportExecutor] Entity order:', plan.insertionOrder)
     const workbook = xlsx.read(fileBuffer, { type: 'buffer', cellDates: true })
 
     const results: ImportExecutorResults = {}
-    
+
     // Initialize results structure
     for (const item of plan.entities) {
       if (item.entity !== 'unknown') {
@@ -88,6 +90,7 @@ export class ImportExecutor {
       const entityPlan = plan.entities.find(e => e.entity === entityName)
       if (!entityPlan) continue
 
+      console.log('[ImportExecutor] Processing sheet:', entityPlan.sheet, 'for entity:', entityName)
       const sheet = workbook.Sheets[entityPlan.sheet]
       if (!sheet) {
         const res = results[entityName]
@@ -100,6 +103,7 @@ export class ImportExecutor {
 
       // Convert sheet to json rows
       const rows = xlsx.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null })
+      console.log('[ImportExecutor] Rows found:', rows.length)
       const columnMap = entityPlan.columnMap
       const res = results[entityName]
       if (!res) continue
@@ -107,7 +111,7 @@ export class ImportExecutor {
       let rowNum = 1 // Track row number for error logging (row 1 is usually header)
       for (const rawRow of rows) {
         rowNum++
-        
+
         // Skip completely empty rows
         const hasValues = Object.values(rawRow).some(v => v !== null && v !== undefined && String(v).trim() !== '')
         if (!hasValues) {
@@ -115,6 +119,7 @@ export class ImportExecutor {
           continue
         }
 
+        console.log('[ImportExecutor] Row processing:', rowNum)
         try {
           // Map rawRow keys using columnMap
           const mappedData: Record<string, unknown> = {}
@@ -127,10 +132,13 @@ export class ImportExecutor {
           }
 
           if (entityName === 'Alumno') {
+            console.log('[ImportExecutor] Prisma create/update for Alumno')
             await this.processAlumnoRow(mappedData, context, emailMap, phoneMap, nameMap, normalize, res, rowNum)
           } else if (entityName === 'Clase') {
+            console.log('[ImportExecutor] Prisma create/update for Clase')
             await this.processClaseRow(mappedData, context, nameMap, normalize, res, rowNum)
           } else if (entityName === 'Pago') {
+            console.log('[ImportExecutor] Prisma create/update for Pago')
             await this.processPagoRow(mappedData, context, nameMap, normalize, res, rowNum)
           }
         } catch (error) {
@@ -140,6 +148,7 @@ export class ImportExecutor {
       }
     }
 
+    console.log('[ImportExecutor] Finished')
     return results
   }
 

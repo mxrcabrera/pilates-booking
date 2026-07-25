@@ -41,17 +41,17 @@ export class ImportPlanner {
     const firstAttempt = await this.attemptPlan(metadata, apiKey, model, false)
     console.log('[ImportPlanner] First LLM request finished')
 
-    // Check if any entity reached sufficient confidence threshold
-    const hasHighConfidence = firstAttempt.entities.some(e => e.entity !== 'unknown' && e.confidence >= 0.7)
+    // Check if any valid entity was detected (not all 'unknown')
+    const hasValidEntity = firstAttempt.entities.some(e => e.entity !== 'unknown')
 
-    if (hasHighConfidence) {
-      console.log('[ImportPlanner] High confidence found, using first attempt')
+    if (hasValidEntity) {
+      console.log('[ImportPlanner] Valid entities found, using first attempt')
       console.log('[ImportPlanner] Final plan:', JSON.stringify(firstAttempt))
       return firstAttempt
     }
 
-    // Fallback: include sample rows for richer context
-    console.log('[ImportPlanner] Fallback request started (low confidence)')
+    // Fallback: include sample rows for richer context when all entities are 'unknown'
+    console.log('[ImportPlanner] Fallback request started (all entities unknown)')
     const enrichedMetadata = this.extractMetadata(workbook, true)
     const secondAttempt = await this.attemptPlan(enrichedMetadata, apiKey, model, true)
     console.log('[ImportPlanner] Fallback request finished')
